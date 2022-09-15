@@ -33,3 +33,4 @@ UNFINISHED:
 8. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
 9. Add framerate handling and clean timestep support.
 10. Add VMA (Vulkan Memory Allocator) for GPU memory management (buffers/images).
+11. Add Fast Rotsprite shader 2x & 3x scale (forked on profile).

@@ -32,3 +32,4 @@ UNFINISHED:
 7. Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).
 8. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
 9. Add framerate handling and clean timestep support.
+10. Add VMA (Vulkan Memory Allocator) for GPU memory management (buffers/images).

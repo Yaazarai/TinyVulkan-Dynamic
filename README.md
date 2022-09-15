@@ -23,14 +23,12 @@ FINISHED:
     * Actual rendering pipeline that draws the final frame and provides command buffer recording methods.
 
 UNFINISHED:
-1. Remove MiniVkSUpportDetails in lieu of MiniVkInstance (this was a temporary solution to a dependency chain issue).
-2. Finish handling push constant support for shaders.
-3. Test and finish MiniVkThreadPool implemention.
-4. Add more optional properties for configuring the MiniVkDynamicPipeline when creating the graphics pipeline.
-5. Add in Texture/Sprite loading support.
-6. Setup default rendering passthrough shaders.
-7. Setup default model/view/projection matrices.
-8. Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).
-9. Remove tutorial example code files `MiniVulkan.hpp`, `MiniVkLayer.hpp` and `Window.hpp`.
-10. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
-11. Add framerate handling and clean timestep support.
+1. Finish handling push constant support for shaders.
+2. Test and finish MiniVkThreadPool implemention.
+3. Add more optional properties for configuring the MiniVkDynamicPipeline when creating the graphics pipeline.
+4. Add in Texture/Sprite loading support.
+5. Setup default rendering passthrough shaders.
+6. Setup default model/view/projection matrices.
+7. Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).
+8. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
+9. Add framerate handling and clean timestep support.

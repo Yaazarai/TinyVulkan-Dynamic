@@ -24,7 +24,7 @@ namespace MINIVULKAN_NS {
 
 	class MiniVkRenderImage : public MiniVkObject {
 	private:
-		MiniVkInstanceSupportDetails mvkLayer;
+		MiniVkInstance& mvkLayer;
 
 		#pragma region VKIMAGE CREATION
 
@@ -104,7 +104,7 @@ namespace MINIVULKAN_NS {
 			vkFreeMemory(mvkLayer.logicalDevice, memory, nullptr);
 		}
 
-		MiniVkRenderImage(MiniVkInstanceSupportDetails mvkLayer, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
+		MiniVkRenderImage(MiniVkInstance& mvkLayer, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
 			VkMemoryPropertyFlags properties, VkImageTiling tiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL) : mvkLayer(mvkLayer) {
 			onDispose += std::callback<>(this, &MiniVkRenderImage::Disposable);
 
@@ -128,7 +128,7 @@ namespace MINIVULKAN_NS {
 	template<typename VertexStruct, typename UniformStruct>
 	class MiniVkDynamicRenderer : public MiniVkObject {
 	private:
-		MiniVkInstanceSupportDetails mvkLayer;
+		MiniVkInstance& mvkLayer;
 	public:
 		MiniVkSwapChain& swapChain;
 		MiniVkDynamicPipeline<VertexStruct, UniformStruct>& graphicsPipeline;
@@ -157,7 +157,7 @@ namespace MINIVULKAN_NS {
 			}
 		}
 
-		MiniVkDynamicRenderer(MiniVkInstanceSupportDetails mvkLayer, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline<VertexStruct, UniformStruct>& graphicsPipeline) :
+		MiniVkDynamicRenderer(MiniVkInstance& mvkLayer, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline<VertexStruct, UniformStruct>& graphicsPipeline) :
 		mvkLayer(mvkLayer), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
 			onDispose += std::callback<>(this, &MiniVkDynamicRenderer::Disposable);
 

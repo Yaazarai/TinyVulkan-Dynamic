@@ -33,7 +33,7 @@
 
 			/// VKINSTANCE INFO ///
 			VkApplicationInfo appInfo{};
-
+		public:
 			/// PHYSICAL_LOGICAL_DEVICES ///
 			std::vector<VkPhysicalDeviceType> physicalDeviceTypes;
 			VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -45,7 +45,7 @@
 			VkSurfaceKHR windowSurface;
 			/// VKINSTANCE_INITIATION_DESTRUCTION ///
 			VkInstance instance;
-		public:
+
 			void Disposable() {
 				vkDeviceWaitIdle(logicalDevice);
 				vkDestroyDevice(logicalDevice, nullptr);
@@ -126,17 +126,6 @@
 				#endif
 			}
 
-			#pragma region INSTANCE SUPPORT DETAILS
-
-			MiniVkInstanceSupportDetails QuerySupportDetails() {
-				return MiniVkInstanceSupportDetails(instance, logicalDevice, physicalDevice, window, window->GetWindowSurface());
-			}
-
-			MiniVkInstanceSupportDetails QuerySupportDetailsSharedWindow(MiniVkWindow* wnd) {
-				return MiniVkInstanceSupportDetails(instance, logicalDevice, physicalDevice, wnd);
-			}
-
-			#pragma endregion
 			#pragma region PHYSICAL_LOGICAL_DEVICES
 
 			/// <summary>Creates the logical devices for the graphics/present queue families.</summary>

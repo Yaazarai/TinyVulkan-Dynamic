@@ -6,7 +6,7 @@
 	namespace MINIVULKAN_NS {
 		class MiniVkCommandPool : public MiniVkObject {
 		private:
-			MiniVkInstanceSupportDetails mvkLayer;
+			MiniVkInstance& mvkLayer;
 			VkCommandPool commandPool;
 			std::vector<VkCommandBuffer> commandBuffers;
 		public:
@@ -15,7 +15,7 @@
 				vkDestroyCommandPool(mvkLayer.logicalDevice, commandPool, nullptr);
 			}
 			
-			MiniVkCommandPool(MiniVkInstanceSupportDetails mvkLayer, size_t bufferCount = 1) : mvkLayer(mvkLayer) {
+			MiniVkCommandPool(MiniVkInstance& mvkLayer, size_t bufferCount = 1) : mvkLayer(mvkLayer) {
 				onDispose += std::callback<>(this, &MiniVkCommandPool::Disposable);
 				CreateCommandPool();
 				CreateCommandBuffers(bufferCount+1);

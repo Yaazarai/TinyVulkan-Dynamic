@@ -7,7 +7,7 @@
 		template<typename VertexStruct, typename UniformStruct>
 		class MiniVkDynamicPipeline : public MiniVkObject {
 		private:
-			MiniVkInstanceSupportDetails mvkLayer;
+			MiniVkInstance& mvkLayer;
 		public:
 			/// GRAPHICS_PIPELINE ///
 			uint32_t pushConstantRangeSize;
@@ -31,7 +31,7 @@
 				vkDestroyDescriptorSetLayout(mvkLayer.logicalDevice, descriptorSetLayout, nullptr);
 			}
 
-			MiniVkDynamicPipeline(MiniVkInstanceSupportDetails mvkLayer, MiniVkShaderStages& shaderStages, VkFormat imageFormat, uint32_t pushConstantRangeSize = 0,
+			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, MiniVkShaderStages& shaderStages, VkFormat imageFormat, uint32_t pushConstantRangeSize = 0,
 			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) : mvkLayer(mvkLayer), imageFormat(imageFormat),
 			colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), shaderStages(shaderStages), pushConstantRangeSize(pushConstantRangeSize) {

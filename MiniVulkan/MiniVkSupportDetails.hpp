@@ -27,26 +27,6 @@
 
 		enum class MiniVkBufferingMode { SINGLE = 1, DOUBLE = 2, TRIPLE = 3 };
 
-		struct MiniVkInstanceSupportDetails {
-		public:
-			VkInstance& instance;
-			VkDevice& logicalDevice;
-			VkPhysicalDevice& physicalDevice;
-			MiniVkWindow* window = nullptr;
-			VkSurfaceKHR renderSurface = nullptr;
-
-			MiniVkInstanceSupportDetails(VkInstance& inst, VkDevice& logDevice, VkPhysicalDevice& physDevice, MiniVkWindow* window, VkSurfaceKHR rendSurface = nullptr)
-				: instance(inst), logicalDevice(logDevice), physicalDevice(physDevice), window(window), renderSurface(rendSurface) {}
-
-			MiniVkInstanceSupportDetails operator=(const MiniVkInstanceSupportDetails& vkI) {
-				instance = vkI.instance;
-				logicalDevice = vkI.logicalDevice;
-				physicalDevice = vkI.physicalDevice;
-				window = vkI.window;
-				renderSurface = vkI.renderSurface;
-			}
-		};
-
 		struct MiniVkSwapChainSupportDetails {
 		public:
 			VkSurfaceCapabilitiesKHR capabilities;

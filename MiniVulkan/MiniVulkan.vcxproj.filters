@@ -23,18 +23,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MiniVulkan.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Invokable.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MiniVkLayer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MiniVk.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
@@ -72,6 +60,9 @@
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
     <ClInclude Include="MiniVkDynamicRenderer.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="Invokable.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
   </ItemGroup>

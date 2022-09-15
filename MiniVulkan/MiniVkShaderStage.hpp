@@ -6,7 +6,7 @@
 namespace MINIVULKAN_NS {
 	class MiniVkShaderStages : public MiniVkObject {
 	private:
-		MiniVkInstanceSupportDetails mvkLayer;
+		MiniVkInstance& mvkLayer;
 
 	public:
 		std::vector<std::string> shaderPaths;
@@ -20,7 +20,7 @@ namespace MINIVULKAN_NS {
 				vkDestroyShaderModule(mvkLayer.logicalDevice, shaderModule, nullptr);
 		}
 
-		MiniVkShaderStages(MiniVkInstanceSupportDetails mvkLayer, const std::vector<std::string>& shaderPaths, const std::vector<VkShaderStageFlagBits>& shaderFlagCreateBits) : mvkLayer(mvkLayer), shaderPaths(shaderPaths) {
+		MiniVkShaderStages(MiniVkInstance& mvkLayer, const std::vector<std::string>& shaderPaths, const std::vector<VkShaderStageFlagBits>& shaderFlagCreateBits) : mvkLayer(mvkLayer), shaderPaths(shaderPaths) {
 			onDispose += std::callback<>(this, &MiniVkShaderStages::Disposable);
 
 			for (size_t i = 0; i < shaderPaths.size(); i++) {
@@ -36,13 +36,7 @@ namespace MINIVULKAN_NS {
 				shaderStages.push_back(stage);
 		}
 
-		MiniVkShaderStages operator=(const MiniVkShaderStages& shader) {
-			mvkLayer = shader.mvkLayer;
-			shaderPaths.assign(shader.shaderPaths.begin(), shader.shaderPaths.end());
-			shaderCreateInfo.assign(shader.shaderCreateInfo.begin(), shader.shaderCreateInfo.end());
-			shaderModules.assign(shader.shaderModules.begin(), shader.shaderModules.end());
-			shaderStages.assign(shader.shaderStages.begin(), shader.shaderStages.end());
-		}
+		MiniVkShaderStages operator=(const MiniVkShaderStages& shader) = delete;
 
 		VkShaderModule CreateShaderModule(std::vector<char> shaderCode) {
 			VkShaderModuleCreateInfo createInfo{};

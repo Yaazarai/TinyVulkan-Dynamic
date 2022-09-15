@@ -23,7 +23,7 @@
 		
 		class MiniVkBuffer : public MiniVkObject {
 		protected:
-			MiniVkInstanceSupportDetails mvkLayer;
+			MiniVkInstance& mvkLayer;
 
 			uint32_t QueryMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
 				VkPhysicalDeviceMemoryProperties memProperties;
@@ -70,7 +70,7 @@
 				vkFreeMemory(mvkLayer.logicalDevice, memory, nullptr);
 			}
 
-			MiniVkBuffer(MiniVkInstanceSupportDetails mvkLayer, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) : mvkLayer(mvkLayer), size(size) {
+			MiniVkBuffer(MiniVkInstance& mvkLayer, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) : mvkLayer(mvkLayer), size(size) {
 				onDispose += std::callback<>(this, &MiniVkBuffer::Disposable);
 				CreateBuffer(size, usage, properties, buffer, memory);
 			}
@@ -86,7 +86,7 @@
 				MiniVkBuffer::Copy(mvkLayer, graphicsQueue, commandPool, stagingBuffer.buffer, buffer, size);
 			}
 
-			inline static void Copy(MiniVkInstanceSupportDetails mvkLayer, VkQueue graphicsQueue, VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
+			inline static void Copy(MiniVkInstance& mvkLayer, VkQueue graphicsQueue, VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
 				VkCommandBufferAllocateInfo allocInfo{};
 				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -187,7 +187,7 @@
 		public:
 			std::vector<MiniVkVertex>& vertices;
 
-			MiniVkVertexBuffer(MiniVkInstanceSupportDetails mvkLayer, std::vector<MiniVkVertex> &vertices) : vertices(vertices),
+			MiniVkVertexBuffer(MiniVkInstance& mvkLayer, std::vector<MiniVkVertex> &vertices) : vertices(vertices),
 				MiniVkBuffer(mvkLayer, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
 
@@ -204,7 +204,7 @@
 			MiniVkVertexBuffer& vertexBuffer;
 			std::vector<uint32_t> indices;
 
-			MiniVkIndexBuffer(MiniVkInstanceSupportDetails mvkLayer, MiniVkVertexBuffer& vertexBuffer, const std::vector<uint32_t>& indices) : vertexBuffer(vertexBuffer), indices(indices),
+			MiniVkIndexBuffer(MiniVkInstance& mvkLayer, MiniVkVertexBuffer& vertexBuffer, const std::vector<uint32_t>& indices) : vertexBuffer(vertexBuffer), indices(indices),
 				MiniVkBuffer(mvkLayer, sizeof(uint32_t)* indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
 
@@ -220,7 +220,7 @@
 		public:
 			UniformStruct set;
 
-			MiniVkUniformBuffer(MiniVkInstanceSupportDetails mvkLayer, VkDescriptorSetLayout setLayout, UniformStruct set) : set(set),
+			MiniVkUniformBuffer(MiniVkInstance& mvkLayer, VkDescriptorSetLayout setLayout, UniformStruct set) : set(set),
 				MiniVkBuffer(mvkLayer, sizeof(UniformStruct), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) {}
 
 			MiniVkUniformBuffer operator=(const MiniVkUniformBuffer& ubuff) = delete;
@@ -231,7 +231,7 @@
 		
 		class MiniVkTextureBuffer : public MiniVkBuffer {
 		public:
-			MiniVkTextureBuffer(MiniVkInstanceSupportDetails mvkLayer, VkDeviceSize imageSize) :
+			MiniVkTextureBuffer(MiniVkInstance& mvkLayer, VkDeviceSize imageSize) :
 				MiniVkBuffer(mvkLayer, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
 

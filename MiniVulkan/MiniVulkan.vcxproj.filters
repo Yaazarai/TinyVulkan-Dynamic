@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Shader Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\MiniVk">
+      <UniqueIdentifier>{e4d8e465-5d8f-4686-96f4-a6e5282978c5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MiniVulkan.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Invokable.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkLayer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVk.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkWindow.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkInstance.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkObject.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkQueueFamily.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkCommandPool.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkSwapChain.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkSupportDetails.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkShaderStage.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkThreadPool.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkDynamicPipeline.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkShaderBuffers.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkDynamicRenderer.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Documentation.txt">
+      <Filter>Header Files</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sample_shader.vert">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="sample_shader.frag">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="compile.bat">
+      <Filter>Shader Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

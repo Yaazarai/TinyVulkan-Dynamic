@@ -1,0 +1,7 @@
+﻿  Source.cpp
+D:\Programming\MiniVulkanDy\MiniVulkan\MiniVkDynamicRenderer.hpp(238,41): warning C4244: '=': conversion from 'uint32_t' to 'float', possible loss of data
+D:\Programming\MiniVulkanDy\MiniVulkan\MiniVkDynamicRenderer.hpp(186): message : while compiling class template member function 'void minivulkan::MiniVkDynamicRenderer<minivulkan::MiniVkVertex,minivulkan::MiniVkUniform>::BeginRecordCommandBuffer(VkCommandBuffer,const VkClearValue,VkImageView &,VkImage &,VkExtent2D)'
+D:\Programming\MiniVulkanDy\MiniVulkan\Source.cpp(126): message : see reference to function template instantiation 'void minivulkan::MiniVkDynamicRenderer<minivulkan::MiniVkVertex,minivulkan::MiniVkUniform>::BeginRecordCommandBuffer(VkCommandBuffer,const VkClearValue,VkImageView &,VkImage &,VkExtent2D)' being compiled
+D:\Programming\MiniVulkanDy\MiniVulkan\Source.cpp(115): message : see reference to class template instantiation 'minivulkan::MiniVkDynamicRenderer<minivulkan::MiniVkVertex,minivulkan::MiniVkUniform>' being compiled
+D:\Programming\MiniVulkanDy\MiniVulkan\MiniVkDynamicRenderer.hpp(239,42): warning C4244: '=': conversion from 'uint32_t' to 'float', possible loss of data
+  MiniVulkan.vcxproj -> D:\Programming\MiniVulkanDy\x64\Debug\MiniVulkan.exe

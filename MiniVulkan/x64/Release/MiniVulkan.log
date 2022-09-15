@@ -1,0 +1,7 @@
+﻿  Source.cpp
+  Generating code
+D:\Programming\MiniVulkanDy\MiniVulkan\Invokable.hpp(39): warning C4717: 'std::callback<>::create<std::callback<> &>': recursive on all control paths, function will cause runtime stack overflow
+D:\Programming\MiniVulkanDy\MiniVulkan\Invokable.hpp(39): warning C4717: 'std::callback<VkCommandBuffer_T *>::create<std::callback<VkCommandBuffer_T *> &,0>': recursive on all control paths, function will cause runtime stack overflow
+D:\Programming\MiniVulkanDy\MiniVulkan\Invokable.hpp(39): warning C4717: 'std::callback<void *,int,int>::create<std::callback<void *,int,int> &,0,1,2>': recursive on all control paths, function will cause runtime stack overflow
+  Finished generating code
+  MiniVulkan.vcxproj -> D:\Programming\MiniVulkanDy\x64\Release\MiniVulkan.exe

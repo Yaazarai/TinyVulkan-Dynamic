@@ -37,7 +37,7 @@
 			colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), shaderStages(shaderStages), pushConstantRangeSize(pushConstantRangeSize) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);
 
-				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.window->GetWindowSurface());
+				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
 				vkGetDeviceQueue(mvkLayer.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 				vkGetDeviceQueue(mvkLayer.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 

@@ -32,7 +32,7 @@
 				poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 				poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 				poolInfo.queueFamilyIndex = MiniVkQueueFamily::FindQueueFamilies(
-					mvkLayer.physicalDevice, mvkLayer.window->GetWindowSurface()
+					mvkLayer.physicalDevice, mvkLayer.presentationSurface
 				).graphicsFamily.value();
 
 				if (vkCreateCommandPool(mvkLayer.logicalDevice, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)

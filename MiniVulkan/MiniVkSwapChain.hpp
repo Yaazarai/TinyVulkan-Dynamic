@@ -11,9 +11,10 @@
 		public:
 			/// VKSURFACE FOR PRESENTATION ///
 			MiniVkSurfaceSupportDetails presentDetails;
+			std::invokable<int&, int&> onGetFrameBufferSize;
 
 			/// INVOKABLE EVENTS ///
-			std::invokable<void*, int, int> onReCreateSwapChain;
+			std::invokable<> onReCreateSwapChain;
 			bool framebufferResized = false;
 
 			/// SWAP_CHAINS ///
@@ -52,8 +53,7 @@
 
 			/// <summary>Re-creates the Vulkan surface swap-chain & resets the currentFrame to 0.</summary>
 			void ReCreateSwapChain() {
-				int width = 0, height = 0; // Optional.
-				onReCreateSwapChain.invoke(mvkLayer.window->GetHandle(), width, height);
+				onReCreateSwapChain.invoke();
 				createInfo.oldSwapchain = swapChain;
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
 				Disposable();
@@ -75,7 +75,7 @@
 
 				VkSwapchainCreateInfoKHR createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-				createInfo.surface = mvkLayer.window->GetWindowSurface();
+				createInfo.surface = mvkLayer.presentationSurface;
 				createInfo.minImageCount = imageCount;
 				createInfo.imageFormat = surfaceFormat.format;
 				createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -83,7 +83,7 @@
 				createInfo.imageArrayLayers = 1; // Change when developing VR or other 3D stereoscopic applications
 				createInfo.imageUsage = swapChainImageUsage;
 
-				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.window->GetWindowSurface());
+				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
 				uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 				if (indices.graphicsFamily != indices.presentFamily) {
@@ -147,7 +147,7 @@
 				MiniVkSwapChainSupportDetails details;
 
 				uint32_t formatCount;
-				VkSurfaceKHR windowSurface = mvkLayer.window->GetWindowSurface();
+				VkSurfaceKHR windowSurface = mvkLayer.presentationSurface;
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device, windowSurface, &formatCount, nullptr);
 				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, windowSurface, &details.capabilities);
 
@@ -192,7 +192,7 @@
 				}
 				else {
 					int width, height;
-					mvkLayer.window->GetFrameBufferSize(width, height);
+					onGetFrameBufferSize.invoke(width, height);
 
 					VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 					actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);

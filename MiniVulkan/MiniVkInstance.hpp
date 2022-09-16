@@ -6,12 +6,6 @@
 	namespace MINIVULKAN_NS {
 		class MiniVkInstance : public MiniVkObject {
 		private:
-			#ifdef _DEBUG
-			const bool enableValidationLayers = true;
-			#else
-			const bool enableValidationLayers = false;
-			#endif
-
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 			const std::vector<const char*> instanceExtensions = {
 				VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME // Dynamic Rendering Dependency
@@ -34,36 +28,39 @@
 			/// VKINSTANCE INFO ///
 			VkApplicationInfo appInfo{};
 		public:
+			#ifdef _DEBUG
+			const static bool enableValidationLayers = true;
+			#else
+			const static bool enableValidationLayers = false;
+			#endif
 			/// PHYSICAL_LOGICAL_DEVICES ///
 			std::vector<VkPhysicalDeviceType> physicalDeviceTypes;
 			VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 			VkDevice logicalDevice;
 
-			/// INCLUDED WINDOW LIB ///
-			MiniVkWindow* window;
 			/// WINDOW RENDER SURFACE ///
-			VkSurfaceKHR windowSurface;
+			VkSurfaceKHR presentationSurface;
+			std::vector<const char*> presentationRequiredExtensions;
+			std::invokable<VkSurfaceKHR&> onGetPresentationSurface;
 			/// VKINSTANCE_INITIATION_DESTRUCTION ///
 			VkInstance instance;
 
 			void Disposable() {
 				vkDeviceWaitIdle(logicalDevice);
 				vkDestroyDevice(logicalDevice, nullptr);
-				vkDestroySurfaceKHR(instance, windowSurface, nullptr);
 				if (enableValidationLayers) DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+				vkDestroySurfaceKHR(instance, presentationSurface, nullptr);
 				vkDestroyInstance(instance, nullptr);
 			}
 
-			MiniVkInstance(MiniVkWindow* hwndWindow, const std::string& title, const std::vector<VkPhysicalDeviceType> pTypes) {
+			MiniVkInstance(std::callback<VkInstance&, VkSurfaceKHR&> createPresentationSurface, std::vector<const char*> presentationExtensions, const std::string& title, const std::vector<VkPhysicalDeviceType> pTypes)
+			: presentationRequiredExtensions(presentationExtensions) {
 				onDispose += std::callback<>(this, &MiniVkInstance::Disposable);
-				
-				window = hwndWindow;
 				physicalDeviceTypes.assign(pTypes.begin(), pTypes.end());
 
 				CreateVkInstance(title);
+				createPresentationSurface(instance, presentationSurface);
 				SetupDebugMessenger();
-				window->CreateWindowSurface(instance);
-				windowSurface = hwndWindow->GetWindowSurface();
 				QueryPhysicalDevice();
 				CreateLogicalDevice();
 			}
@@ -102,7 +99,7 @@
 				/////////////////////////// Validation Layer Support Handling ////////////////////////////
 				//////////////////////////////////////////////////////////////////////////////////////////
 
-				auto extensions = window->GetRequiredExtensions(enableValidationLayers);
+				auto extensions = presentationRequiredExtensions;
 				// Add required instance extensions to required window extensions
 				for (const auto& extension : instanceExtensions) extensions.push_back(extension);
 
@@ -130,7 +127,7 @@
 
 			/// <summary>Creates the logical devices for the graphics/present queue families.</summary>
 			void CreateLogicalDevice() {
-				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(physicalDevice, windowSurface);
+				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(physicalDevice, presentationSurface);
 
 				std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 				std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -210,20 +207,20 @@
 				MiniVkSwapChainSupportDetails details;
 
 				uint32_t formatCount;
-				vkGetPhysicalDeviceSurfaceFormatsKHR(device, windowSurface, &formatCount, nullptr);
-				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, windowSurface, &details.capabilities);
+				vkGetPhysicalDeviceSurfaceFormatsKHR(device, presentationSurface, &formatCount, nullptr);
+				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, presentationSurface, &details.capabilities);
 
 				if (formatCount > 0) {
 					details.formats.resize(formatCount);
-					vkGetPhysicalDeviceSurfaceFormatsKHR(device, windowSurface, &formatCount, details.formats.data());
+					vkGetPhysicalDeviceSurfaceFormatsKHR(device, presentationSurface, &formatCount, details.formats.data());
 				}
 
 				uint32_t presentModeCount;
-				vkGetPhysicalDeviceSurfacePresentModesKHR(device, windowSurface, &presentModeCount, nullptr);
+				vkGetPhysicalDeviceSurfacePresentModesKHR(device, presentationSurface, &presentModeCount, nullptr);
 
 				if (presentModeCount != 0) {
 					details.presentModes.resize(presentModeCount);
-					vkGetPhysicalDeviceSurfacePresentModesKHR(device, windowSurface, &presentModeCount, details.presentModes.data());
+					vkGetPhysicalDeviceSurfacePresentModesKHR(device, presentationSurface, &presentModeCount, details.presentModes.data());
 				}
 
 				return details;
@@ -238,7 +235,7 @@
 				//VkPhysicalDeviceFeatures deviceFeatures;
 				//vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(device, windowSurface);
+				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(device, presentationSurface);
 				bool supportsExtensions = QueryDeviceExtensionSupport(device);
 
 				bool swapChainAdequate = false;

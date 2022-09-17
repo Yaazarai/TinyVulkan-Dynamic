@@ -4,15 +4,18 @@
 	#include "./MiniVk.hpp"
 
 	namespace MINIVULKAN_NS {
+		#define VKCOMP_RGBA VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+		#define VKCOMP_BGRA VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT
+
 		template<typename VertexStruct, typename UniformStruct>
 		class MiniVkDynamicPipeline : public MiniVkObject {
 		private:
 			MiniVkInstance& mvkLayer;
 		public:
 			/// GRAPHICS_PIPELINE ///
-			uint32_t pushConstantRangeSize;
+			std::vector<VkPushConstantRange> pushConstantRanges;
+			std::vector<VkDescriptorSetLayout> descriptorSets;
 			MiniVkShaderStages& shaderStages;
-			VkDescriptorSetLayout descriptorSetLayout;
 			VkPipelineDynamicStateCreateInfo dynamicState;
 			VkPipelineLayout pipelineLayout;
 			VkPipeline graphicsPipeline;
@@ -28,13 +31,15 @@
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
 				vkDestroyPipeline(mvkLayer.logicalDevice, graphicsPipeline, nullptr);
 				vkDestroyPipelineLayout(mvkLayer.logicalDevice, pipelineLayout, nullptr);
-				vkDestroyDescriptorSetLayout(mvkLayer.logicalDevice, descriptorSetLayout, nullptr);
+				
+				for(auto set : descriptorSets)
+					vkDestroyDescriptorSetLayout(mvkLayer.logicalDevice, set, nullptr);
 			}
 
-			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, MiniVkShaderStages& shaderStages, VkFormat imageFormat, uint32_t pushConstantRangeSize = 0,
-			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) : mvkLayer(mvkLayer), imageFormat(imageFormat),
-			colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), shaderStages(shaderStages), pushConstantRangeSize(pushConstantRangeSize) {
+			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, MiniVkShaderStages& shaderStages, VkFormat imageFormat, const std::vector<VkPushConstantRange>& pushConstantRanges,
+			const std::vector<VkDescriptorSetLayout>& descriptorSets, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+			: mvkLayer(mvkLayer), imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology),
+			shaderStages(shaderStages), pushConstantRanges(pushConstantRanges), descriptorSets(descriptorSets) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
@@ -64,36 +69,21 @@
 				vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
-				VkDescriptorSetLayoutBinding uboLayoutBinding{};
-				uboLayoutBinding.binding = 0;
-				uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				uboLayoutBinding.descriptorCount = 1;
-				uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-				uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-				VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
-				descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-				descriptorLayoutInfo.bindingCount = 1;
-				descriptorLayoutInfo.pBindings = &uboLayoutBinding;
-
-				if (vkCreateDescriptorSetLayout(mvkLayer.logicalDevice, &descriptorLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-					throw std::runtime_error("MiniVulkan: Failed to create Uniform Buffer descriptor set layout!");
-				///////////////////////////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 				pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-				pipelineLayoutInfo.setLayoutCount = 1;
-				pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-				pipelineLayoutInfo.pushConstantRangeCount = 0;
+				
+				pipelineLayoutInfo.setLayoutCount = 0;
+				uint32_t setLayoutCount = static_cast<uint32_t>(descriptorSets.size());
+				if (setLayoutCount > 0) {
+					pipelineLayoutInfo.setLayoutCount = setLayoutCount;
+					pipelineLayoutInfo.pSetLayouts = descriptorSets.data();
+				}
 
-				if (pushConstantRangeSize > 0) {
-					VkPushConstantRange pushConstantRange{};
-					pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-					pushConstantRange.offset = 0;
-					pushConstantRange.size = pushConstantRangeSize;
-					
-					pipelineLayoutInfo.pushConstantRangeCount = 1;
-					pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+				pipelineLayoutInfo.pushConstantRangeCount = 0;
+				uint32_t pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
+				if (pushConstantRangeCount > 0) {
+					pipelineLayoutInfo.pushConstantRangeCount = pushConstantRangeCount;
+					pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 				}
 
 				if (vkCreatePipelineLayout(mvkLayer.logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
@@ -177,6 +167,34 @@
 				if (vkCreateGraphicsPipelines(mvkLayer.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create graphics pipeline!");
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
+			}
+
+			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
+				VkPushConstantRange pushConstantRange{};
+				pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+				pushConstantRange.offset = 0;
+				pushConstantRange.size = pushConstantRangeSize;
+				return pushConstantRange;
+			}
+
+			inline static VkDescriptorSetLayout SelectDescriptorSetLayout(MiniVkInstance& mvkLayer, uint32_t bindingId = 0, VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
+				VkDescriptorSetLayoutBinding layoutBinding{};
+				layoutBinding.binding = bindingId;
+				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				layoutBinding.descriptorCount = 1;
+				layoutBinding.stageFlags = shaderStages;
+				layoutBinding.pImmutableSamplers = nullptr; // Optional
+				layoutBinding.descriptorType = descriptorType;
+
+				VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
+				descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+				descriptorLayoutInfo.bindingCount = 1;
+				descriptorLayoutInfo.pBindings = &layoutBinding;
+
+				VkDescriptorSetLayout setLayout{};
+				if (vkCreateDescriptorSetLayout(mvkLayer.logicalDevice, &descriptorLayoutInfo, nullptr, &setLayout) != VK_SUCCESS)
+					throw std::runtime_error("MiniVulkan: Failed to create Uniform Buffer descriptor set layout!");
+				return setLayout;
 			}
 		};
 	}

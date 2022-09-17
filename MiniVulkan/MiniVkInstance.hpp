@@ -53,7 +53,7 @@
 				vkDestroyInstance(instance, nullptr);
 			}
 
-			MiniVkInstance(std::callback<VkInstance&, VkSurfaceKHR&> createPresentationSurface, std::vector<const char*> presentationExtensions, const std::string& title, const std::vector<VkPhysicalDeviceType> pTypes)
+			MiniVkInstance(std::callback<VkInstance&, VkSurfaceKHR&> createPresentationSurface, const std::vector<const char*> presentationExtensions, const std::string title, const std::vector<VkPhysicalDeviceType> pTypes)
 			: presentationRequiredExtensions(presentationExtensions) {
 				onDispose += std::callback<>(this, &MiniVkInstance::Disposable);
 				physicalDeviceTypes.assign(pTypes.begin(), pTypes.end());

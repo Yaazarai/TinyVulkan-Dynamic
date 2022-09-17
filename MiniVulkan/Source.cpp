@@ -24,16 +24,14 @@
 #define DEFAULT_VERTEX_SHADER "./Shader Files/sample_vert.spv"
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
-int MINIVULKAN_MAIN {
+int MINIVULKAN_MAIN{
     /// ABOUT std::callback<...> and std::invokable<...>
     ///     invokable<...> takes in aone or multiple callback<...> with matching template parameters
     ///     and can call all callback members and their bound methods, instance methods or lambda methods.
     ///     This is similar to C# event system where you bind methods to C# events.
     /// 
     ///     This is used mainly to remove direct header/class dependencies between major parts of the system.
-    
     minivk::MiniVkWindow window(640, 360, true, "HELLO WORLD");
-
     minivk::MiniVkInstance instance(std::callback<VkInstance&, VkSurfaceKHR&>(&window, &minivk::MiniVkWindow::CreateWindowSurface),
         window.GetRequiredExtensions(minivk::MiniVkInstance::enableValidationLayers), "HELLO WORLD", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU});
 
@@ -49,7 +47,10 @@ int MINIVULKAN_MAIN {
         { "./Shader Files/sample_vert.spv", "./Shader Files/sample_frag.spv" },
         { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
     
-    minivk::MiniVkDynamicPipeline<minivk::MiniVkVertex, minivk::MiniVkUniform> dynamicPipeline(instance, shaderStages, swapChain.swapChainImageFormat, 0, 15U, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN);
+    minivk::MiniVkDynamicPipeline<minivk::MiniVkVertex, minivk::MiniVkUniform> dynamicPipeline(instance, shaderStages, swapChain.swapChainImageFormat,
+        {},// {minivk::MiniVkDynamicPipeline<minivk::MiniVkVertex, minivk::MiniVkUniform>::SelectPushConstantRange(0, VK_SHADER_STAGE_ALL_GRAPHICS)},
+        {},// {minivk::MiniVkDynamicPipeline<minivk::MiniVkVertex, minivk::MiniVkUniform>::SelectDescriptorSetLayout(instance, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)},
+        VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN);
     minivk::MiniVkDynamicRenderer<minivk::MiniVkVertex, minivk::MiniVkUniform> dynamicRenderer(instance, commandPool, swapChain, dynamicPipeline);
     
     std::vector<minivk::MiniVkVertex> vbuff;

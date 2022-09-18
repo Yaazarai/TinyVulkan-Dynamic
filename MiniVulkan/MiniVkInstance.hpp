@@ -6,6 +6,7 @@
 	namespace MINIVULKAN_NS {
 		class MiniVkInstance : public MiniVkObject {
 		private:
+			bool isInitialized = false;
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 			const std::vector<const char*> instanceExtensions = {
 				VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME // Dynamic Rendering Dependency
@@ -33,15 +34,16 @@
 			#else
 			const static bool enableValidationLayers = false;
 			#endif
+
 			/// PHYSICAL_LOGICAL_DEVICES ///
 			std::vector<VkPhysicalDeviceType> physicalDeviceTypes;
 			VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 			VkDevice logicalDevice;
 
 			/// WINDOW RENDER SURFACE ///
-			VkSurfaceKHR presentationSurface;
+			VkSurfaceKHR presentationSurface = nullptr;
 			std::vector<const char*> presentationRequiredExtensions;
-			std::invokable<VkSurfaceKHR&> onGetPresentationSurface;
+			
 			/// VKINSTANCE_INITIATION_DESTRUCTION ///
 			VkInstance instance;
 
@@ -53,16 +55,11 @@
 				vkDestroyInstance(instance, nullptr);
 			}
 
-			MiniVkInstance(std::callback<VkInstance&, VkSurfaceKHR&> createPresentationSurface, const std::vector<const char*> presentationExtensions, const std::string title, const std::vector<VkPhysicalDeviceType> pTypes)
+			MiniVkInstance(const std::vector<const char*> presentationExtensions, const std::string title, const std::vector<VkPhysicalDeviceType> pTypes)
 			: presentationRequiredExtensions(presentationExtensions) {
 				onDispose += std::callback<>(this, &MiniVkInstance::Disposable);
 				physicalDeviceTypes.assign(pTypes.begin(), pTypes.end());
-
 				CreateVkInstance(title);
-				createPresentationSurface(instance, presentationSurface);
-				SetupDebugMessenger();
-				QueryPhysicalDevice();
-				CreateLogicalDevice();
 			}
 
 			MiniVkInstance operator=(const MiniVkInstance& inst) = delete;
@@ -121,6 +118,15 @@
 
 				std::cout << "MiniVulkan: " << extensionCount << " extensions supported\n";
 				#endif
+			}
+
+			void Initialize(VkSurfaceKHR presentationSurface) {
+				if (isInitialized) return;
+				this->presentationSurface = presentationSurface;
+				SetupDebugMessenger();
+				QueryPhysicalDevice();
+				CreateLogicalDevice();
+				isInitialized = true;
 			}
 
 			#pragma region PHYSICAL_LOGICAL_DEVICES
@@ -272,7 +278,6 @@
 			#pragma endregion
 			#pragma region VALIDATION_LAYERS
 
-			/// <summary>Returns BOOL(true/false) if Vulkan ValidationLayers are supported.</summary>
 			bool QueryValidationLayerSupport() {
 				uint32_t layerCount;
 				vkEnumerateInstanceLayerProperties(&layerCount, nullptr);

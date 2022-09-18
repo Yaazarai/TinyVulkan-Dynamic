@@ -131,9 +131,11 @@ namespace MINIVULKAN_NS {
 		virtual void* GetCallbackPointer() { return glfwGetWindowUserPointer(hwndWindow); }
 
 		/// <summary>[overridable] Creates a Vulkan surface for this GLFW window.</summary>
-		virtual void CreateWindowSurface(VkInstance& instance, VkSurfaceKHR& wndSurface) {
+		virtual VkSurfaceKHR CreateWindowSurface(VkInstance& instance) {
+			VkSurfaceKHR wndSurface;
 			if (glfwCreateWindowSurface(instance, hwndWindow, nullptr, &wndSurface) != VK_SUCCESS)
 				throw std::runtime_error("MiniVulkan: Failed to create GLFW Window Surface!");
+			return wndSurface;
 		}
 
 		/// <summary>[overridable] Gets the GLFW window handle.</summary>

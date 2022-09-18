@@ -65,6 +65,12 @@
     <ClInclude Include="Invokable.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
+    <ClInclude Include="vk_mem_alloc.h">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniVkMemAlloc.hpp">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt">

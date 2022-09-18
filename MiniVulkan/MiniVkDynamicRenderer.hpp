@@ -125,13 +125,12 @@ namespace MINIVULKAN_NS {
 		}
 	};
 
-	template<typename VertexStruct, typename UniformStruct>
 	class MiniVkDynamicRenderer : public MiniVkObject {
 	private:
 		MiniVkInstance& mvkLayer;
 	public:
 		MiniVkSwapChain& swapChain;
-		MiniVkDynamicPipeline<VertexStruct, UniformStruct>& graphicsPipeline;
+		MiniVkDynamicPipeline& graphicsPipeline;
 
 		/// SWAPCHAIN SYNCHRONIZATION_OBJECTS ///
 		std::vector<VkSemaphore> swapChain_imageAvailableSemaphores;
@@ -157,7 +156,7 @@ namespace MINIVULKAN_NS {
 			}
 		}
 
-		MiniVkDynamicRenderer(MiniVkInstance& mvkLayer, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline<VertexStruct, UniformStruct>& graphicsPipeline) :
+		MiniVkDynamicRenderer(MiniVkInstance& mvkLayer, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline& graphicsPipeline) :
 		mvkLayer(mvkLayer), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
 			onDispose += std::callback<>(this, &MiniVkDynamicRenderer::Disposable);
 

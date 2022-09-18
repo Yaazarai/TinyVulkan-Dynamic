@@ -182,6 +182,7 @@
     <ClInclude Include="MiniVkDynamicPipeline.hpp" />
     <ClInclude Include="MiniVkDynamicRenderer.hpp" />
     <ClInclude Include="MiniVkInstance.hpp" />
+    <ClInclude Include="MiniVkMemAlloc.hpp" />
     <ClInclude Include="MiniVkObject.hpp" />
     <ClInclude Include="MiniVkQueueFamily.hpp" />
     <ClInclude Include="MiniVkShaderStage.hpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="MiniVkThreadPool.hpp" />
     <ClInclude Include="MiniVkShaderBuffers.hpp" />
     <ClInclude Include="MiniVkWindow.hpp" />
+    <ClInclude Include="vk_mem_alloc.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt" />

@@ -206,9 +206,20 @@
 				return vkAcquireNextImageKHR(mvkLayer.logicalDevice, swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
 			}
 
-			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
-			void OnWindowFrameBufferNotifyResizeCallback() { SetFrameBufferResized(true); }
+			/// <summary>Returns the current swap chain image.</summary>
+			VkImage& CurrentImage() { return swapChainImages[currentFrame]; }
 
+			/// <summary>Returns the current swap chain image view.</summary>
+			VkImageView& CurrentImageView() { return swapChainImageViews[currentFrame]; }
+
+			VkExtent2D CurrentExtent2D() { return swapChainExtent; }
+
+			size_t SelectCurrentIndex() { return currentFrame; }
+
+			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
+			void OnFrameBufferNotifyResizeCallback() { SetFrameBufferResized(true); }
+
+			/// <summary>Notifies the swap chain of the presentation framebuffer resize status.</summary>
 			void SetFrameBufferResized(bool resized) { framebufferResized = resized; }
 		};
 	}

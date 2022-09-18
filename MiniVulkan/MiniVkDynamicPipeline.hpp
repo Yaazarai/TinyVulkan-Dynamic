@@ -7,12 +7,14 @@
 		#define VKCOMP_RGBA VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		#define VKCOMP_BGRA VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT
 
-		template<typename VertexStruct, typename UniformStruct>
 		class MiniVkDynamicPipeline : public MiniVkObject {
 		private:
 			MiniVkInstance& mvkLayer;
 		public:
 			/// GRAPHICS_PIPELINE ///
+			VkVertexInputBindingDescription vertexBindingDescription;
+			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition;
+
 			std::vector<VkPushConstantRange> pushConstantRanges;
 			std::vector<VkDescriptorSetLayout> descriptorSets;
 			MiniVkShaderStages& shaderStages;
@@ -36,18 +38,16 @@
 					vkDestroyDescriptorSetLayout(mvkLayer.logicalDevice, set, nullptr);
 			}
 
-			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, MiniVkShaderStages& shaderStages, VkFormat imageFormat, const std::vector<VkPushConstantRange>& pushConstantRanges,
+			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, VkFormat imageFormat, MiniVkShaderStages& shaderStages, VkVertexInputBindingDescription vertexBindingDescription,
+			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition, const std::vector<VkPushConstantRange>& pushConstantRanges,
 			const std::vector<VkDescriptorSetLayout>& descriptorSets, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-			: mvkLayer(mvkLayer), imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology),
-			shaderStages(shaderStages), pushConstantRanges(pushConstantRanges), descriptorSets(descriptorSets) {
+			: mvkLayer(mvkLayer), shaderStages(shaderStages), vertexBindingDescription(vertexBindingDescription), vertexAttributeDescrition(vertexAttributeDescrition),
+			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), pushConstantRanges(pushConstantRanges), descriptorSets(descriptorSets) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
 				vkGetDeviceQueue(mvkLayer.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 				vkGetDeviceQueue(mvkLayer.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
-
-				static_assert(std::is_base_of<MiniVkVertex, VertexStruct>::value, "VertexStruct (T) of template must derive MiniVkVertex.");
-				static_assert(std::is_base_of<MiniVkUniform, UniformStruct>::value, "UniformStruct (T) of template must derivce MiniVkUniform.");
 
 				CreateGraphicsPipeline();
 			}
@@ -58,8 +58,8 @@
 			void CreateGraphicsPipeline() {
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				/////////// This section specifies that MiniVkVertex provides the vertex layout description ///////////
-				auto bindingDescription = VertexStruct::GetBindingDescription();
-				auto attributeDescriptions = VertexStruct::GetAttributeDescriptions();
+				auto bindingDescription = vertexBindingDescription;
+				auto attributeDescriptions = vertexAttributeDescrition;
 
 				VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 				vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

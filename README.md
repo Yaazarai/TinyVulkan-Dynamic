@@ -23,14 +23,13 @@ FINISHED:
     * Actual rendering pipeline that draws the final frame and provides command buffer recording methods.
 
 UNFINISHED:
-1. Finish handling push constant support for shaders.
-2. Test and finish MiniVkThreadPool implemention.
-3. Add more optional properties for configuring the MiniVkDynamicPipeline when creating the graphics pipeline.
-4. Add in Texture/Sprite loading support.
-5. Setup default rendering passthrough shaders.
-6. Setup default model/view/projection matrices.
-7. Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).
-8. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
-9. Add framerate handling and clean timestep support.
-10. Add VMA (Vulkan Memory Allocator) for GPU memory management (buffers/images).
-11. Add Fast Rotsprite shader 2x & 3x scale (forked on profile).
+1. Test and finish MiniVkThreadPool implemention.
+2. Add more optional properties for configuring the MiniVkDynamicPipeline when creating the graphics pipeline.
+3. Add in Texture/Sprite loading support.
+4. Setup default rendering passthrough shaders.
+5. Setup default model/view/projection matrices.
+6. Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).
+7. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
+8. Add framerate handling and clean timestep support.
+9. Add Fast Rotsprite shader 2x & 3x scale (forked on profile).
+10. Add headless (without window) mode.

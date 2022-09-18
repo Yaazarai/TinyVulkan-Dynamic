@@ -40,7 +40,7 @@ int MINIVULKAN_MAIN{
     minivk::MiniVkSwapChain swapChain(instance, minivk::MiniVkSurfaceSupportDetails(), minivk::MiniVkBufferingMode::TRIPLE);
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &minivk::MiniVkWindow::GetFrameBufferSize);
     swapChain.onReCreateSwapChain += std::callback<>(&window, &minivk::MiniVkWindow::OnFrameBufferReSizeCallback);
-    window.onResizeFrameBuffer += std::callback<>(&swapChain, &minivk::MiniVkSwapChain::OnFrameBufferNotifyResizeCallback);
+    window.onResizeFrameBuffer += std::callback<>(&swapChain, &minivk::MiniVkSwapChain::OnFrameBufferResizeCallback);
 
     minivk::MiniVkCommandPool commandPool(instance, (size_t) swapChain.bufferingMode);
     

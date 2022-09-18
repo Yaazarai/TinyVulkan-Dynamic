@@ -217,7 +217,7 @@
 			size_t SelectCurrentIndex() { return currentFrame; }
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
-			void OnFrameBufferNotifyResizeCallback() { SetFrameBufferResized(true); }
+			void OnFrameBufferResizeCallback() { SetFrameBufferResized(true); }
 
 			/// <summary>Notifies the swap chain of the presentation framebuffer resize status.</summary>
 			void SetFrameBufferResized(bool resized) { framebufferResized = resized; }

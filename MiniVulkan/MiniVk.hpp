@@ -36,7 +36,10 @@
     #define GLM_FORCE_DEPTH_ZERO_TO_ONE
     #include <glm/vec4.hpp>
     #include <glm/mat4x4.hpp>
-
+    
+    #define MIN(a,b) ((a)<(b)?(a):(b))
+    #define MAX(a,b) ((a)>(b)?(a):(b))
+    
     // Sets a GLFW Windows' Main entry point. If DebugMode is enabled the console window will be visible.
     /*
         Linker | System | SubSystem

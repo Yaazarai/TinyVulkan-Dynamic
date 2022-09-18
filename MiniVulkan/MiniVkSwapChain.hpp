@@ -68,8 +68,10 @@
 				VkPresentModeKHR presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
 				VkExtent2D extent = QuerySwapExtent(swapChainSupport.capabilities);
 
-				/// The "+1" is to request an additional swap-chain image for rendering from the device driver.
-				uint32_t imageCount = swapChainSupport.capabilities.minImageCount + (static_cast<size_t>(bufferingMode) - 1);
+				uint32_t imageCount = MIN(swapChainSupport.capabilities.maxImageCount, MAX(swapChainSupport.capabilities.minImageCount, static_cast<uint32_t>(bufferingMode)));
+
+				//std::cout << "MINIMAGECOUNT: " << swapChainSupport.capabilities.minImageCount << std::endl;
+				
 				if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 					imageCount = swapChainSupport.capabilities.maxImageCount;
 

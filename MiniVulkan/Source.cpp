@@ -25,12 +25,6 @@
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
 int MINIVULKAN_MAIN{
-    /// ABOUT std::callback<...> and std::invokable<...>
-    ///     invokable<...> takes in aone or multiple callback<...> with matching template parameters
-    ///     and can call all callback members and their bound methods, instance methods or lambda methods.
-    ///     This is similar to C# event system where you bind methods to C# events.
-    ///     
-    ///     This is used mainly to remove direct header/class dependencies between major parts of the system.
     minivk::MiniVkWindow window(640, 360, true, "HELLO WORLD");;
     minivk::MiniVkInstance instance(window.GetRequiredExtensions(minivk::MiniVkInstance::enableValidationLayers), "HELLO TRIANGLE", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU});
     instance.Initialize(window.CreateWindowSurface(instance.instance));
@@ -43,7 +37,7 @@ int MINIVULKAN_MAIN{
     window.onResizeFrameBuffer += std::callback<>(&swapChain, &minivk::MiniVkSwapChain::OnFrameBufferResizeCallback);
 
     minivk::MiniVkCommandPool commandPool(instance, (size_t) swapChain.bufferingMode);
-    
+
     minivk::MiniVkShaderStages shaderStages(instance,
         { "./Shader Files/sample_vert.spv", "./Shader Files/sample_frag.spv" },
         { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
@@ -69,6 +63,7 @@ int MINIVULKAN_MAIN{
     dynamicPipeline.Dispose();
     shaderStages.Dispose();
     commandPool.Dispose();
+    memoryAllocator.Dispose();
     instance.Dispose();
     window.Dispose();
     return GLFW_NO_ERROR;

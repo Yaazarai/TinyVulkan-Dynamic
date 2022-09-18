@@ -25,7 +25,7 @@
 
 		#pragma endregion
 
-		enum class MiniVkBufferingMode { SINGLE = 1, DOUBLE = 2, TRIPLE = 3 };
+		enum class MiniVkBufferingMode { DOUBLE = 2, TRIPLE = 3, QUADRUPLE = 4 };
 
 		struct MiniVkSwapChainSupportDetails {
 		public:

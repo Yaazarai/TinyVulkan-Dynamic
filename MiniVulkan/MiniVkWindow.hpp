@@ -71,10 +71,8 @@ namespace MINIVULKAN_NS {
 			GLFWwindow* window = hwndWindow;
 			glfwGetFramebufferSize(window, &width, &height);
 
-			while (width == 0 || height == 0) {
+			while (width == 0 || height == 0)
 				glfwGetFramebufferSize(window, &width, &height);
-				glfwWaitEvents();
-			}
 		}
 
 		/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>

@@ -69,8 +69,6 @@
 				VkExtent2D extent = QuerySwapExtent(swapChainSupport.capabilities);
 
 				uint32_t imageCount = MIN(swapChainSupport.capabilities.maxImageCount, MAX(swapChainSupport.capabilities.minImageCount, static_cast<uint32_t>(bufferingMode)));
-
-				//std::cout << "MINIMAGECOUNT: " << swapChainSupport.capabilities.minImageCount << std::endl;
 				
 				if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 					imageCount = swapChainSupport.capabilities.maxImageCount;

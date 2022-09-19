@@ -231,9 +231,6 @@ namespace MINIVULKAN_NS {
 			dynamicRenderInfo.colorAttachmentCount = 1;
 			dynamicRenderInfo.pColorAttachments = &colorAttachmentInfo;
 
-			vkCmdBeginRenderingEKHR(mvkLayer.instance, commandBuffer, &dynamicRenderInfo);
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
-
 			VkViewport dynamicViewportKHR{};
 			dynamicViewportKHR.x = 0;
 			dynamicViewportKHR.y = 0;
@@ -243,10 +240,13 @@ namespace MINIVULKAN_NS {
 			dynamicViewportKHR.maxDepth = 1.0f;
 			vkCmdSetViewport(commandBuffer, 0, 1, &dynamicViewportKHR);
 			vkCmdSetScissor(commandBuffer, 0, 1, &renderAreaKHR);
+
+			vkCmdBeginRenderingEKHR(mvkLayer.instance, commandBuffer, &dynamicRenderInfo);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
 		}
 
 		/// <summary>Ends recording to the command buffer.</summary>
-		void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, VkImage& renderImageTarget) {
+		void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, const VkClearValue clearColor, VkImageView& renderTarget, VkImage& renderImageTarget, VkExtent2D renderArea) {
 			vkCmdEndRenderingEKHR(mvkLayer.instance, commandBuffer);
 
 			const VkImageMemoryBarrier image_memory_barrier{
@@ -267,6 +267,35 @@ namespace MINIVULKAN_NS {
 			vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 				VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &image_memory_barrier);
 
+			VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
+			colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+			colorAttachmentInfo.imageView = renderTarget;
+			colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+			colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			colorAttachmentInfo.clearValue = clearColor;
+
+			VkRenderingInfoKHR dynamicRenderInfo{};
+			dynamicRenderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+
+			VkRect2D renderAreaKHR{};
+			renderAreaKHR.extent = renderArea;
+			renderAreaKHR.offset = { 0,0 };
+			dynamicRenderInfo.renderArea = renderAreaKHR;
+			dynamicRenderInfo.layerCount = 1;
+			dynamicRenderInfo.colorAttachmentCount = 1;
+			dynamicRenderInfo.pColorAttachments = &colorAttachmentInfo;
+
+			VkViewport dynamicViewportKHR{};
+			dynamicViewportKHR.x = 0;
+			dynamicViewportKHR.y = 0;
+			dynamicViewportKHR.width = static_cast<float>(renderArea.width);
+			dynamicViewportKHR.height = static_cast<float>(renderArea.height);
+			dynamicViewportKHR.minDepth = 0.0f;
+			dynamicViewportKHR.maxDepth = 1.0f;
+			vkCmdSetViewport(commandBuffer, 0, 1, &dynamicViewportKHR);
+			vkCmdSetScissor(commandBuffer, 0, 1, &renderAreaKHR);
+
 			if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 				throw std::runtime_error("MiniVulkan: Failed to record [end] to command buffer!");
 		}
@@ -282,7 +311,7 @@ namespace MINIVULKAN_NS {
 			VkResult result = vkAcquireNextImageKHR(mvkLayer.logicalDevice, swapChain.swapChain, UINT64_MAX, swapChain_imageAvailableSemaphores[swapChain.currentFrame], VK_NULL_HANDLE, &imageIndex);
 			VkCommandBuffer cmdBuffer = commandBuffers[imageIndex];
 
-			if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || swapChain.framebufferResized) {
 				swapChain.SetFrameBufferResized(false);
 				swapChain.ReCreateSwapChain();
 				return;
@@ -294,13 +323,6 @@ namespace MINIVULKAN_NS {
 
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			onRenderEvents.invoke(cmdBuffer);
-
-			/*
-			const VkClearValue clearColor = { {1.0f, 1.0f, 1.0f, 1.0f} };
-			graphicsPipeline.BeginRecordCommandBuffer(commandBuffers[swapChain.currentFrame], clearColor, swapChain.swapChainImageViews[swapChain.currentFrame], swapChain.swapChainExtent);
-			vkCmdDraw(commandBuffers[swapChain.currentFrame], 3, 1, 0, 0);
-			graphicsPipeline.EndRecordCommandBuffer(commandBuffers[swapChain.currentFrame]);
-			*/
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			VkSubmitInfo submitInfo{};
@@ -333,14 +355,13 @@ namespace MINIVULKAN_NS {
 
 			result = vkQueuePresentKHR(graphicsPipeline.presentQueue, &presentInfo);
 
+			swapChain.currentFrame = (swapChain.currentFrame + 1) % swapChain.swapChainImages.size();
+
 			if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || swapChain.framebufferResized) {
 				swapChain.SetFrameBufferResized(false);
 				swapChain.ReCreateSwapChain();
-				return;
 			} else if (result != VK_SUCCESS)
 				throw std::runtime_error("MiniVulkan: Failed to present swap chain image!");
-			
-			swapChain.currentFrame = (swapChain.currentFrame + 1) % swapChain.swapChainImages.size();
 		}
 	};
 }

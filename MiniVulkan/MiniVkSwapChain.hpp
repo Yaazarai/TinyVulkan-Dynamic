@@ -14,7 +14,7 @@
 			std::invokable<int&, int&> onGetFrameBufferSize;
 
 			/// INVOKABLE EVENTS ///
-			std::invokable<> onReCreateSwapChain;
+			std::invokable<int&, int&> onReCreateSwapChain;
 			bool framebufferResized = false;
 
 			/// SWAP_CHAINS ///
@@ -53,7 +53,8 @@
 
 			/// <summary>Re-creates the Vulkan surface swap-chain & resets the currentFrame to 0.</summary>
 			void ReCreateSwapChain() {
-				onReCreateSwapChain.invoke();
+				int w, h;
+				onReCreateSwapChain.invoke(w, h);
 				createInfo.oldSwapchain = swapChain;
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
 				Disposable();
@@ -189,8 +190,7 @@
 			VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
 				if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 					return capabilities.currentExtent;
-				}
-				else {
+				} else {
 					int width, height;
 					onGetFrameBufferSize.invoke(width, height);
 
@@ -217,7 +217,7 @@
 			size_t SelectCurrentIndex() { return currentFrame; }
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
-			void OnFrameBufferResizeCallback() { SetFrameBufferResized(true); }
+			void OnFrameBufferResizeCallback(int width, int height) { SetFrameBufferResized(true); }
 
 			/// <summary>Notifies the swap chain of the presentation framebuffer resize status.</summary>
 			void SetFrameBufferResized(bool resized) { framebufferResized = resized; }

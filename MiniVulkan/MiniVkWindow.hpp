@@ -66,20 +66,18 @@ namespace MINIVULKAN_NS {
 		inline static void OnRefreshCallback(GLFWwindow* hwnd) { MiniVkWindow::onRefresh.invoke(hwnd); }
 
 		/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
-		void OnFrameBufferReSizeCallback() {
-			int width = 0, height = 0;
-			GLFWwindow* window = hwndWindow;
-			glfwGetFramebufferSize(window, &width, &height);
+		void OnFrameBufferReSizeCallback(int& width, int& height) {
+			glfwGetFramebufferSize(hwndWindow, &width, &height);
 
-			while (width == 0 || height == 0)
-				glfwGetFramebufferSize(window, &width, &height);
+			while (width <= 0 || height <= 0)
+				glfwGetFramebufferSize(hwndWindow, &width, &height);
 		}
 
 		/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
-		inline static void OnFrameBufferNotifyReSizeCallback(GLFWwindow* hwnd, int width, int height) { onResizeFrameBuffer.invoke(); }
+		inline static void OnFrameBufferNotifyReSizeCallback(GLFWwindow* hwnd, int width, int height) { onResizeFrameBuffer.invoke(width, height); }
 
 		// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
-		inline static std::invokable<> onResizeFrameBuffer;
+		inline static std::invokable<int,int> onResizeFrameBuffer;
 		// Invokable callback to respond to GLFWwindowrefreshfun: Window::onRefresh += callback<GLFWwindow*>(ClassInstance, &Class::Function);
 		inline static std::invokable<GLFWwindow*> onRefresh;
 		// Invokable callback that executes before the main loop executes.
@@ -138,9 +136,6 @@ namespace MINIVULKAN_NS {
 
 		/// <summary>[overridable] Gets the GLFW window handle.</summary>
 		virtual GLFWwindow* GetWindowHandle() { return hwndWindow; }
-
-		/// <summary>[overridable] Gets the GLFW window frame buffer size.</summary>
-		virtual void GetFrameBufferSize(int& width, int& height) { glfwGetFramebufferSize(hwndWindow, &width, &height); }
 
 		/// <summary>[overridable] Gets the required GLFW extensions.</summary>
 		virtual std::vector<const char*> GetRequiredExtensions(bool enableValidationLayers) {

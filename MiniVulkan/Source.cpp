@@ -42,9 +42,9 @@ int MINIVULKAN_MAIN{
 
     minivk::MiniVkSurfaceSupportDetails presentDetails;
     minivk::MiniVkSwapChain swapChain(instance, presentDetails, minivk::MiniVkBufferingMode::TRIPLE);
-    swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &minivk::MiniVkWindow::GetFrameBufferSize);
-    swapChain.onReCreateSwapChain += std::callback<>(&window, &minivk::MiniVkWindow::OnFrameBufferReSizeCallback);
-    window.onResizeFrameBuffer += std::callback<>(&swapChain, &minivk::MiniVkSwapChain::OnFrameBufferResizeCallback);
+    swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &minivk::MiniVkWindow::OnFrameBufferReSizeCallback);
+    swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &minivk::MiniVkWindow::OnFrameBufferReSizeCallback);
+    window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &minivk::MiniVkSwapChain::OnFrameBufferResizeCallback);
 
     minivk::MiniVkCommandPool commandPool(instance, (size_t) swapChain.bufferingMode);
 
@@ -88,12 +88,12 @@ int MINIVULKAN_MAIN{
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     window.SetCallbackPointer(&instance);
-    //std::thread mythread([&window, &dynamicRenderer]() { while (!window.ShouldClose()) { dynamicRenderer.RenderFrame(); } });
+    std::thread mythread([&window, &dynamicRenderer]() { while (!window.ShouldClose()) { dynamicRenderer.RenderFrame(); } });
 
     while (!window.ShouldClosePollEvents()) {
-        dynamicRenderer.RenderFrame();
+        //dynamicRenderer.RenderFrame();
     }
-    //mythread.join();
+    mythread.join();
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

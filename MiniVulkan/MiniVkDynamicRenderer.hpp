@@ -311,8 +311,7 @@ namespace MINIVULKAN_NS {
 			VkResult result = vkAcquireNextImageKHR(mvkLayer.logicalDevice, swapChain.swapChain, UINT64_MAX, swapChain_imageAvailableSemaphores[swapChain.currentFrame], VK_NULL_HANDLE, &imageIndex);
 			VkCommandBuffer cmdBuffer = commandBuffers[imageIndex];
 
-			if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || swapChain.framebufferResized) {
-				swapChain.SetFrameBufferResized(false);
+			if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 				swapChain.ReCreateSwapChain();
 				return;
 			} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)

@@ -66,11 +66,11 @@ int MINIVULKAN_MAIN{
     vbuff.push_back(minivk::MiniVkVertex{ .pos = glm::vec2(0.5, 0.5), .color = glm::vec3(1.0, .0, 0.0) });
     vbuff.push_back(minivk::MiniVkVertex{ .pos = glm::vec2(-0.5, 0.5), .color = glm::vec3(0.0, 0.0, 0.0) });
     minivk::MiniVkVertexBuffer vbuffer(instance, vbuff);
-    vbuffer.Stage(dynamicPipeline.graphicsQueue, commandPool.GetPool(), vbuff.data(), vbuffer.size);
+    vbuffer.StageV(dynamicPipeline.graphicsQueue, commandPool.GetPool());
 
     std::vector<uint32_t> ibuff = { 0, 1, 2, 2, 3, 0 };
     minivk::MiniVkIndexBuffer ibuffer(instance, vbuffer, ibuff);
-    ibuffer.Stage(dynamicPipeline.graphicsQueue, commandPool.GetPool(), ibuff.data(), vbuffer.size);
+    ibuffer.StageI(dynamicPipeline.graphicsQueue, commandPool.GetPool());
 
     dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuffer, &ibuff, &ibuffer, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
         dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());\

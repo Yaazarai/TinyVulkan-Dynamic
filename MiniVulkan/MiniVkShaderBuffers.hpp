@@ -191,6 +191,10 @@
 				MiniVkBuffer(mvkLayer, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
 
+			void StageV(VkQueue graphicsQueue, VkCommandPool commandPool) {
+				MiniVkBuffer::Stage(graphicsQueue, commandPool, vertices.data(), sizeof(MiniVkVertex) * vertices.size());
+			}
+
 			MiniVkVertexBuffer operator=(const MiniVkVertexBuffer& vbuff) = delete;
 		};
 
@@ -208,6 +212,10 @@
 				MiniVkBuffer(mvkLayer, sizeof(uint32_t)* indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
 
+			void StageI(VkQueue graphicsQueue, VkCommandPool commandPool) {
+				MiniVkBuffer::Stage(graphicsQueue, commandPool, indices.data(), sizeof(uint32_t) * indices.size());
+			}
+
 			MiniVkIndexBuffer operator=(const MiniVkIndexBuffer ibuff) = delete;
 		};
 
@@ -223,6 +231,10 @@
 			MiniVkUniformBuffer(MiniVkInstance& mvkLayer, VkDescriptorSetLayout setLayout, UniformStruct set) : set(set),
 				MiniVkBuffer(mvkLayer, sizeof(UniformStruct), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) {}
 
+			void StageU(VkQueue graphicsQueue, VkCommandPool commandPool) {
+				MiniVkBuffer::Stage(graphicsQueue, commandPool, &set, sizeof(UniformStruct));
+			}
+
 			MiniVkUniformBuffer operator=(const MiniVkUniformBuffer& ubuff) = delete;
 		};
 
@@ -231,9 +243,15 @@
 		
 		class MiniVkTextureBuffer : public MiniVkBuffer {
 		public:
-			MiniVkTextureBuffer(MiniVkInstance& mvkLayer, VkDeviceSize imageSize) :
-				MiniVkBuffer(mvkLayer, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
+			std::vector<unsigned char> rgbaPixels;
+
+			MiniVkTextureBuffer(MiniVkInstance& mvkLayer, std::vector<unsigned char> rgbaPixels) :
+				MiniVkBuffer(mvkLayer, rgbaPixels.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), rgbaPixels(rgbaPixels) {}
+
+			void StageT(VkQueue graphicsQueue, VkCommandPool commandPool) {
+				MiniVkBuffer::Stage(graphicsQueue, commandPool, rgbaPixels.data(), rgbaPixels.size());
+			}
 
 			MiniVkTextureBuffer operator=(const MiniVkTextureBuffer& tbuff) = delete;
 		};

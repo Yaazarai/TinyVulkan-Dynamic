@@ -91,7 +91,12 @@
     #define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
     #define VMA_DEBUG_GLOBAL_MUTEX VK_TRUE
     #define VMA_USE_STL_CONTAINERS VK_TRUE
-    #include "./vk_mem_alloc.h"
+    #include "./VkMemAlloc.h"
+
+    /////// QuiteOK Image Format ///////
+    #define QOI_IMPLEMENTATION
+    #include "./QuiteOkImageFormat.h"
+
     /////////// DEPENDENCIES ///////////
     ////////////////////////////////////
 
@@ -152,8 +157,11 @@
     /// Dynamic Drawing/Rendering Pipeline (avoids [framebuffers/renderpasses/subpasses] which may be slower on mobile hardware).
     /* 13 */ #include "./MiniVkDynamicPipeline.hpp"
     
+    /// Represents a renderable image(drawing surface) in Vulkan with attached semaphores/fences (optional usage).
+    /* 14 */ #include "./MiniVkRenderImage.hpp"
+
     /// Dynamic Renderer for actually drawing to the screen using a SwapChain or custom VkImage render targets.
-    /* 14 */ #include "./MiniVkDynamicRenderer.hpp"
+    /* 15 */ #include "./MiniVkDynamicRenderer.hpp"
 
     //// MINIVULKAN HEADER INCLUDES ////
     ////////////////////////////////////

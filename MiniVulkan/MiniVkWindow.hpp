@@ -40,114 +40,114 @@
 #pragma once
 #ifndef MINIVK_MINIVKWINDOW
 #define MINIVK_MINIVKWINDOW
-#include "./MiniVk.hpp"
+	#include "./MiniVk.hpp"
 
-namespace MINIVULKAN_NS {
-	class MiniVkWindow : public MiniVkObject {
-	private:
-		bool hwndResizable;
-		int hwndWidth, hwndHeight;
-		std::string title;
-		GLFWwindow* hwndWindow;
+	namespace MINIVULKAN_NS {
+		class MiniVkWindow : public MiniVkObject {
+		private:
+			bool hwndResizable;
+			int hwndWidth, hwndHeight;
+			std::string title;
+			GLFWwindow* hwndWindow;
 
-		/// <summary>GLFWwindow unique pointer constructor.</summary>
-		virtual GLFWwindow* InitiateWindow(int width, int height, bool resizable, std::string title) {
-			glfwInit();
-			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-			glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
-			hwndResizable = resizable;
-			hwndWidth = width;
-			hwndHeight = height;
-			return glfwCreateWindow(hwndWidth, hwndHeight, title.c_str(), nullptr, nullptr);
-		}
+			/// <summary>GLFWwindow unique pointer constructor.</summary>
+			virtual GLFWwindow* InitiateWindow(int width, int height, bool resizable, std::string title) {
+				glfwInit();
+				glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+				glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
+				hwndResizable = resizable;
+				hwndWidth = width;
+				hwndHeight = height;
+				return glfwCreateWindow(hwndWidth, hwndHeight, title.c_str(), nullptr, nullptr);
+			}
 
-	public:
-		/// <summary>Callback for GLFW Window refresh event.</summary>
-		inline static void OnRefreshCallback(GLFWwindow* hwnd) { MiniVkWindow::onRefresh.invoke(hwnd); }
+		public:
+			/// <summary>Callback for GLFW Window refresh event.</summary>
+			inline static void OnRefreshCallback(GLFWwindow* hwnd) { MiniVkWindow::onRefresh.invoke(hwnd); }
 
-		/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
-		void OnFrameBufferReSizeCallback(int& width, int& height) {
-			glfwGetFramebufferSize(hwndWindow, &width, &height);
-
-			while (width <= 0 || height <= 0)
+			/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
+			void OnFrameBufferReSizeCallback(int& width, int& height) {
 				glfwGetFramebufferSize(hwndWindow, &width, &height);
-		}
 
-		/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
-		inline static void OnFrameBufferNotifyReSizeCallback(GLFWwindow* hwnd, int width, int height) { onResizeFrameBuffer.invoke(width, height); }
+				while (width <= 0 || height <= 0)
+					glfwGetFramebufferSize(hwndWindow, &width, &height);
+			}
 
-		// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
-		inline static std::invokable<int,int> onResizeFrameBuffer;
-		// Invokable callback to respond to GLFWwindowrefreshfun: Window::onRefresh += callback<GLFWwindow*>(ClassInstance, &Class::Function);
-		inline static std::invokable<GLFWwindow*> onRefresh;
-		// Invokable callback that executes before the main loop executes.
-		std::invokable<void*> onEnterMain;
-		// Invokable callback that executes when the Window is running in it's main loop.
-		std::invokable<void*> onRunMain;
-		// Invokable callback that executes after the main loop closes.
-		std::invokable<void*> onExitMain;
+			/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
+			inline static void OnFrameBufferNotifyReSizeCallback(GLFWwindow* hwnd, int width, int height) { onResizeFrameBuffer.invoke(width, height); }
 
-		void Disposable() {
-			glfwDestroyWindow(hwndWindow);
-			glfwTerminate();
-		}
+			// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
+			inline static std::invokable<int,int> onResizeFrameBuffer;
+			// Invokable callback to respond to GLFWwindowrefreshfun: Window::onRefresh += callback<GLFWwindow*>(ClassInstance, &Class::Function);
+			inline static std::invokable<GLFWwindow*> onRefresh;
+			// Invokable callback that executes before the main loop executes.
+			std::invokable<void*> onEnterMain;
+			// Invokable callback that executes when the Window is running in it's main loop.
+			std::invokable<void*> onRunMain;
+			// Invokable callback that executes after the main loop closes.
+			std::invokable<void*> onExitMain;
 
-		/// <summary>[overridable] Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
-		MiniVkWindow(int width, int height, bool resizable, std::string title) {
-			onDispose += std::callback<>(this, &MiniVkWindow::Disposable);
-			hwndWindow = InitiateWindow(width, height, resizable, title);
-			glfwSetWindowUserPointer(hwndWindow, this);
-			glfwSetWindowRefreshCallback(hwndWindow, MiniVkWindow::OnRefreshCallback);
-			glfwSetFramebufferSizeCallback(hwndWindow, MiniVkWindow::OnFrameBufferNotifyReSizeCallback);
-		}
+			void Disposable() {
+				glfwDestroyWindow(hwndWindow);
+				glfwTerminate();
+			}
 
-		// Remove default copy constructor.
-		MiniVkWindow(const MiniVkWindow&) = delete;
-		// Remove default copy destructor.
-		MiniVkWindow& operator=(const MiniVkWindow&) = delete;
+			/// <summary>[overridable] Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
+			MiniVkWindow(int width, int height, bool resizable, std::string title) {
+				onDispose += std::callback<>(this, &MiniVkWindow::Disposable);
+				hwndWindow = InitiateWindow(width, height, resizable, title);
+				glfwSetWindowUserPointer(hwndWindow, this);
+				glfwSetWindowRefreshCallback(hwndWindow, MiniVkWindow::OnRefreshCallback);
+				glfwSetFramebufferSizeCallback(hwndWindow, MiniVkWindow::OnFrameBufferNotifyReSizeCallback);
+			}
 
-		/// <summary>[overridable] Calls glfwPollEvents() then checks if the GLFW window should close.</summary>
-		virtual bool ShouldClose() { return glfwWindowShouldClose(hwndWindow); }
+			// Remove default copy constructor.
+			MiniVkWindow(const MiniVkWindow&) = delete;
+			// Remove default copy destructor.
+			MiniVkWindow& operator=(const MiniVkWindow&) = delete;
 
-		/// <summary>[overridable] Returns the active GLFW window handle.</summary>
-		virtual GLFWwindow* GetHandle() { return hwndWindow; }
+			/// <summary>[overridable] Calls glfwPollEvents() then checks if the GLFW window should close.</summary>
+			virtual bool ShouldClose() { return glfwWindowShouldClose(hwndWindow); }
 
-		/// <summary>[overridable] Polls for window user input events.</summary>
-		virtual void PollWindowEvents() { glfwPollEvents(); }
+			/// <summary>[overridable] Returns the active GLFW window handle.</summary>
+			virtual GLFWwindow* GetHandle() { return hwndWindow; }
 
-		/// <summary>[overridable] Returns [BOOL] should close and polls input events (optional).</summary>
-		virtual bool ShouldClosePollEvents() {
-			bool shouldClose = glfwWindowShouldClose(hwndWindow) == GLFW_TRUE;
-			PollWindowEvents();
-			return shouldClose;
-		}
+			/// <summary>[overridable] Polls for window user input events.</summary>
+			virtual void PollWindowEvents() { glfwPollEvents(); }
 
-		virtual void SetCallbackPointer(void* data) { glfwSetWindowUserPointer(hwndWindow, data); }
+			/// <summary>[overridable] Returns [BOOL] should close and polls input events (optional).</summary>
+			virtual bool ShouldClosePollEvents() {
+				bool shouldClose = glfwWindowShouldClose(hwndWindow) == GLFW_TRUE;
+				PollWindowEvents();
+				return shouldClose;
+			}
 
-		virtual void* GetCallbackPointer() { return glfwGetWindowUserPointer(hwndWindow); }
+			virtual void SetCallbackPointer(void* data) { glfwSetWindowUserPointer(hwndWindow, data); }
 
-		/// <summary>[overridable] Creates a Vulkan surface for this GLFW window.</summary>
-		virtual VkSurfaceKHR CreateWindowSurface(VkInstance& instance) {
-			VkSurfaceKHR wndSurface;
-			if (glfwCreateWindowSurface(instance, hwndWindow, nullptr, &wndSurface) != VK_SUCCESS)
-				throw std::runtime_error("MiniVulkan: Failed to create GLFW Window Surface!");
-			return wndSurface;
-		}
+			virtual void* GetCallbackPointer() { return glfwGetWindowUserPointer(hwndWindow); }
 
-		/// <summary>[overridable] Gets the GLFW window handle.</summary>
-		virtual GLFWwindow* GetWindowHandle() { return hwndWindow; }
+			/// <summary>[overridable] Creates a Vulkan surface for this GLFW window.</summary>
+			virtual VkSurfaceKHR CreateWindowSurface(VkInstance& instance) {
+				VkSurfaceKHR wndSurface;
+				if (glfwCreateWindowSurface(instance, hwndWindow, nullptr, &wndSurface) != VK_SUCCESS)
+					throw std::runtime_error("MiniVulkan: Failed to create GLFW Window Surface!");
+				return wndSurface;
+			}
 
-		/// <summary>[overridable] Gets the required GLFW extensions.</summary>
-		virtual std::vector<const char*> GetRequiredExtensions(bool enableValidationLayers) {
-			uint32_t glfwExtensionCount = 0;
-			const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-			std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+			/// <summary>[overridable] Gets the GLFW window handle.</summary>
+			virtual GLFWwindow* GetWindowHandle() { return hwndWindow; }
 
-			if (enableValidationLayers)
-				extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+			/// <summary>[overridable] Gets the required GLFW extensions.</summary>
+			virtual std::vector<const char*> GetRequiredExtensions(bool enableValidationLayers) {
+				uint32_t glfwExtensionCount = 0;
+				const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+				std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-			return extensions;
-		}
-	};
-}
+				if (enableValidationLayers)
+					extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+				return extensions;
+			}
+		};
+	}
 #endif

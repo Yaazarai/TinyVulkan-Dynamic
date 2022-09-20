@@ -3,24 +3,6 @@
 	#include "./MiniVk.hpp"
 
 	namespace MINIVULKAN_NS {
-		#pragma region DYNAMIC RENDERING FUNCTIONS
-
-		VkResult vkCmdBeginRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
-			auto func = (PFN_vkCmdBeginRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
-			if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdBeginRenderingKHR");
-			func(commandBuffer, pRenderingInfo);
-			return VK_SUCCESS;
-		}
-
-		VkResult vkCmdEndRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer) {
-			auto func = (PFN_vkCmdEndRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdEndRenderingKHR");
-			if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdEndRenderingKHR");
-			func(commandBuffer);
-			return VK_SUCCESS;
-		}
-
-		#pragma endregion
-
 		class MiniVkRenderImage : public MiniVkObject {
 		private:
 			MiniVkInstance& mvkLayer;

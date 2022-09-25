@@ -18,96 +18,86 @@
         RELEASE: ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;
         DEBUG  : ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;
 */
-#define MINIVULKAN_SHORTREF
+#define MINIVULKAN_SHORTERREF //mvk
 #include "MiniVk.hpp"
+using namespace mvk;
 
-#include <chrono>
-
-// Returns the current time for benchmarking as type std::chrono::T.
-template<typename T>
-uint64_t now() {
-    return std::chrono::duration_cast<T>
-        (std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-}
-
+/// SHADER FILE REFERENCE PATHS
 #define DEFAULT_VERTEX_SHADER "./Shader Files/sample_vert.spv"
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
-int MINIVULKAN_MAIN{
-    minivk::MiniVkWindow window(640, 360, true, "HELLO WORLD");;
-    minivk::MiniVkInstance instance(window.GetRequiredExtensions(minivk::MiniVkInstance::enableValidationLayers), "HELLO TRIANGLE", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU});
-    instance.Initialize(window.CreateWindowSurface(instance.instance));
+int MINIVULKAN_MAIN {
+    /// MINI VULKAN & WINDOW INITIALIZATION /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    MiniVkWindow window(640, 360, true, "MINIVKWINDOW");
+    MiniVkInstance mvkInstance(window.GetRequiredExtensions(MiniVkInstance::enableValidationLayers), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU});
+    mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
-    minivk::MiniVkMemAlloc memoryAllocator(instance);
+    /// VULKAN MEMORY ALLOCATOR FOR BUFFER/IMAGE CREATION (OPTIONAL, RECOMMENDED) ///////////////////////////////////////////////////////////////////
+    MiniVkMemAlloc memAlloc(mvkInstance);
 
-    minivk::MiniVkSurfaceSupportDetails presentDetails;
-    minivk::MiniVkSwapChain swapChain(instance, presentDetails, minivk::MiniVkBufferingMode::TRIPLE);
-    swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &minivk::MiniVkWindow::OnFrameBufferReSizeCallback);
-    swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &minivk::MiniVkWindow::OnFrameBufferReSizeCallback);
-    window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &minivk::MiniVkSwapChain::OnFrameBufferResizeCallback);
+    /// SWAPCHAIN & WINDOW/SWAPCHAIN COMMUNICATION UPDAITNG /////////////////////////////////////////////////////////////////////////////////////////
+    MiniVkSwapChain swapChain(mvkInstance, MiniVkSurfaceSupportDetails(), MiniVkBufferingMode::TRIPLE);
+    swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
+    swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
+    window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
 
-    minivk::MiniVkCommandPool commandPool(instance, (size_t) swapChain.bufferingMode);
+    /// COMMAND POOL & COMMAND BUFFER INITIALIZATION FOR RENDERING //////////////////////////////////////////////////////////////////////////////////
+    MiniVkCommandPool commandPool(mvkInstance, (size_t)swapChain.bufferingMode);
 
-    minivk::MiniVkShaderStages shaderStages(instance,
+    /// SHADER SETUP ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    MiniVkShaderStages shaderStages(mvkInstance,
         { "./Shader Files/sample_vert.spv", "./Shader Files/sample_frag.spv" },
         { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
     
-    minivk::MiniVkDynamicPipeline dynamicPipeline(instance, swapChain.swapChainImageFormat, shaderStages,
-        minivk::MiniVkVertex::GetBindingDescription(), minivk::MiniVkVertex::GetAttributeDescriptions(),
-        {},// {minivk::MiniVkDynamicPipeline::SelectPushConstantRange(0, VK_SHADER_STAGE_ALL_GRAPHICS)},
-        {},// {minivk::MiniVkDynamicPipeline::SelectDescriptorSetLayout(instance, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)},
-        VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN);
+    /// GRAPHICS PIPELINE SETUP (without push constant & uniform buffer input) //////////////////////////////////////////////////////////////////////
+    MiniVkDynamicPipeline dynamicPipeline(mvkInstance, swapChain.swapChainImageFormat, shaderStages,
+        MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(), {}, {}, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN);
     
-    minivk::MiniVkDynamicRenderer dynamicRenderer(instance, commandPool, swapChain, dynamicPipeline);
-
-    std::vector<minivk::MiniVkVertex> vbuff;
-    vbuff.push_back(minivk::MiniVkVertex{ .pos = glm::vec2(-0.5, -0.5), .color = glm::vec3(0.0, .0, 1.0) });
-    vbuff.push_back(minivk::MiniVkVertex{ .pos = glm::vec2(0.5, -0.5), .color = glm::vec3(.0, 1.0, .0) });
-    vbuff.push_back(minivk::MiniVkVertex{ .pos = glm::vec2(0.5, 0.5), .color = glm::vec3(1.0, .0, 0.0) });
-    vbuff.push_back(minivk::MiniVkVertex{ .pos = glm::vec2(-0.5, 0.5), .color = glm::vec3(0.0, 0.0, 0.0) });
-    minivk::MiniVkVertexBuffer vbuffer(instance, vbuff);
-    vbuffer.StageV(dynamicPipeline.graphicsQueue, commandPool.GetPool());
-
+    /// GRAPHICS RENDERER ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    MiniVkDynamicRenderer dynamicRenderer(mvkInstance, commandPool, swapChain, dynamicPipeline);
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    std::vector<MiniVkVertex> vbuff;
+    vbuff.push_back(MiniVkVertex{ .pos = glm::vec2(-0.5, -0.5), .color = glm::vec3(0.0, .0, 1.0) });
+    vbuff.push_back(MiniVkVertex{ .pos = glm::vec2(0.5, -0.5), .color = glm::vec3(.0, 1.0, .0) });
+    vbuff.push_back(MiniVkVertex{ .pos = glm::vec2(0.5, 0.5), .color = glm::vec3(1.0, .0, 0.0) });
+    vbuff.push_back(MiniVkVertex{ .pos = glm::vec2(-0.5, 0.5), .color = glm::vec3(0.0, 0.0, 0.0) });
     std::vector<uint32_t> ibuff = { 0, 1, 2, 2, 3, 0 };
-    minivk::MiniVkIndexBuffer ibuffer(instance, vbuffer, ibuff);
-    ibuffer.StageI(dynamicPipeline.graphicsQueue, commandPool.GetPool());
 
-    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuffer, &ibuff, &ibuffer, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
-        dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());\
+    MiniVkMemoryStrct* vbuffer = memAlloc.CreateVertexBuffer(vbuff);
+    memAlloc.StageMemoryData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), vbuffer, vbuff.data(), vbuffer->size, 0, 0);
+    MiniVkMemoryStrct* ibuffer = memAlloc.CreateIndexBuffer(ibuff);
+    memAlloc.StageMemoryData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), ibuffer, ibuff.data(), ibuffer->size, 0, 0);
 
-        VkBuffer vertexBuffers[] = { vbuffer.buffer };
+    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuff, &ibuff, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
+        dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D()); \
+        
+        VkBuffer vertexBuffers[] = { vbuffer->buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, ibuffer->buffer, offsets[0], VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuff.size()), 1, 0, 0, 0);
-
+        
         dynamicRenderer.EndRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
-    });
+    }); // onRenderEvents are render functions that get called within RenderFrame() before the swapChain image is presented to the screen.
+    while (!window.ShouldClosePollEvents()) dynamicRenderer.RenderFrame();
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    window.SetCallbackPointer(&instance);
-    std::thread mythread([&window, &dynamicRenderer]() { while (!window.ShouldClose()) { dynamicRenderer.RenderFrame(); } });
-
-    while (!window.ShouldClosePollEvents()) {
-        //dynamicRenderer.RenderFrame();
-    }
-    mythread.join();
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // FORCE DISPOSE ORDER: (Dispose is automatically called on destructor, but in our case order is explicitly senstive for Vulkan).
-    ibuffer.Dispose();
-    vbuffer.Dispose();
+    /// ORDER-FORCED DISPOSE ORDER //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    vkDeviceWaitIdle(mvkInstance.logicalDevice);
+    memAlloc.DestroyMemory(ibuffer);
+    memAlloc.DestroyMemory(vbuffer);
     swapChain.Dispose();
     dynamicRenderer.Dispose();
     dynamicPipeline.Dispose();
     shaderStages.Dispose();
     commandPool.Dispose();
-    memoryAllocator.Dispose();
-    instance.Dispose();
+    memAlloc.Dispose();
+    mvkInstance.Dispose();
     window.Dispose();
-    return GLFW_NO_ERROR;
+    return VK_SUCCESS;
 }

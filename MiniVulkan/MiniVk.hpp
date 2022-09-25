@@ -53,9 +53,6 @@
     #endif
 
     /// The namespace can be quickly renamed to fix conflcits.
-    /// 
-    /// Define MINIVULKAN_
-    /// 
     #ifndef MINIVULKAN_NS
     #define MINIVULKAN_NS minivulkan
     #endif
@@ -64,6 +61,9 @@
     /// You can define MINIVULKCAN_SHORTREF for a shorter namespace reference. (:
     #ifdef MINIVULKAN_SHORTREF
     namespace minivk = minivulkan;
+    #endif
+    #ifdef MINIVULKAN_SHORTERREF
+    namespace mvk = minivulkan;
     #endif
 
     ////////////////////////////////////
@@ -131,9 +131,6 @@
     /// The Vulkan instance which handles the DEVICE-HOST driver connection.
     /* 07 */ #include "./MiniVkInstance.hpp"
 
-    /// Vulkan Memory ALlocator
-    /* 08 */ #include "./MiniVkMemAlloc.hpp"
-
     /// Swap Chains handle queuing framebuffers/vkimages(render images) for drawing and rendering to the screen.
     /// These images are borrowed from the device driver and are returned at the end of the rendering frame.
     /// You must create your own VkImages for offscreen rendering.
@@ -144,12 +141,13 @@
     /// This includes both rendering to images using shaders and copying data from the HOST(PC/CPU) to the DEVICE(GPU).
     /* 10 */ #include "./MiniVkCommandPool.hpp"
 
+    /// Vulkan Memory Allocator (Buffer / Image memory allocation on host/device)
     /// Buffer, Vertex and Uniform Buffers for shaders.
     /// MiniVkBuffer is the base-derivable buffer class for handling memory operations with the GPU.
     ///     *** All MiniVkBuffer operations are STAGED (see header file for documentation info).
     /// Vertex buffers provide an interface for passing vertex model information to shaders.
     /// Uniform buffers provide an interface for passing shader constant information to shaders.
-    /* 11 */ #include "./MiniVkShaderBuffers.hpp"
+    /* 08 */ #include "./MiniVkMemAlloc.hpp"
 
     /// Shader Info and Ordering for passing to the graphics pipeline for the final render.
     /* 12 */ #include "./MiniVkShaderStage.hpp"
@@ -158,7 +156,7 @@
     /* 13 */ #include "./MiniVkDynamicPipeline.hpp"
     
     /// Represents a renderable image(drawing surface) in Vulkan with attached semaphores/fences (optional usage).
-    /* 14 */ #include "./MiniVkRenderImage.hpp"
+    /* 14 */ #include "./MiniVkImage.hpp"
 
     /// Dynamic Renderer for actually drawing to the screen using a SwapChain or custom VkImage render targets.
     /* 15 */ #include "./MiniVkDynamicRenderer.hpp"

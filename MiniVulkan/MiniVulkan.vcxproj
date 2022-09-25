@@ -185,7 +185,7 @@
     <ClInclude Include="MiniVkMemAlloc.hpp" />
     <ClInclude Include="MiniVkObject.hpp" />
     <ClInclude Include="MiniVkQueueFamily.hpp" />
-    <ClInclude Include="MiniVkRenderImage.hpp" />
+    <ClInclude Include="MiniVkImage.hpp" />
     <ClInclude Include="MiniVkShaderStage.hpp" />
     <ClInclude Include="MiniVkSupportDetails.hpp" />
     <ClInclude Include="MiniVkSwapChain.hpp" />

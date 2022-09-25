@@ -3,6 +3,24 @@
 	#include "./MiniVk.hpp"
 
 	namespace MINIVULKAN_NS {
+		class MiniVkImage : public MiniVkObject {
+		private:
+			MiniVkInstance& mvkLayer;
+			MiniVkMemAlloc& vmAlloc;
+			VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
+			VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+			VkFence inFlightFence = VK_NULL_HANDLE;
+
+			VkImage image = VK_NULL_HANDLE;
+			VkImageView imageView = VK_NULL_HANDLE;
+
+		public:
+			
+
+
+			MiniVkImage operator=(const MiniVkImage& mvkImage) = delete;
+		};
+		
 		class MiniVkRenderImage : public MiniVkObject {
 		private:
 			MiniVkInstance& mvkLayer;
@@ -34,7 +52,7 @@
 				imageInfo.usage = usage;
 				imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 				imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
+				
 				if (vkCreateImage(mvkLayer.logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create vkimage!");
 
@@ -68,6 +86,7 @@
 
 			#pragma endregion
 		public:
+			MiniVkMemAlloc& vmAllocator;
 			VkImage image;
 			VkImageView imageView;
 			VkDeviceMemory memory;
@@ -85,8 +104,8 @@
 				vkFreeMemory(mvkLayer.logicalDevice, memory, nullptr);
 			}
 
-			MiniVkRenderImage(MiniVkInstance& mvkLayer, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
-				VkMemoryPropertyFlags properties, VkImageTiling tiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL) : mvkLayer(mvkLayer) {
+			MiniVkRenderImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAllocator, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
+				VkMemoryPropertyFlags properties, VkImageTiling tiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL) : mvkLayer(mvkLayer), vmAllocator(vmAllocator) {
 				onDispose += std::callback<>(this, &MiniVkRenderImage::Disposable);
 
 				CreateImage(width, height, format, usage, properties, image, memory, tiling);

@@ -15,6 +15,9 @@
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 				/// Swapchain support for buffering frame images with the device driver to reduce tearing.
 				
+				// Used to enable high memory priority for VMA.
+				VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+
 				//VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
 				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, // Dynamic Rendering Dependency
 				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency
@@ -170,7 +173,7 @@
 					throw std::runtime_error("MiniVulkan: Failed to create logical device!");
 			}
 
-			/// <summary>Wait for logical device after main() loop close.</summary>
+			/// <summary>Wait for attached GPU device tro finish transfer/rendering commands.</summary>
 			void WaitIdleLogicalDevice() {
 				vkDeviceWaitIdle(logicalDevice);
 			}

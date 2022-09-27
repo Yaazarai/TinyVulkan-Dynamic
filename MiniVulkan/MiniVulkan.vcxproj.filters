@@ -56,9 +56,6 @@
     <ClInclude Include="MiniVkDynamicPipeline.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkShaderBuffers.hpp">
-      <Filter>Header Files\MiniVk</Filter>
-    </ClInclude>
     <ClInclude Include="MiniVkDynamicRenderer.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>

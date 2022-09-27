@@ -66,19 +66,26 @@ int MINIVULKAN_MAIN {
     vbuff.push_back(MiniVkVertex{ .pos = glm::vec2(-0.5, 0.5), .color = glm::vec3(0.0, 0.0, 0.0) });
     std::vector<uint32_t> ibuff = { 0, 1, 2, 2, 3, 0 };
 
-    MiniVkMemoryStrct* vbuffer = memAlloc.CreateVertexBuffer(vbuff);
-    memAlloc.StageMemoryData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), vbuffer, vbuff.data(), vbuffer->size, 0, 0);
-    MiniVkMemoryStrct* ibuffer = memAlloc.CreateIndexBuffer(ibuff);
-    memAlloc.StageMemoryData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), ibuffer, ibuff.data(), ibuffer->size, 0, 0);
+    int channels = 4;
+    qoi_desc qoidesc;
+    FILE* test = fopen("./Screeny.qoi", "rb");
+    if (test == NULL) { std::cout << "NO QOI IMAGE" << std::endl; } else { fclose(test); }
+    void* qoiPixels = qoi_read("./Screeny.qoi", &qoidesc, channels);
 
-    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuff, &ibuff, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
+    std::cout << "QOI WIDTH: " << qoidesc.width << std::endl;
+    std::cout << "QOI HEIGHT: " << qoidesc.height << std::endl;
+    std::cout << "QOI CHANNELS: " << (uint32_t)qoidesc.channels << std::endl;
+    
+    VkDeviceSize dataSize = qoidesc.width * qoidesc.height * qoidesc.channels;
+    std::cout << "QOI SIZE: " << (uint32_t)dataSize << std::endl;
+    MiniVkMemoryStrct* image = memAlloc.CreateImage(qoidesc.width, qoidesc.height);
+    memAlloc.StageImageData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), image, qoiPixels, dataSize);
+    QOI_FREE(qoiPixels);
+    
+    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&memAlloc, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
         dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D()); \
         
-        VkBuffer vertexBuffers[] = { vbuffer->buffer };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, ibuffer->buffer, offsets[0], VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuff.size()), 1, 0, 0, 0);
+        
         
         dynamicRenderer.EndRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     }); // onRenderEvents are render functions that get called within RenderFrame() before the swapChain image is presented to the screen.
@@ -88,9 +95,9 @@ int MINIVULKAN_MAIN {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     /// ORDER-FORCED DISPOSE ORDER //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    vkDeviceWaitIdle(mvkInstance.logicalDevice);
-    memAlloc.DestroyMemory(ibuffer);
-    memAlloc.DestroyMemory(vbuffer);
+    memAlloc.DestroyMemory(image);
+
+    mvkInstance.WaitIdleLogicalDevice();
     swapChain.Dispose();
     dynamicRenderer.Dispose();
     dynamicPipeline.Dispose();

@@ -16,7 +16,6 @@
 			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition;
 
 			std::vector<VkPushConstantRange> pushConstantRanges;
-			std::vector<VkDescriptorSetLayout> descriptorSets;
 			MiniVkShaderStages& shaderStages;
 			VkPipelineDynamicStateCreateInfo dynamicState;
 			VkPipelineLayout pipelineLayout;
@@ -33,16 +32,12 @@
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
 				vkDestroyPipeline(mvkLayer.logicalDevice, graphicsPipeline, nullptr);
 				vkDestroyPipelineLayout(mvkLayer.logicalDevice, pipelineLayout, nullptr);
-				
-				for(auto set : descriptorSets)
-					vkDestroyDescriptorSetLayout(mvkLayer.logicalDevice, set, nullptr);
 			}
 
 			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, VkFormat imageFormat, MiniVkShaderStages& shaderStages, VkVertexInputBindingDescription vertexBindingDescription,
-			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition, const std::vector<VkPushConstantRange>& pushConstantRanges,
-			const std::vector<VkDescriptorSetLayout>& descriptorSets, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 			: mvkLayer(mvkLayer), shaderStages(shaderStages), vertexBindingDescription(vertexBindingDescription), vertexAttributeDescrition(vertexAttributeDescrition),
-			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), pushConstantRanges(pushConstantRanges), descriptorSets(descriptorSets) {
+			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), pushConstantRanges(pushConstantRanges) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
@@ -71,13 +66,6 @@
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 				pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-				
-				pipelineLayoutInfo.setLayoutCount = 0;
-				uint32_t setLayoutCount = static_cast<uint32_t>(descriptorSets.size());
-				if (setLayoutCount > 0) {
-					pipelineLayoutInfo.setLayoutCount = setLayoutCount;
-					pipelineLayoutInfo.pSetLayouts = descriptorSets.data();
-				}
 
 				pipelineLayoutInfo.pushConstantRangeCount = 0;
 				uint32_t pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
@@ -174,26 +162,6 @@
 				pushConstantRange.offset = 0;
 				pushConstantRange.size = pushConstantRangeSize;
 				return pushConstantRange;
-			}
-
-			inline static VkDescriptorSetLayout SelectDescriptorSetLayout(MiniVkInstance& mvkLayer, uint32_t bindingId = 0, VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
-				VkDescriptorSetLayoutBinding layoutBinding{};
-				layoutBinding.binding = bindingId;
-				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				layoutBinding.descriptorCount = 1;
-				layoutBinding.stageFlags = shaderStages;
-				layoutBinding.pImmutableSamplers = nullptr; // Optional
-				layoutBinding.descriptorType = descriptorType;
-
-				VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
-				descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-				descriptorLayoutInfo.bindingCount = 1;
-				descriptorLayoutInfo.pBindings = &layoutBinding;
-
-				VkDescriptorSetLayout setLayout{};
-				if (vkCreateDescriptorSetLayout(mvkLayer.logicalDevice, &descriptorLayoutInfo, nullptr, &setLayout) != VK_SUCCESS)
-					throw std::runtime_error("MiniVulkan: Failed to create Uniform Buffer descriptor set layout!");
-				return setLayout;
 			}
 		};
 	}

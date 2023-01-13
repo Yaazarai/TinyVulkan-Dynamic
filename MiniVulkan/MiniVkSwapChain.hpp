@@ -139,7 +139,7 @@
 					} else { createInfo = *createInfoEx; }
 
 					if (vkCreateImageView(mvkLayer.logicalDevice, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
-						throw std::runtime_error("failed to create image views!");
+						throw std::runtime_error("MiniVulkan: Failed to create swap chain image views!");
 				}
 			}
 

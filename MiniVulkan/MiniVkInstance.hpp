@@ -21,11 +21,15 @@
 				//VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
 				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, // Dynamic Rendering Dependency
 				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency
-				VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+				VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 				/// Allows for rendering without framebuffers and render passes to simplify the graphics pipeline.
 				/// Downside is performance might worsen on tiling GPUs (mobile platforms), which is not relevant here.
+				
+				VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
+				/// Allows for writing descriptors directly into a command buffer rather than allocating from sets/pools.
+				/// This should be faster in some cases than actual descriptor sets/pools.
 			};
-
+			
 			/// DEBUG_UTILITIES ///
 			VkDebugUtilsMessengerEXT debugMessenger;
 
@@ -241,8 +245,8 @@
 				vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
 				// You can uncomment this to add check for specific device features.
-				//VkPhysicalDeviceFeatures deviceFeatures;
-				//vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+				VkPhysicalDeviceFeatures deviceFeatures {};
+				vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(device, presentationSurface);
 				bool supportsExtensions = QueryDeviceExtensionSupport(device);
@@ -260,7 +264,7 @@
 						break;
 					}
 
-				return indices.IsComplete() && supportsExtensions && swapChainAdequate && hasType;
+				return indices.IsComplete() && supportsExtensions && swapChainAdequate && deviceFeatures.multiViewport == VK_TRUE && hasType;
 			}
 
 			/// <summary>Returns BOOL(true/false) if the VkPhysicalDevice (GPU/iGPU) supports extensions.</summary>

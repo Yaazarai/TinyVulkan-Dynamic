@@ -35,9 +35,12 @@
     #define GLM_FORCE_LEFT_HANDED
     #define GLM_FORCE_DEPTH_ZERO_TO_ONE
     #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-    #include <glm/vec4.hpp>
-    #include <glm/mat4x4.hpp>
     
+    #include <glm/glm.hpp>
+    #include <glm/vec2.hpp>
+    #include <glm/vec4.hpp>
+    #include <glm/mat2x2.hpp>
+
     #define MIN(a,b) ((a)<(b)?(a):(b))
     #define MAX(a,b) ((a)>(b)?(a):(b))
     
@@ -113,7 +116,7 @@
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     /// MiniVulkan follows a dependency chain where each next header include depends on includes before it.
     /// This helps to isolate the different Vulkan stages into individual sets for easy changes or study.
-    /// Due to this includes do nto have access to other includes further ahead in the dependency chain.
+    /// Due to this includes do not have access to other includes further ahead in the dependency chain.
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// Allows for easy function callbacks and event handling.

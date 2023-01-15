@@ -65,7 +65,7 @@
 			/// <summary>Callback for GLFW Window refresh event.</summary>
 			inline static void OnRefreshCallback(GLFWwindow* hwnd) { MiniVkWindow::onRefresh.invoke(hwnd); }
 
-			/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
+			/// <summary>Pass to render engine for swapchain resizing.</summary>
 			void OnFrameBufferReSizeCallback(int& width, int& height) {
 				glfwGetFramebufferSize(hwndWindow, &width, &height);
 
@@ -92,13 +92,14 @@
 				glfwTerminate();
 			}
 
-			/// <summary>[overridable] Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
-			MiniVkWindow(int width, int height, bool resizable, std::string title) {
+			/// <summary>Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
+			MiniVkWindow(int width, int height, bool resizable, std::string title, bool hasMinSize = false, int minWidth = 200, int minHeight = 200) {
 				onDispose += std::callback<>(this, &MiniVkWindow::Disposable);
 				hwndWindow = InitiateWindow(width, height, resizable, title);
 				glfwSetWindowUserPointer(hwndWindow, this);
 				glfwSetWindowRefreshCallback(hwndWindow, MiniVkWindow::OnRefreshCallback);
 				glfwSetFramebufferSizeCallback(hwndWindow, MiniVkWindow::OnFrameBufferNotifyReSizeCallback);
+				if (hasMinSize) glfwSetWindowSizeLimits(hwndWindow, minWidth, minHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 			}
 
 			// Remove default copy constructor.
@@ -122,8 +123,10 @@
 				return shouldClose;
 			}
 
+			/// <summary>[overridable] Sets the callback pointer for the window.</summary>
 			virtual void SetCallbackPointer(void* data) { glfwSetWindowUserPointer(hwndWindow, data); }
 
+			/// <summary>[overridable] Gets the callback pointer for the window.</summary>
 			virtual void* GetCallbackPointer() { return glfwGetWindowUserPointer(hwndWindow); }
 
 			/// <summary>[overridable] Creates a Vulkan surface for this GLFW window.</summary>

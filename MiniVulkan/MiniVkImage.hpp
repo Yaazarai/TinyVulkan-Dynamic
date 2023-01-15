@@ -8,6 +8,10 @@
 		};
 		/*
 			ABVOUT BUFFERS & IMAGES:
+				When Creating Buffers:
+					Buffers must be initialized with a VkDviceSize, which is the size of the data in BYTES, not the
+					size of the data container (number of items). This same principle applies to stagging buffer data.
+
 				There are 3 types of GPU dedicated memory buffers:
 					Vertex:		Allows you to send mesh triangle data to the GPU.
 					Index:		Allws you to send mapped indices for vertex buffers to the GPU.
@@ -51,14 +55,14 @@
 				vmaDestroyBuffer(vmAlloc.GetAllocator(), buffer, memory);
 			}
 
-			MiniVkBuffer(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
-			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), size(size) {
+			MiniVkBuffer(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
+			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose += std::callback<>(this, &MiniVkBuffer::Disposable);
 				CreateBuffer(size, usage, flags);
 			}
 
-			MiniVkBuffer(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize size, MiniVkBufferType type)
-			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), size(size) {
+			MiniVkBuffer(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize dataSize, MiniVkBufferType type)
+			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose += std::callback<>(this, &MiniVkBuffer::Disposable);
 
 				switch (type) {
@@ -88,13 +92,13 @@
 				stagingBuffer.Dispose();
 			}
 
-			void TransferBufferCmd(VkQueue graphicsQueue, VkCommandPool commandPool, MiniVkBuffer& srcBuffer, VkDeviceSize size, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
+			void TransferBufferCmd(VkQueue graphicsQueue, VkCommandPool commandPool, MiniVkBuffer& srcBuffer, VkDeviceSize dataSize, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
 				VkCommandBuffer commandBuffer = BeginTransferCmd(graphicsQueue, commandPool);
 
 				VkBufferCopy copyRegion{};
 				copyRegion.srcOffset = srceOffset;
 				copyRegion.dstOffset = destOffset;
-				copyRegion.size = size;
+				copyRegion.size = dataSize;
 				vkCmdCopyBuffer(commandBuffer, srcBuffer.buffer, buffer, 1, &copyRegion);
 
 				EndTransferCmd(graphicsQueue, commandPool, commandBuffer);

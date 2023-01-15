@@ -27,11 +27,13 @@ using namespace mvk;
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
 struct MiniVkVertex {
-    glm::vec2 pos;
-    glm::vec3 color;
+    glm::vec2 position;
+    glm::vec4 color;
+
+    MiniVkVertex(glm::vec2 pos, glm::vec4 col) : position(pos), color(col) {}
 
     static VkVertexInputBindingDescription GetBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
+        VkVertexInputBindingDescription bindingDescription(1);
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(MiniVkVertex);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -43,11 +45,11 @@ struct MiniVkVertex {
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(MiniVkVertex, pos);
+        attributeDescriptions[0].offset = offsetof(MiniVkVertex, position);
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(MiniVkVertex, color);
         return attributeDescriptions;
     }
@@ -58,15 +60,9 @@ struct MiniVkIndexer {
     std::vector<uint32_t> indices;
 };
 
-struct ProjectionUniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
-
 int MINIVULKAN_MAIN {
     /// MINI VULKAN & WINDOW INITIALIZATION /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    MiniVkWindow window(640, 360, true, "MINIVKWINDOW");
+    MiniVkWindow window(1920, 1080, true, "MINIVK WINDOW", false);
     MiniVkInstance mvkInstance(window.GetRequiredExtensions(MiniVkInstance::enableValidationLayers), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU});
     mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
@@ -81,7 +77,6 @@ int MINIVULKAN_MAIN {
     //      MiniVkMemAlloc -> Dynamic Memory Allocator (using VMA).
     //      MiniVkCommandPool -> For Getting Command Buffers for rendering.
     //      MiniVkShaderStages -> Shaders that render commands passthrough in the graphics pipeline.
-    //      VkDescriptorSetLayout -> Defines the data layout of large info being sent to shaders.
     //      MiniVkDynamicPipeline -> Render Pipeline structure that defines the rendering format.
     //      MiniVkDynamicRenderer -> Performs the actual rendering commands and submits them to the swapchain (screen).
     //
@@ -89,36 +84,54 @@ int MINIVULKAN_MAIN {
     MiniVkCommandPool commandPool(mvkInstance, (size_t)swapChain.bufferingMode);
     MiniVkShaderStages shaderStages(mvkInstance, { "./Shader Files/sample_vert.spv", "./Shader Files/sample_frag.spv" }, { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
     
-    //VkPushConstantRange fragmentColorSetLayout = MiniVkDynamicPipeline::SelectPushConstantRange(32, VK_SHADER_STAGE_FRAGMENT_BIT);
-    MiniVkDynamicPipeline dynamicPipeline(mvkInstance, swapChain.swapChainImageFormat, shaderStages, MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(), {  }, {  });
+    MiniVkDynamicPipeline dynamicPipeline(mvkInstance, swapChain.swapChainImageFormat, shaderStages, MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(), { });
     MiniVkDynamicRenderer dynamicRenderer(mvkInstance, commandPool, swapChain, dynamicPipeline);
     
-    /*
-    std::vector<MiniVkBuffer> InFlightUniformBuffers;
-    for(int i = 0; i < static_cast<int>(swapChain.bufferingMode); i++)
-        InFlightUniformBuffers.push_back(MiniVkBuffer(mvkInstance, memAlloc, sizeof(ProjectionUniformBufferObject), MiniVkBufferType::VKVMA_BUFFER_TYPE_UNIFORM));
-    */
+    
+    //VkPushConstantRange fragmentColorSetLayout = MiniVkDynamicPipeline::SelectPushConstantRange(32, VK_SHADER_STAGE_FRAGMENT_BIT);
+    
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&memAlloc, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
+    std::vector<MiniVkVertex> triangle {
+        {{-0.5,-0.5}, {1.0,0.0,0.0,0.0}},
+        {{+0.5,-0.5}, {0.0,1.0,0.0,1.0}},
+        {{+0.5,+0.5}, {0.0,0.0,1.0,0.0}},
+        {{-0.5,+0.5}, {0.0,1.0,1.0,1.0}}
+    };
+    std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
+
+    MiniVkBuffer vbuffer(mvkInstance, memAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
+    vbuffer.StageBufferData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
+    MiniVkBuffer ibuffer(mvkInstance, memAlloc, indices.size() * sizeof(indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
+    ibuffer.StageBufferData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), indices.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
+
+    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuffer, &ibuffer, &memAlloc, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
         dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
 
-
+        VkBuffer vertexBuffers[] = { vbuffer.buffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size)/sizeof(uint32_t), 1, 0, 0, 0);
         
         dynamicRenderer.EndRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     }); // onRenderEvents are render functions that get called within RenderFrame() before the swapChain image is presented to the screen.
-    while (!window.ShouldClosePollEvents()) dynamicRenderer.RenderFrame();
     
+    window.SetCallbackPointer(&mvkInstance);
+    std::thread mythread([&mvkInstance, &window, &dynamicRenderer]() { while (!window.ShouldClose()) { dynamicRenderer.RenderFrame(); } });
+    while (!window.ShouldClosePollEvents()) {}
+    mythread.join();
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     /// ORDER-FORCED DISPOSE ORDER //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     mvkInstance.WaitIdleLogicalDevice();
-
-    //for(auto &ubo : InFlightUniformBuffers) ubo.Dispose();
+    vbuffer.Dispose();
+    ibuffer.Dispose();
     swapChain.Dispose();
     dynamicRenderer.Dispose();
     dynamicPipeline.Dispose();

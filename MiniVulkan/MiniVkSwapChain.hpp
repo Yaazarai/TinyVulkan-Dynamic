@@ -193,6 +193,8 @@
 				} else {
 					int width, height;
 					onGetFrameBufferSize.invoke(width, height);
+					width = MIN(1, width);
+					height = MIN(1, height);
 
 					VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 					actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);

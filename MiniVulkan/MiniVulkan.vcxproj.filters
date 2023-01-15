@@ -68,10 +68,10 @@
     <ClInclude Include="MiniVkMemAlloc.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
-    <ClInclude Include="QuiteOkImageFormat.h">
+    <ClInclude Include="MiniVkImage.hpp">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkImage.hpp">
+    <ClInclude Include="QuiteOkImageFormat.h">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
   </ItemGroup>

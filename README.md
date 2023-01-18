@@ -24,11 +24,11 @@ FINISHED:
 
 UNFINISHED:
 1. Test and finish MiniVkThreadPool implemention.
-2. Add more optional properties for configuring the MiniVkDynamicPipeline when creating the graphics pipeline.
+2. ~~Add more optional properties for configuring the MiniVkDynamicPipeline when creating the graphics pipeline.~~
 3. Add in Texture/Sprite loading support.
-4. Setup default rendering passthrough shaders.
-5. Setup default model/view/projection matrices.
-6. Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).
+4. ~~Setup default rendering passthrough shaders.~~
+5. ~~Setup default model/view/projection matrices.~~
+6. ~~Fix centered (-1,-1 to +1,+1) GLSL coordinate system to top-left (0,0, to 1,1).~~
 7. Provide better solution to `FORCE DISPOSE ORDER` calls in `source.cpp`.
 8. Add framerate handling and clean timestep support.
 9. Add Fast Rotsprite shader 2x & 3x scale (forked on profile).

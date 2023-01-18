@@ -60,6 +60,14 @@ struct MiniVkIndexer {
     std::vector<uint32_t> indices;
 };
 
+static glm::mat4x4 ProjectionMatrix(float width, float height, float znear, float zfar) {
+    return glm::transpose(glm::mat4(
+        2.0/(width - 1), 0.0, 0.0, -1.0,
+        0.0, 2.0/(height-1), 0.0, -1.0,
+        0.0, 0.0, -2.0/(zfar-znear), -((zfar+znear)/(znear-zfar)),
+        0.0, 0.0, 0.0, 1.0));
+}
+
 int MINIVULKAN_MAIN {
     /// MINI VULKAN & WINDOW INITIALIZATION /////////////////////////////////////////////////////////////////////////////////////////////////////////
     MiniVkWindow window(1920, 1080, true, "MINIVK WINDOW", false);
@@ -84,34 +92,41 @@ int MINIVULKAN_MAIN {
     MiniVkCommandPool commandPool(mvkInstance, (size_t)swapChain.bufferingMode);
     MiniVkShaderStages shaderStages(mvkInstance, { "./Shader Files/sample_vert.spv", "./Shader Files/sample_frag.spv" }, { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
     
-    MiniVkDynamicPipeline dynamicPipeline(mvkInstance, swapChain.swapChainImageFormat, shaderStages, MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(), { });
+    MiniVkDynamicPipeline dynamicPipeline(mvkInstance, swapChain.swapChainImageFormat, shaderStages, MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(),
+        {MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4),VK_SHADER_STAGE_VERTEX_BIT)});
     MiniVkDynamicRenderer dynamicRenderer(mvkInstance, commandPool, swapChain, dynamicPipeline);
-    
-    
-    //VkPushConstantRange fragmentColorSetLayout = MiniVkDynamicPipeline::SelectPushConstantRange(32, VK_SHADER_STAGE_FRAGMENT_BIT);
     
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     std::vector<MiniVkVertex> triangle {
-        {{-0.5,-0.5}, {1.0,0.0,0.0,0.0}},
-        {{+0.5,-0.5}, {0.0,1.0,0.0,1.0}},
-        {{+0.5,+0.5}, {0.0,0.0,1.0,0.0}},
-        {{-0.5,+0.5}, {0.0,1.0,1.0,1.0}}
+        {{480.0,480.0}, {1.0,0.0,0.0,0.0}},
+        {{1440,480}, {0.0,1.0,0.0,1.0}},
+        {{1440,1440}, {0.0,0.0,1.0,0.0}},
+        {{480,1440}, {0.0,1.0,1.0,1.0}}
     };
+    //std::vector<MiniVkVertex> triangle {
+    //    {{-0.5,-0.5}, {1.0,0.0,0.0,0.0}},
+    //    {{+0.5,-0.5}, {0.0,1.0,0.0,1.0}},
+    //    {{+0.5,+0.5}, {0.0,0.0,1.0,0.0}},
+    //    {{-0.5,+0.5}, {0.0,1.0,1.0,1.0}}
+    //};
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
     MiniVkBuffer vbuffer(mvkInstance, memAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
     vbuffer.StageBufferData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
     MiniVkBuffer ibuffer(mvkInstance, memAlloc, indices.size() * sizeof(indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
     ibuffer.StageBufferData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), indices.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
-
-    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuffer, &ibuffer, &memAlloc, &swapChain, &dynamicRenderer](VkCommandBuffer commandBuffer) {
+    
+    dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuffer, &ibuffer, &memAlloc, &swapChain, &dynamicRenderer, &dynamicPipeline](VkCommandBuffer commandBuffer) {
         dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
 
         VkBuffer vertexBuffers[] = { vbuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
+        auto projection = ProjectionMatrix(1920, 1080, -1, 1);
+        vkCmdPushConstants(commandBuffer, dynamicPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
+
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size)/sizeof(uint32_t), 1, 0, 0, 0);

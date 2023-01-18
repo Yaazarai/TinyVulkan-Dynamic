@@ -74,6 +74,9 @@
     <ClInclude Include="QuiteOkImageFormat.h">
       <Filter>Header Files\MiniVk</Filter>
     </ClInclude>
+    <ClInclude Include="MiniVkCoordSystem.h">
+      <Filter>Header Files\MiniVk</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt">

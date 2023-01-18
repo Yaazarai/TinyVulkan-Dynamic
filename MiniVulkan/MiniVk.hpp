@@ -40,6 +40,8 @@
     #include <glm/vec2.hpp>
     #include <glm/vec4.hpp>
     #include <glm/mat2x2.hpp>
+    #include <glm/mat4x4.hpp>
+    #include <glm/ext.hpp>
 
     #define MIN(a,b) ((a)<(b)?(a):(b))
     #define MAX(a,b) ((a)>(b)?(a):(b))

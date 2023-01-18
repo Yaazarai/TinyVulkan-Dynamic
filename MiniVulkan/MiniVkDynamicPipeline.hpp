@@ -158,7 +158,7 @@
 
 			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
 				VkPushConstantRange pushConstantRange{};
-				pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+				pushConstantRange.stageFlags = shaderStages;
 				pushConstantRange.offset = 0;
 				pushConstantRange.size = pushConstantRangeSize;
 				return pushConstantRange;

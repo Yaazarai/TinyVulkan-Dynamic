@@ -13,7 +13,7 @@
 		public:
 			/// GRAPHICS_PIPELINE ///
 			VkVertexInputBindingDescription vertexBindingDescription;
-			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition;
+			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition;
 
 			std::vector<VkPushConstantRange> pushConstantRanges;
 			MiniVkShaderStages& shaderStages;
@@ -35,7 +35,7 @@
 			}
 
 			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, VkFormat imageFormat, MiniVkShaderStages& shaderStages, VkVertexInputBindingDescription vertexBindingDescription,
-			std::array<VkVertexInputAttributeDescription, 2> vertexAttributeDescrition, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 			: mvkLayer(mvkLayer), shaderStages(shaderStages), vertexBindingDescription(vertexBindingDescription), vertexAttributeDescrition(vertexAttributeDescrition),
 			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), pushConstantRanges(pushConstantRanges) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);

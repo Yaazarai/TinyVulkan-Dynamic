@@ -27,10 +27,11 @@ using namespace mvk;
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
 struct MiniVkVertex {
+    glm::vec2 texcoord;
     glm::vec2 position;
     glm::vec4 color;
 
-    MiniVkVertex(glm::vec2 pos, glm::vec4 col) : position(pos), color(col) {}
+    MiniVkVertex(glm::vec2 tex, glm::vec2 pos, glm::vec4 col) : texcoord(tex), position(pos), color(col) {}
 
     static VkVertexInputBindingDescription GetBindingDescription() {
         VkVertexInputBindingDescription bindingDescription(1);
@@ -40,17 +41,22 @@ struct MiniVkVertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(MiniVkVertex, position);
+        attributeDescriptions[0].offset = offsetof(MiniVkVertex, texcoord);
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(MiniVkVertex, color);
+        attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(MiniVkVertex, position);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(MiniVkVertex, color);
         return attributeDescriptions;
     }
 };
@@ -93,10 +99,10 @@ int MINIVULKAN_MAIN {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     std::vector<MiniVkVertex> triangle {
-        {{480.0,270.0}, {1.0,0.0,0.0,0.0}},
-        {{1440.0,270.0}, {0.0,1.0,0.0,1.0}},
-        {{1440.0,810.0}, {0.0,0.0,1.0,0.0}},
-        {{480.0,810.0}, {0.0,1.0,1.0,1.0}}
+        {{0.0,0.0}, {480.0,270.0}, {1.0,0.0,0.0,0.0}},
+        {{1.0,0.0}, {1440.0,270.0}, {0.0,1.0,0.0,1.0}},
+        {{1.0,1.0}, {1440.0,810.0}, {0.0,0.0,1.0,0.0}},
+        {{0.0,1.0}, {480.0,810.0}, {0.0,1.0,1.0,1.0}}
     };
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
@@ -104,7 +110,7 @@ int MINIVULKAN_MAIN {
     vbuffer.StageBufferData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
     MiniVkBuffer ibuffer(mvkInstance, memAlloc, indices.size() * sizeof(indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
     ibuffer.StageBufferData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), indices.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
-    
+
     dynamicRenderer.onRenderEvents += std::callback<VkCommandBuffer>([&vbuffer, &ibuffer, &memAlloc, &swapChain, &dynamicRenderer, &dynamicPipeline](VkCommandBuffer commandBuffer) {
         dynamicRenderer.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
 

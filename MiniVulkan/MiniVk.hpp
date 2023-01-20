@@ -29,6 +29,9 @@
     #include <GLFW/glfw3native.h>
 
     #include <vulkan/vulkan.hpp>
+    #define MVK_RENDERER_VERSION VK_MAKE_API_VERSION(0, 1, 0, 0)
+    #define MVK_ENGINE_VERSION VK_MAKE_API_VERSION(0, 1, 3, 0)
+    #define MVK_API_VERSION VK_API_VERSION_1_3
     
     // GLM (OpenGL math) properties.
     #define GLM_FORCE_RADIANS
@@ -99,6 +102,8 @@
     #define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
     #define VMA_DEBUG_GLOBAL_MUTEX VK_TRUE
     #define VMA_USE_STL_CONTAINERS VK_TRUE
+    #define VMA_STATIC_VULKAN_FUNCTIONS VK_TRUE
+    #define VMA_DYNAMIC_VULKAN_FUNCTIONS VK_TRUE
     #include "./VkMemAlloc.h"
 
     /////// QuiteOK Image Format ///////
@@ -173,6 +178,8 @@
     /// Represents a renderable image(drawing surface) in Vulkan with attached semaphores/fences (optional usage).
     /* 15 */ #include "./MiniVkImage.hpp"
 
+    /// Simple math functions for vertices, matrix transforms, etc.
+    /* 16 */ #include "./MiniVkMath.hpp"
     //// MINIVULKAN HEADER INCLUDES ////
     ////////////////////////////////////
 #endif

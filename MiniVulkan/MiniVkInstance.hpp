@@ -18,16 +18,20 @@
 				// Used to enable high memory priority for VMA.
 				VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
 
-				//VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
 				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, // Dynamic Rendering Dependency
 				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency
+				//VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME, // Dynamic Rendering Dependency
+				
 				VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 				/// Allows for rendering without framebuffers and render passes to simplify the graphics pipeline.
 				/// Downside is performance might worsen on tiling GPUs (mobile platforms), which is not relevant here.
 				
-				VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
+				VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 				/// Allows for writing descriptors directly into a command buffer rather than allocating from sets/pools.
 				/// This should be faster in some cases than actual descriptor sets/pools.
+				
+				//VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME
+				// Possible fix for AMD iGPUs.
 			};
 			
 			/// DEBUG_UTILITIES ///
@@ -76,10 +80,10 @@
 				VkApplicationInfo appInfo{};
 				appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 				appInfo.pApplicationName = title.c_str();
-				appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+				appInfo.applicationVersion = MVK_RENDERER_VERSION;
 				appInfo.pEngineName = "MiniVulkan";
-				appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-				appInfo.apiVersion = VK_API_VERSION_1_0;
+				appInfo.engineVersion = MVK_ENGINE_VERSION;
+				appInfo.apiVersion = MVK_API_VERSION;
 
 				VkInstanceCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

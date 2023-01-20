@@ -38,7 +38,7 @@
 		public:
 			VkFormat dataFormat = VK_FORMAT_B8G8R8A8_SRGB;
 			VkColorSpaceKHR colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-			VkPresentModeKHR idealPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+			VkPresentModeKHR idealPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 		};
 	}
 #endif

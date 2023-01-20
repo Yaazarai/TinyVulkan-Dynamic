@@ -179,10 +179,10 @@
     <ClInclude Include="Invokable.hpp" />
     <ClInclude Include="MiniVk.hpp" />
     <ClInclude Include="MiniVkCommandPool.hpp" />
-    <ClInclude Include="MiniVkCoordSystem.h" />
     <ClInclude Include="MiniVkDynamicPipeline.hpp" />
     <ClInclude Include="MiniVkDynamicRenderer.hpp" />
     <ClInclude Include="MiniVkInstance.hpp" />
+    <ClInclude Include="MiniVkMath.hpp" />
     <ClInclude Include="MiniVkMemAlloc.hpp" />
     <ClInclude Include="MiniVkObject.hpp" />
     <ClInclude Include="MiniVkQueueFamily.hpp" />

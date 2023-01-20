@@ -60,18 +60,10 @@ struct MiniVkIndexer {
     std::vector<uint32_t> indices;
 };
 
-static glm::mat4x4 ProjectionMatrix(float width, float height, float znear, float zfar) {
-    return glm::transpose(glm::mat4(
-        2.0/(width - 1), 0.0, 0.0, -1.0,
-        0.0, 2.0/(height-1), 0.0, -1.0,
-        0.0, 0.0, -2.0/(zfar-znear), -((zfar+znear)/(znear-zfar)),
-        0.0, 0.0, 0.0, 1.0));
-}
-
 int MINIVULKAN_MAIN {
     /// MINI VULKAN & WINDOW INITIALIZATION /////////////////////////////////////////////////////////////////////////////////////////////////////////
     MiniVkWindow window(1920, 1080, true, "MINIVK WINDOW", false);
-    MiniVkInstance mvkInstance(window.GetRequiredExtensions(MiniVkInstance::enableValidationLayers), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU});
+    MiniVkInstance mvkInstance(window.GetRequiredExtensions(MiniVkInstance::enableValidationLayers), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU});
     mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
     /// SWAPCHAIN & WINDOW/SWAPCHAIN COMMUNICATION UPDAITNG /////////////////////////////////////////////////////////////////////////////////////////
@@ -101,17 +93,11 @@ int MINIVULKAN_MAIN {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     std::vector<MiniVkVertex> triangle {
-        {{480.0,480.0}, {1.0,0.0,0.0,0.0}},
-        {{1440,480}, {0.0,1.0,0.0,1.0}},
-        {{1440,1440}, {0.0,0.0,1.0,0.0}},
-        {{480,1440}, {0.0,1.0,1.0,1.0}}
+        {{480.0,270.0}, {1.0,0.0,0.0,0.0}},
+        {{1440.0,270.0}, {0.0,1.0,0.0,1.0}},
+        {{1440.0,810.0}, {0.0,0.0,1.0,0.0}},
+        {{480.0,810.0}, {0.0,1.0,1.0,1.0}}
     };
-    //std::vector<MiniVkVertex> triangle {
-    //    {{-0.5,-0.5}, {1.0,0.0,0.0,0.0}},
-    //    {{+0.5,-0.5}, {0.0,1.0,0.0,1.0}},
-    //    {{+0.5,+0.5}, {0.0,0.0,1.0,0.0}},
-    //    {{-0.5,+0.5}, {0.0,1.0,1.0,1.0}}
-    //};
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
     MiniVkBuffer vbuffer(mvkInstance, memAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
@@ -124,9 +110,10 @@ int MINIVULKAN_MAIN {
 
         VkBuffer vertexBuffers[] = { vbuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
-        auto projection = ProjectionMatrix(1920, 1080, -1, 1);
-        vkCmdPushConstants(commandBuffer, dynamicPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
 
+        glm::mat4 projection = MiniVkMath::Project2D(1920.0, 1080.0, -1.0, 1.0);
+        vkCmdPushConstants(commandBuffer, dynamicPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
+        
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size)/sizeof(uint32_t), 1, 0, 0, 0);

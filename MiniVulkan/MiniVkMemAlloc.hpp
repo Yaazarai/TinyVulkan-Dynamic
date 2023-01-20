@@ -16,17 +16,12 @@
 
 			MiniVkMemAlloc(MiniVkInstance& mvkLayer) : mvkLayer(mvkLayer) {
 				onDispose += std::callback<>(this, &MiniVkMemAlloc::Disposable);
-			
-				VmaVulkanFunctions vulkanFunctions = {};
-				vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
-				vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
 
 				VmaAllocatorCreateInfo allocatorCreateInfo = {};
-				allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+				allocatorCreateInfo.vulkanApiVersion = MVK_API_VERSION;
 				allocatorCreateInfo.physicalDevice = mvkLayer.physicalDevice;
 				allocatorCreateInfo.device = mvkLayer.logicalDevice;
 				allocatorCreateInfo.instance = mvkLayer.instance;
-				allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
 				vmaCreateAllocator(&allocatorCreateInfo, &memoryAllocator);
 			}

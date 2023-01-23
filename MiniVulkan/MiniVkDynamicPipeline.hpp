@@ -3,6 +3,13 @@
 #define MINIVK_MINIVKDYNAMICPIPELINE
 	#include "./MiniVk.hpp"
 
+	VkResult vkCmdPushDescriptorSetEKHR(VkInstance instance, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t set, uint32_t writeCount, const VkWriteDescriptorSet* pWriteSets) {
+		auto func = (PFN_vkCmdPushDescriptorSetKHR)vkGetInstanceProcAddr(instance, "vkCmdPushDescriptorSetKHR");
+		if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdPushDescriptorSetKHR");
+		func(commandBuffer, bindPoint, layout, set, writeCount, pWriteSets);
+		return VK_SUCCESS;
+	}
+
 	namespace MINIVULKAN_NS {
 		#define VKCOMP_RGBA VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		#define VKCOMP_BGRA VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT
@@ -14,6 +21,9 @@
 			/// GRAPHICS_PIPELINE ///
 			VkVertexInputBindingDescription vertexBindingDescription;
 			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition;
+
+			VkDescriptorSetLayout descriptorLayout;
+			std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
 
 			std::vector<VkPushConstantRange> pushConstantRanges;
 			MiniVkShaderStages& shaderStages;
@@ -30,14 +40,15 @@
 
 			void Disposable() {
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
+				vkDestroyDescriptorSetLayout(mvkLayer.logicalDevice, descriptorLayout, nullptr);
 				vkDestroyPipeline(mvkLayer.logicalDevice, graphicsPipeline, nullptr);
 				vkDestroyPipelineLayout(mvkLayer.logicalDevice, pipelineLayout, nullptr);
 			}
 
 			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, VkFormat imageFormat, MiniVkShaderStages& shaderStages, VkVertexInputBindingDescription vertexBindingDescription,
-			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 			: mvkLayer(mvkLayer), shaderStages(shaderStages), vertexBindingDescription(vertexBindingDescription), vertexAttributeDescrition(vertexAttributeDescrition),
-			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), pushConstantRanges(pushConstantRanges) {
+			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
@@ -72,6 +83,20 @@
 				if (pushConstantRangeCount > 0) {
 					pipelineLayoutInfo.pushConstantRangeCount = pushConstantRangeCount;
 					pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+				}
+
+				if (descriptorBindings.size() > 0) {
+					VkDescriptorSetLayoutCreateInfo descriptorCreateInfo {};
+					descriptorCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+					descriptorCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+					descriptorCreateInfo.bindingCount = static_cast<uint32_t>(descriptorBindings.size());
+					descriptorCreateInfo.pBindings = descriptorBindings.data();
+					
+					if (vkCreateDescriptorSetLayout(mvkLayer.logicalDevice, &descriptorCreateInfo, nullptr, &descriptorLayout) != VK_SUCCESS)
+						throw std::runtime_error("MiniVulkan: Failed to create push descriptor bindings! ");
+
+					pipelineLayoutInfo.setLayoutCount = 1;
+					pipelineLayoutInfo.pSetLayouts = &descriptorLayout;
 				}
 
 				if (vkCreatePipelineLayout(mvkLayer.logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
@@ -162,6 +187,38 @@
 				pushConstantRange.offset = 0;
 				pushConstantRange.size = pushConstantRangeSize;
 				return pushConstantRange;
+			}
+
+			inline static VkDescriptorSetLayoutBinding SelectPushDescriptorLayoutBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t descriptorCount = 1) {
+				VkDescriptorSetLayoutBinding descriptorLayoutBinding {};
+				descriptorLayoutBinding.binding = binding;
+				descriptorLayoutBinding.descriptorCount = descriptorCount;
+				descriptorLayoutBinding.descriptorType = descriptorType;
+				descriptorLayoutBinding.pImmutableSamplers = nullptr;
+				descriptorLayoutBinding.stageFlags = stageFlags;
+				return descriptorLayoutBinding;
+			}
+
+			inline static VkWriteDescriptorSet SelectWriteImageDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorImageInfo* imageInfo) {
+				VkWriteDescriptorSet writeDescriptorSets{};
+				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets.dstSet = 0;
+				writeDescriptorSets.dstBinding = binding;
+				writeDescriptorSets.descriptorCount = descriptorCount;
+				writeDescriptorSets.descriptorType = descriptorType;
+				writeDescriptorSets.pImageInfo = imageInfo;
+				return writeDescriptorSets;
+			}
+
+			inline static VkWriteDescriptorSet SelectWriteBufferDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorBufferInfo* bufferInfo) {
+				VkWriteDescriptorSet writeDescriptorSets{};
+				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets.dstSet = 0;
+				writeDescriptorSets.dstBinding = binding;
+				writeDescriptorSets.descriptorCount = descriptorCount;
+				writeDescriptorSets.descriptorType = descriptorType;
+				writeDescriptorSets.pBufferInfo = bufferInfo;
+				return writeDescriptorSets;
 			}
 		};
 	}

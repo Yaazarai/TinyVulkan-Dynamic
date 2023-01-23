@@ -47,6 +47,7 @@
 
 			/// <summary>Create the Vulkan surface swapchain.</summary>
 			void CreateSwapChain() {
+				vkDeviceWaitIdle(mvkLayer.logicalDevice);
 				CreateSwapChainImages();
 				CreateSwapChainImageViews();
 			}
@@ -55,8 +56,9 @@
 			void ReCreateSwapChain() {
 				int w, h;
 				onReCreateSwapChain.invoke(w, h);
-				createInfo.oldSwapchain = swapChain;
+
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
+				createInfo.oldSwapchain = swapChain;
 				Disposable();
 				CreateSwapChain();
 				currentFrame = 0;
@@ -68,9 +70,16 @@
 				VkSurfaceFormatKHR surfaceFormat = QuerySwapSurfaceFormat(swapChainSupport.formats);
 				VkPresentModeKHR presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
 				VkExtent2D extent = QuerySwapExtent(swapChainSupport.capabilities);
-
 				uint32_t imageCount = MIN(swapChainSupport.capabilities.maxImageCount, MAX(swapChainSupport.capabilities.minImageCount, static_cast<uint32_t>(bufferingMode)));
 				
+				while(extent.width == 0u || extent.height == 0u) {
+					int w, h; onReCreateSwapChain.invoke(w, h);
+					swapChainSupport = QuerySwapChainSupport(mvkLayer.physicalDevice);
+					surfaceFormat = QuerySwapSurfaceFormat(swapChainSupport.formats);
+					presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
+					extent = QuerySwapExtent(swapChainSupport.capabilities);
+				}
+
 				if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 					imageCount = swapChainSupport.capabilities.maxImageCount;
 
@@ -186,21 +195,17 @@
 				return VK_PRESENT_MODE_FIFO_KHR;
 			}
 
-			/// <summary>Select swap-chaion extent (swap-chain surface resolution).</summary>
+			/// <summary>Select swap-chain extent (swap-chain surface resolution).</summary>
 			VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
-				if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-					return capabilities.currentExtent;
-				} else {
-					int width, height;
-					onGetFrameBufferSize.invoke(width, height);
-					width = MIN(1, width);
-					height = MIN(1, height);
+				int width, height;
+				onGetFrameBufferSize.invoke(width, height);
 
-					VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
-					actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-					actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-					return actualExtent;
-				}
+				VkExtent2D actualExtent {
+					MIN(MAX((uint32_t)width, capabilities.minImageExtent.width), capabilities.maxImageExtent.width),
+					MIN(MAX((uint32_t)height, capabilities.minImageExtent.height), capabilities.maxImageExtent.height)
+				};
+
+				return actualExtent;
 			}
 
 			/// <summary>Acquires the next image from the swap chain and returns out that image index.</summary>

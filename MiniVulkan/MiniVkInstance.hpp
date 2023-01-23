@@ -29,9 +29,6 @@
 				VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 				/// Allows for writing descriptors directly into a command buffer rather than allocating from sets/pools.
 				/// This should be faster in some cases than actual descriptor sets/pools.
-				
-				//VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME
-				// Possible fix for AMD iGPUs.
 			};
 			
 			/// DEBUG_UTILITIES ///
@@ -41,9 +38,9 @@
 			VkApplicationInfo appInfo{};
 		public:
 			#ifdef _DEBUG
-			const static bool enableValidationLayers = true;
+			#define MVK_ENABLE_VALIDATION_LAYERS true
 			#else
-			const static bool enableValidationLayers = false;
+			#define MVK_ENABLE_VALIDATION_LAYERS false
 			#endif
 
 			/// PHYSICAL_LOGICAL_DEVICES ///
@@ -61,7 +58,7 @@
 			void Disposable() {
 				vkDeviceWaitIdle(logicalDevice);
 				vkDestroyDevice(logicalDevice, nullptr);
-				if (enableValidationLayers) DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+				if (MVK_ENABLE_VALIDATION_LAYERS) DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 				vkDestroySurfaceKHR(instance, presentationSurface, nullptr);
 				vkDestroyInstance(instance, nullptr);
 			}
@@ -92,7 +89,7 @@
 				//////////////////////////////////////////////////////////////////////////////////////////
 				/////////////////////////// Validation Layer Support Handling ////////////////////////////
 				VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo {};
-				if (enableValidationLayers) {
+				if (MVK_ENABLE_VALIDATION_LAYERS) {
 					if (!QueryValidationLayerSupport())
 						throw std::runtime_error("MiniVulkan: Failed to initialize validation layers!");
 
@@ -172,7 +169,7 @@
 				createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 				createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-				if (enableValidationLayers) {
+				if (MVK_ENABLE_VALIDATION_LAYERS) {
 					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 					createInfo.ppEnabledLayerNames = validationLayers.data();
 				} else { createInfo.enabledLayerCount = 0; }
@@ -311,7 +308,7 @@
 			}
 
 			void SetupDebugMessenger() {
-				if (!enableValidationLayers) return;
+				if (!MVK_ENABLE_VALIDATION_LAYERS) return;
 
 				VkDebugUtilsMessengerCreateInfoEXT createInfo;
 				PopulateDebugMessengerCreateInfo(createInfo);

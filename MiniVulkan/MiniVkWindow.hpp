@@ -55,6 +55,7 @@
 				glfwInit();
 				glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 				glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
+				
 				hwndResizable = resizable;
 				hwndWidth = width;
 				hwndHeight = height;
@@ -67,10 +68,14 @@
 
 			/// <summary>Pass to render engine for swapchain resizing.</summary>
 			void OnFrameBufferReSizeCallback(int& width, int& height) {
-				glfwGetFramebufferSize(hwndWindow, &width, &height);
+				width = 0;
+				height = 0;
 
 				while (width <= 0 || height <= 0)
 					glfwGetFramebufferSize(hwndWindow, &width, &height);
+
+				hwndWidth = width;
+				hwndHeight = height;
 			}
 
 			/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
@@ -142,6 +147,13 @@
 
 			/// <summary>[overridable] Gets the required GLFW extensions.</summary>
 			virtual std::vector<const char*> GetRequiredExtensions(bool enableValidationLayers) {
+				return MiniVkWindow::QueryRequiredExtensions(enableValidationLayers);
+			}
+
+			/// <summary>[overridable] Gets the required GLFW extensions.</summary>
+			static std::vector<const char*> QueryRequiredExtensions(bool enableValidationLayers) {
+				glfwInit();
+
 				uint32_t glfwExtensionCount = 0;
 				const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 				std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
@@ -151,6 +163,12 @@
 
 				return extensions;
 			}
+			
+			/// <summary>[overridable] Returns the window's framebuffer width.</summary>
+			virtual int GetWidth() { return MAX(hwndWidth, 1); }
+
+			/// <summary>[overridable] Returns the window's framebuffer height.</summary>
+			virtual int GetHeight() { return MAX(hwndHeight, 1); }
 		};
 	}
 #endif

@@ -143,15 +143,6 @@
 		private:
 			MiniVkInstance& mvkLayer;
 			MiniVkMemAlloc& vmAlloc;
-			
-			VmaAllocation memory = VK_NULL_HANDLE;
-			VkImage image = VK_NULL_HANDLE;
-			VkImageView imageView = VK_NULL_HANDLE;
-			VkSampler imageSampler = VK_NULL_HANDLE;
-
-			VkDeviceSize width, height;
-			VkFormat format;
-			VkImageLayout layout;
 						
 			VkSemaphore availableSmphr = VK_NULL_HANDLE;
 			VkSemaphore finishedSmphr = VK_NULL_HANDLE;
@@ -230,7 +221,16 @@
 				vmaDestroyImage(vmAlloc.GetAllocator(), image, memory);
 			}
 
-			MiniVkImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED)
+			VmaAllocation memory = VK_NULL_HANDLE;
+			VkImage image = VK_NULL_HANDLE;
+			VkImageView imageView = VK_NULL_HANDLE;
+			VkSampler imageSampler = VK_NULL_HANDLE;
+			VkImageLayout layout;
+
+			VkDeviceSize width, height;
+			VkFormat format;
+
+			MiniVkImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED)
 			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), width(width), height(height), format(format), layout(layout) {
 				onDispose += std::callback<>(this, &MiniVkImage::Disposable);
 
@@ -241,7 +241,7 @@
 				imgCreateInfo.extent.depth = 1;
 				imgCreateInfo.mipLevels = 1;
 				imgCreateInfo.arrayLayers = 1;
-				imgCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+				imgCreateInfo.format = format;
 				imgCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 				imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 				imgCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;

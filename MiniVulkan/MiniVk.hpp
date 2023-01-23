@@ -127,36 +127,36 @@
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// Allows for easy function callbacks and event handling.
-    /* 01 */ #include "./Invokable.hpp"
+    /* 00 */ #include "./Invokable.hpp"
     
     /// MiniVulkan object for memory disposal interface.
-    /* 02 */ #include "./MiniVkObject.hpp"
+    /* 01 */ #include "./MiniVkObject.hpp"
     
     /// Basic Thread Pool (C++ is stupid--not provided in STL).
-    /* 03 */ #include "./MiniVkThreadPool.hpp"
-    
-    /// Default (overridable) Window class implementation using GLFW.
-    /* 04 */ #include "./MiniVkWindow.hpp"
+    /* 02 */ #include "./MiniVkThreadPool.hpp"
 
     /// Support classes for passing Vulkan information.
-    /* 05 */ #include "./MiniVkSupportDetails.hpp"
+    /* 03 */ #include "./MiniVkSupportDetails.hpp"
 
     /// Graphics/Presentation queues (used for sending draw commands to GPUs).
     /// This can be modified for compute shaders (VK_QUEUE_COMPUTE_BIT). *NOT_SUPPORTED
-    /* 06 */ #include "./MiniVkQueueFamily.hpp"
+    /* 04 */ #include "./MiniVkQueueFamily.hpp"
 
     /// The Vulkan instance which handles the DEVICE-HOST driver connection.
-    /* 07 */ #include "./MiniVkInstance.hpp"
+    /* 05 */ #include "./MiniVkInstance.hpp"
+
+    /// Default (overridable) Window class implementation using GLFW.
+    /* 06 */ #include "./MiniVkWindow.hpp"
 
     /// Swap Chains handle queuing framebuffers/vkimages(render images) for drawing and rendering to the screen.
     /// These images are borrowed from the device driver and are returned at the end of the rendering frame.
     /// You must create your own VkImages for offscreen rendering.
-    /* 09 */ #include "./MiniVkSwapChain.hpp"
+    /* 07 */ #include "./MiniVkSwapChain.hpp"
 
     /// Array of buffers for writing render/transfer commands to.
     /// Command Buffers (in the command pool) are used for all rendering and memory operations with the GPU.
     /// This includes both rendering to images using shaders and copying data from the HOST(PC/CPU) to the DEVICE(GPU).
-    /* 10 */ #include "./MiniVkCommandPool.hpp"
+    /* 08 */ #include "./MiniVkCommandPool.hpp"
 
     /// Vulkan Memory Allocator (Buffer / Image memory allocation on host/device)
     /// Buffer, Vertex and Uniform Buffers for shaders.
@@ -164,22 +164,22 @@
     ///     *** All MiniVkBuffer operations are STAGED (see header file for documentation info).
     /// Vertex buffers provide an interface for passing vertex model information to shaders.
     /// Uniform buffers provide an interface for passing shader constant information to shaders.
-    /* 08 */ #include "./MiniVkMemAlloc.hpp"
+    /* 09 */ #include "./MiniVkMemAlloc.hpp"
 
     /// Shader Info and Ordering for passing to the graphics pipeline for the final render.
-    /* 12 */ #include "./MiniVkShaderStage.hpp"
+    /* 10 */ #include "./MiniVkShaderStage.hpp"
     
+    /// Represents a renderable image(drawing surface) in Vulkan with attached semaphores/fences (optional usage).
+    /* 11 */ #include "./MiniVkImage.hpp"
+
     /// Dynamic Drawing/Rendering Pipeline (avoids [framebuffers/renderpasses/subpasses] which may be slower on mobile hardware).
-    /* 13 */ #include "./MiniVkDynamicPipeline.hpp"
+    /* 12 */ #include "./MiniVkDynamicPipeline.hpp"
 
     /// Dynamic Renderer for actually drawing to the screen using a SwapChain or custom VkImage render targets.
-    /* 14 */ #include "./MiniVkDynamicRenderer.hpp"
-
-    /// Represents a renderable image(drawing surface) in Vulkan with attached semaphores/fences (optional usage).
-    /* 15 */ #include "./MiniVkImage.hpp"
+    /* 13 */ #include "./MiniVkDynamicRenderer.hpp"
 
     /// Simple math functions for vertices, matrix transforms, etc.
-    /* 16 */ #include "./MiniVkMath.hpp"
+    /* 14 */ #include "./MiniVkMath.hpp"
     //// MINIVULKAN HEADER INCLUDES ////
     ////////////////////////////////////
 #endif

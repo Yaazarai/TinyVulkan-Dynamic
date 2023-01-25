@@ -35,20 +35,21 @@ int MINIVULKAN_MAIN {
     MiniVkMemAlloc memAlloc(mvkInstance);
     MiniVkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
     MiniVkShaderStages shaders(mvkInstance, { DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER }, { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
+    
     MiniVkDynamicPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(),
     { MiniVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT)},
     { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4),VK_SHADER_STAGE_VERTEX_BIT) });
-    MiniVkDynamicSwapChainRenderer dyRender(mvkInstance, cmdPool, swapChain, dyPipe);
+    MiniVkDynamicRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);
 
     window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
     swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
 
     std::vector<MiniVkVertex> triangle {
-        {{0.0,0.0}, {480.0,270.0}, {1.0,0.0,0.0,1.0}},
-        {{1.0,0.0}, {1440.0,270.0}, {0.0,1.0,0.0,1.0}},
-        {{1.0,1.0}, {1440.0,810.0}, {0.0,0.0,1.0,1.0}},
-        {{0.0,1.0}, {480.0,810.0}, {0.0,1.0,1.0,1.0}}
+        {{0.0,0.0}, {480.0,270.0}, {0.0,0.0,0.0,0.5}},
+        {{1.0,0.0}, {1440.0,270.0}, {0.0,0.0,0.0,0.5}},
+        {{1.0,1.0}, {1440.0,810.0}, {0.0,0.0,0.0,0.5}},
+        {{0.0,1.0}, {480.0,810.0}, {0.0,0.0,0.0,0.5}}
     };
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
@@ -69,7 +70,10 @@ int MINIVULKAN_MAIN {
     QOI_FREE(qoiPixels);
 
     dyRender.onRenderEvents += std::callback<VkCommandBuffer>([&mvkInstance, &image, &window, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dyRender, &dyPipe](VkCommandBuffer commandBuffer) {
-        dyRender.BeginRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
+        VkClearValue clearColor{};
+        clearColor.color = { 0.0, 0.0, 0.0, 0.0 };
+
+        dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
         
         VkBuffer vertexBuffers[] = { vbuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
@@ -87,7 +91,7 @@ int MINIVULKAN_MAIN {
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
         
-        dyRender.EndRecordCommandBuffer(commandBuffer, { 0.0, 0.0, 0.0, 1.0 }, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
+        dyRender.EndRecordCommandBuffer(commandBuffer, clearColor, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     });
 
     std::thread mythread([&mvkInstance, &window, &dyRender]() { while (!window.ShouldClose()) { dyRender.RenderFrame(); } });

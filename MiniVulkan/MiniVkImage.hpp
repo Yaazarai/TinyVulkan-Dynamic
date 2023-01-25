@@ -144,6 +144,7 @@
 			MiniVkInstance& mvkLayer;
 			MiniVkMemAlloc& vmAlloc;
 						
+			VkSamplerAddressMode addressingMode;
 			VkSemaphore availableSmphr = VK_NULL_HANDLE;
 			VkSemaphore finishedSmphr = VK_NULL_HANDLE;
 			VkFence inFlightFence = VK_NULL_HANDLE;
@@ -175,9 +176,9 @@
 				samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 				samplerInfo.magFilter = VK_FILTER_LINEAR;
 				samplerInfo.minFilter = VK_FILTER_LINEAR;
-				samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-				samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-				samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+				samplerInfo.addressModeU = addressingMode;
+				samplerInfo.addressModeV = addressingMode;
+				samplerInfo.addressModeW = addressingMode;
 				samplerInfo.anisotropyEnable = VK_FALSE;
 				
 				VkPhysicalDeviceProperties properties{};
@@ -230,10 +231,15 @@
 			VkDeviceSize width, height;
 			VkFormat format;
 
-			MiniVkImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED)
-			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), width(width), height(height), format(format), layout(layout) {
+			MiniVkImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), width(width), height(height), format(format), layout(layout), addressingMode(addressingMode) {
 				onDispose += std::callback<>(this, &MiniVkImage::Disposable);
 
+				ReCreateImage(width, height, format, layout, addressingMode);
+				CreateSyncObjects();
+			}
+
+			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT) {
 				VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 				imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 				imgCreateInfo.extent.width = static_cast<uint32_t>(width);
@@ -255,15 +261,9 @@
 				if (vmaCreateImage(vmAlloc.GetAllocator(), &imgCreateInfo, &allocCreateInfo, &image, &memory, nullptr) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Could not allocate GPU image data for MiniVkImage!");
 
-				CreateSyncObjects();
 				CreateTextureSampler();
 				CreateImageView();
 			}
-
-			MiniVkImage operator=(const MiniVkImage& mvkImage) = delete;
-
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			void TransitionLayoutCmd(VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout newLayout) {
 				VkCommandBuffer commandBuffer = BeginTransferCmd(graphicsQueue, commandPool);
@@ -296,7 +296,7 @@
 					sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 					destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 				} else {
-					throw std::invalid_argument("unsupported layout transition!");
+					throw std::invalid_argument("MiniVkImage: Unsupported layout transition!");
 				}
 
 				layout = newLayout;
@@ -364,9 +364,6 @@
 				vkQueueWaitIdle(graphicsQueue);
 				vkFreeCommandBuffers(mvkLayer.logicalDevice, commandPool, 1, &commandBuffer);
 			}
-
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		};
 	}
 #endif

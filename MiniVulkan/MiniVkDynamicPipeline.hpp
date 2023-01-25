@@ -129,16 +129,14 @@
 				multisampling.sampleShadingEnable = VK_FALSE;
 				multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-				VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-				colorBlendAttachment.colorWriteMask = colorComponentFlags;
-				colorBlendAttachment.blendEnable = VK_FALSE;
-
 				VkPipelineColorBlendStateCreateInfo colorBlending{};
 				colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 				colorBlending.logicOpEnable = VK_FALSE;
 				colorBlending.logicOp = VK_LOGIC_OP_COPY;
 				colorBlending.attachmentCount = 1;
-				colorBlending.pAttachments = &colorBlendAttachment;
+
+				VkPipelineColorBlendAttachmentState blendDescription = GetBlendDescription(true);
+				colorBlending.pAttachments = &blendDescription;
 				colorBlending.blendConstants[0] = 0.0f;
 				colorBlending.blendConstants[1] = 0.0f;
 				colorBlending.blendConstants[2] = 0.0f;
@@ -166,7 +164,7 @@
 				pipelineInfo.pRasterizationState = &rasterizer;
 				pipelineInfo.pMultisampleState = &multisampling;
 				pipelineInfo.pColorBlendState = &colorBlending;
-
+				
 				pipelineInfo.pDynamicState = &dynamicState;
 				pipelineInfo.pNext = &renderingCreateInfo;
 
@@ -178,7 +176,6 @@
 
 				if (vkCreateGraphicsPipelines(mvkLayer.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create graphics pipeline!");
-				///////////////////////////////////////////////////////////////////////////////////////////////////////
 			}
 
 			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
@@ -219,6 +216,20 @@
 				writeDescriptorSets.descriptorType = descriptorType;
 				writeDescriptorSets.pBufferInfo = bufferInfo;
 				return writeDescriptorSets;
+			}
+
+			inline static VkPipelineColorBlendAttachmentState GetBlendDescription(bool isBlendingEnabled) {
+				VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				colorBlendAttachment.blendEnable = isBlendingEnabled;
+				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+				colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+				colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+				colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+				colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+				colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+				return colorBlendAttachment;
 			}
 		};
 	}

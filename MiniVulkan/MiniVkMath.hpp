@@ -6,7 +6,7 @@
 namespace MINIVULKAN_NS {
 	class MiniVkMath {
 	public:
-        static glm::mat4 Project2D(double width, double height, double znear, double zfar) {
+        constexpr static glm::mat4 Project2D(double width, double height, double znear, double zfar) {
             //return glm::transpose(glm::mat4(
             //    2.0/(width - 1), 0.0, 0.0, -1.0,
             //    0.0, 2.0/(height-1), 0.0, -1.0,

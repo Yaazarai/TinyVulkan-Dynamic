@@ -42,6 +42,7 @@
 				if (vmaCreateBuffer(vmAlloc.GetAllocator(), &bufCreateInfo, &allocCreateInfo, &buffer, &memory, &description) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Could not allocate memory for MiniVkBuffer!");
 			}
+		
 		public:
 			MiniVkInstance& mvkLayer;
 			MiniVkMemAlloc& vmAlloc;
@@ -155,13 +156,13 @@
 				createInfo.image = image;
 				createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 				createInfo.format = format;
-
+				
 				createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 				createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 				createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 				createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-				createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				createInfo.subresourceRange.aspectMask = aspectFlags;
 				createInfo.subresourceRange.baseMipLevel = 0;
 				createInfo.subresourceRange.levelCount = 1;
 				createInfo.subresourceRange.baseArrayLayer = 0;
@@ -227,19 +228,20 @@
 			VkImageView imageView = VK_NULL_HANDLE;
 			VkSampler imageSampler = VK_NULL_HANDLE;
 			VkImageLayout layout;
+			VkImageAspectFlags aspectFlags;
 
 			VkDeviceSize width, height;
 			VkFormat format;
+			bool isDepthImage = false;
 
-			MiniVkImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
-			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), width(width), height(height), format(format), layout(layout), addressingMode(addressingMode) {
+			MiniVkImage(MiniVkInstance& mvkLayer, MiniVkMemAlloc& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
+			: mvkLayer(mvkLayer), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), layout(layout), addressingMode(addressingMode), aspectFlags(aspectFlags) {
 				onDispose += std::callback<>(this, &MiniVkImage::Disposable);
 
-				ReCreateImage(width, height, format, layout, addressingMode);
-				CreateSyncObjects();
+				ReCreateImage(width, height, isDepthImage, format, layout, addressingMode, aspectFlags);
 			}
 
-			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT) {
+			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT) {
 				VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 				imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 				imgCreateInfo.extent.width = static_cast<uint32_t>(width);
@@ -250,8 +252,13 @@
 				imgCreateInfo.format = format;
 				imgCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 				imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				imgCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 				imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+				
+				if (!isDepthImage) {
+					imgCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+				} else {
+					imgCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+				}
 
 				VmaAllocationCreateInfo allocCreateInfo = {};
 				allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -261,6 +268,7 @@
 				if (vmaCreateImage(vmAlloc.GetAllocator(), &imgCreateInfo, &allocCreateInfo, &image, &memory, nullptr) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Could not allocate GPU image data for MiniVkImage!");
 
+				CreateSyncObjects();
 				CreateTextureSampler();
 				CreateImageView();
 			}
@@ -275,7 +283,7 @@
 				barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				barrier.image = image;
-				barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				barrier.subresourceRange.aspectMask = aspectFlags;
 				barrier.subresourceRange.baseMipLevel = 0;
 				barrier.subresourceRange.levelCount = 1;
 				barrier.subresourceRange.baseArrayLayer = 0;
@@ -295,7 +303,20 @@
 
 					sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 					destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				} else if (layout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+					barrier.srcAccessMask = 0;
+					barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+					destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+				} else if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+					barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+					if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
+						barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+					}
 				} else {
+					barrier.subresourceRange.aspectMask = aspectFlags;
 					throw std::invalid_argument("MiniVkImage: Unsupported layout transition!");
 				}
 
@@ -312,7 +333,7 @@
 				region.bufferOffset = 0;
 				region.bufferRowLength = 0;
 				region.bufferImageHeight = 0;
-				region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				region.imageSubresource.aspectMask = aspectFlags;
 				region.imageSubresource.mipLevel = 0;
 				region.imageSubresource.baseArrayLayer = 0;
 				region.imageSubresource.layerCount = 1;

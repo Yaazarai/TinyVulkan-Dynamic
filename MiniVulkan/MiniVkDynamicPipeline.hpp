@@ -152,6 +152,20 @@
 				renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 				renderingCreateInfo.colorAttachmentCount = 1;
 				renderingCreateInfo.pColorAttachmentFormats = &imageFormat;
+				renderingCreateInfo.depthAttachmentFormat = QueryDepthFormat();
+
+				VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
+				depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+				depthStencilInfo.depthTestEnable = VK_TRUE;
+				depthStencilInfo.depthWriteEnable = VK_TRUE;
+				depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+				depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+				depthStencilInfo.minDepthBounds = 0.0f; // Optional
+				depthStencilInfo.maxDepthBounds = 1.0f; // Optional
+				depthStencilInfo.stencilTestEnable = VK_FALSE;
+				depthStencilInfo.front = {}; // Optional
+				depthStencilInfo.back = {}; // Optional
+				
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -164,7 +178,8 @@
 				pipelineInfo.pRasterizationState = &rasterizer;
 				pipelineInfo.pMultisampleState = &multisampling;
 				pipelineInfo.pColorBlendState = &colorBlending;
-				
+				pipelineInfo.pDepthStencilState = &depthStencilInfo;
+
 				pipelineInfo.pDynamicState = &dynamicState;
 				pipelineInfo.pNext = &renderingCreateInfo;
 
@@ -176,6 +191,22 @@
 
 				if (vkCreateGraphicsPipelines(mvkLayer.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create graphics pipeline!");
+			}
+
+			VkFormat QueryDepthFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+				const std::vector<VkFormat>& candidates = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
+				for (VkFormat format : candidates) {
+					VkFormatProperties props;
+					vkGetPhysicalDeviceFormatProperties(mvkLayer.physicalDevice, format, &props);
+
+					if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+						return format;
+					} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+						return format;
+					}
+				}
+
+				throw std::runtime_error("MiniVulkan: Failed to find supported format!");
 			}
 
 			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {

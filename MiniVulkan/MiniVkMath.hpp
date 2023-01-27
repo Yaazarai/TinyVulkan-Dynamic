@@ -20,10 +20,10 @@ namespace MINIVULKAN_NS {
 
     struct MiniVkVertex {
         glm::vec2 texcoord;
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec4 color;
 
-        MiniVkVertex(glm::vec2 tex, glm::vec2 pos, glm::vec4 col) : texcoord(tex), position(pos), color(col) {}
+        MiniVkVertex(glm::vec2 tex, glm::vec3 pos, glm::vec4 col) : texcoord(tex), position(pos), color(col) {}
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription(1);
@@ -42,7 +42,7 @@ namespace MINIVULKAN_NS {
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
-            attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
             attributeDescriptions[1].offset = offsetof(MiniVkVertex, position);
 
             attributeDescriptions[2].binding = 0;

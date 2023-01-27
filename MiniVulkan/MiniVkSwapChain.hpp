@@ -37,8 +37,8 @@
 				vkDestroySwapchainKHR(mvkLayer.logicalDevice, swapChain, nullptr);
 			}
 
-			MiniVkSwapChain(MiniVkInstance& mvkLayer, MiniVkSurfaceSupportDetails presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageViewCount = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-			: mvkLayer(mvkLayer), bufferingMode(bufferingMode), presentDetails(presentDetails), swapChainImageUsage(imageViewCount) {
+			MiniVkSwapChain(MiniVkInstance& mvkLayer, MiniVkSurfaceSupportDetails presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			: mvkLayer(mvkLayer), bufferingMode(bufferingMode), presentDetails(presentDetails), swapChainImageUsage(imageUsage) {
 				onDispose += std::callback<>(this, &MiniVkSwapChain::Disposable);
 				CreateSwapChain();
 			}

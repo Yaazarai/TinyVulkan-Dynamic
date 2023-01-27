@@ -45,13 +45,17 @@ int MINIVULKAN_MAIN {
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
     swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
 
-    std::vector<MiniVkVertex> triangle {
-        {{0.0,0.0}, {480.0,270.0}, {0.0,0.0,0.0,0.5}},
-        {{1.0,0.0}, {1440.0,270.0}, {0.0,0.0,0.0,0.5}},
-        {{1.0,1.0}, {1440.0,810.0}, {0.0,0.0,0.0,0.5}},
-        {{0.0,1.0}, {480.0,810.0}, {0.0,0.0,0.0,0.5}}
+    std::vector<MiniVkVertex> triangle{
+        {{0.0,0.0}, {480.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
+        {{1.0,0.0}, {1440.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
+        {{1.0,1.0}, {1440.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
+        {{0.0,1.0}, {480.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
+        {{0.0,0.0}, {480.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
+        {{1.0,0.0}, {1440.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
+        {{1.0,1.0}, {1440.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
+        {{0.0,1.0}, {480.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}}
     };
-    std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
+    std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
 
     MiniVkBuffer vbuffer(mvkInstance, memAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
     vbuffer.StageBufferData(dyPipe.graphicsQueue, cmdPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
@@ -65,33 +69,49 @@ int MINIVULKAN_MAIN {
     void* qoiPixels = qoi_read("./Screeny.qoi", &qoidesc, channels);
     VkDeviceSize dataSize = qoidesc.width * qoidesc.height * qoidesc.channels;
     
-    MiniVkImage image = MiniVkImage(mvkInstance, memAlloc, qoidesc.width, qoidesc.height, VK_FORMAT_R8G8B8A8_SRGB);
+    MiniVkImage image = MiniVkImage(mvkInstance, memAlloc, qoidesc.width, qoidesc.height, false, VK_FORMAT_R8G8B8A8_SRGB);
     image.StageImageData(dyPipe.graphicsQueue, cmdPool.GetPool(), qoiPixels, dataSize);
     QOI_FREE(qoiPixels);
 
     dyRender.onRenderEvents += std::callback<VkCommandBuffer>([&mvkInstance, &image, &window, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dyRender, &dyPipe](VkCommandBuffer commandBuffer) {
         VkClearValue clearColor{};
+        VkClearValue depthStencil{};
         clearColor.color = { 0.0, 0.0, 0.0, 0.0 };
+        depthStencil.depthStencil = { 1.0f, 0 };
 
-        dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
+        dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
         
         VkBuffer vertexBuffers[] = { vbuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
-        glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), -1.0, 1.0);
+        glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
 
         VkDescriptorImageInfo imageInfo;
         imageInfo.imageLayout = image.layout;
         imageInfo.imageView = image.imageView;
         imageInfo.sampler = image.imageSampler;
-        
+
         VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
         vkCmdPushDescriptorSetEKHR(mvkInstance.instance, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dyPipe.pipelineLayout, 0, 1, &writeDescriptorSets);
         vkCmdPushConstants(commandBuffer, dyPipe.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
+
+        /*
+            DEPTH BUFFER INFO:
+                The depth buffer is an image where the depth of each fragment of every draw call is
+                layered on top of eachother as each draw call is performed. This means that you have
+                to sort your draw calls by depth before rendering for "depth-testing," to work.
+
+                Depth-Testing tests the current pixel/fragment's depth against the depth buffer. If
+                the fragment's depth is lower than the depth buffer fragment, then the fragment is
+                discarded.
+
+                THIS IS NOT DEPTH-SORTING, JUST DEPTH-TESTING.
+        */
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 6, 0, 0);
         
-        dyRender.EndRecordCommandBuffer(commandBuffer, clearColor, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
+        dyRender.EndRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     });
 
     std::thread mythread([&mvkInstance, &window, &dyRender]() { while (!window.ShouldClose()) { dyRender.RenderFrame(); } });

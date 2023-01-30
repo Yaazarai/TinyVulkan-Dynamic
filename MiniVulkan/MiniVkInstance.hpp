@@ -8,15 +8,12 @@
 		private:
 			bool isInitialized = false;
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-			const std::vector<const char*> instanceExtensions = {
-				VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME // Dynamic Rendering Dependency
-			};
+			const std::vector<const char*> instanceExtensions = { VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME };
 			const std::vector<const char*> deviceExtensions = {
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 				/// Swapchain support for buffering frame images with the device driver to reduce tearing.
 				
-				// Used to enable high memory priority for VMA.
-				VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+				VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, // Used to enable high memory priority for VMA.
 
 				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, // Dynamic Rendering Dependency
 				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency
@@ -37,16 +34,10 @@
 			/// VKINSTANCE INFO ///
 			VkApplicationInfo appInfo{};
 		public:
-			#ifdef _DEBUG
-			#define MVK_ENABLE_VALIDATION_LAYERS true
-			#else
-			#define MVK_ENABLE_VALIDATION_LAYERS false
-			#endif
-
 			/// PHYSICAL_LOGICAL_DEVICES ///
 			std::vector<VkPhysicalDeviceType> physicalDeviceTypes;
 			VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-			VkDevice logicalDevice;
+			VkDevice logicalDevice = VK_NULL_HANDLE;
 
 			/// WINDOW RENDER SURFACE ///
 			VkSurfaceKHR presentationSurface = nullptr;
@@ -58,7 +49,11 @@
 			void Disposable() {
 				vkDeviceWaitIdle(logicalDevice);
 				vkDestroyDevice(logicalDevice, nullptr);
-				if (MVK_ENABLE_VALIDATION_LAYERS) DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+
+				#ifdef MVK_ENABLE_VALIDATION_LAYERS
+					DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+				#endif
+				
 				vkDestroySurfaceKHR(instance, presentationSurface, nullptr);
 				vkDestroyInstance(instance, nullptr);
 			}
@@ -89,7 +84,7 @@
 				//////////////////////////////////////////////////////////////////////////////////////////
 				/////////////////////////// Validation Layer Support Handling ////////////////////////////
 				VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo {};
-				if (MVK_ENABLE_VALIDATION_LAYERS) {
+				#ifdef MVK_ENABLE_VALIDATION_LAYERS
 					if (!QueryValidationLayerSupport())
 						throw std::runtime_error("MiniVulkan: Failed to initialize validation layers!");
 
@@ -97,10 +92,10 @@
 					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 					createInfo.ppEnabledLayerNames = validationLayers.data();
 					createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-				} else {
+				#elif
 					createInfo.enabledLayerCount = 0;
 					createInfo.pNext = nullptr;
-				}
+				#endif
 				/////////////////////////// Validation Layer Support Handling ////////////////////////////
 				//////////////////////////////////////////////////////////////////////////////////////////
 
@@ -169,10 +164,12 @@
 				createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 				createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-				if (MVK_ENABLE_VALIDATION_LAYERS) {
+				#ifdef MVK_ENABLE_VALIDATION_LAYERS
 					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 					createInfo.ppEnabledLayerNames = validationLayers.data();
-				} else { createInfo.enabledLayerCount = 0; }
+				#elif
+					createInfo.enabledLayerCount = 0;
+				#endif
 
 				if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create logical device!");
@@ -308,7 +305,9 @@
 			}
 
 			void SetupDebugMessenger() {
-				if (!MVK_ENABLE_VALIDATION_LAYERS) return;
+				#ifndef MVK_ENABLE_VALIDATION_LAYERS
+					return;
+				#endif
 
 				VkDebugUtilsMessengerCreateInfoEXT createInfo;
 				PopulateDebugMessengerCreateInfo(createInfo);

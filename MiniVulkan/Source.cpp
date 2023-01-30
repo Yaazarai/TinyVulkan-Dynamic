@@ -27,7 +27,7 @@ using namespace mvk;
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
 int MINIVULKAN_MAIN {
-    MiniVkInstance mvkInstance(MiniVkWindow::QueryRequiredExtensions(MVK_ENABLE_VALIDATION_LAYERS), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU});
+    MiniVkInstance mvkInstance(MiniVkWindow::QueryRequiredExtensions(MVK_ENABLE_VALIDATION), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU});
     MiniVkWindow window(1920, 1080, true, "MINIVK WINDOW");
     mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
@@ -45,15 +45,15 @@ int MINIVULKAN_MAIN {
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
     swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
 
-    std::vector<MiniVkVertex> triangle{
+    std::vector<MiniVkVertex> triangle {
         {{0.0,0.0}, {480.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{1.0,0.0}, {1440.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{1.0,1.0}, {1440.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{0.0,1.0}, {480.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{0.0,0.0}, {480.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
-        {{1.0,0.0}, {1440.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
-        {{1.0,1.0}, {1440.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
-        {{0.0,1.0}, {480.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}}
+        {{0.5,0.0}, {1440.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
+        {{0.5,0.5}, {1440.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
+        {{0.0,0.5}, {480.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}}
     };
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
 
@@ -96,20 +96,20 @@ int MINIVULKAN_MAIN {
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
 
-        /*
-            DEPTH BUFFER INFO:
-                The depth buffer is an image where the depth of each fragment of every draw call is
-                layered on top of eachother as each draw call is performed. This means that you have
-                to sort your draw calls by depth before rendering for "depth-testing," to work.
-
-                Depth-Testing tests the current pixel/fragment's depth against the depth buffer. If
-                the fragment's depth is lower than the depth buffer fragment, then the fragment is
-                discarded.
-
-                THIS IS NOT DEPTH-SORTING, JUST DEPTH-TESTING.
-        */
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 0, 0, 0);
+        
+        //    DEPTH BUFFER INFO:
+        //        The depth buffer is an image where the depth of each fragment of every draw call is
+        //        layered on top of eachother as each draw call is performed. This means that you have
+        //        to sort your draw calls by depth before rendering for "depth-testing," to work.
+        //
+        //        Depth-Testing tests the current pixel/fragment's depth against the depth buffer. If
+        //        the fragment's depth is lower than the depth buffer fragment, then the fragment is
+        //        discarded.
+        //
+        //        THIS IS NOT DEPTH-SORTING, JUST DEPTH-TESTING.
+        
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 6, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 0, 0, 0);
         
         dyRender.EndRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     });
@@ -134,7 +134,6 @@ int MINIVULKAN_MAIN {
     window.Dispose();
     return VK_SUCCESS;
 }
-
 /*
 *   QOI EXAMPLE USAGE:
     int channels = 4;

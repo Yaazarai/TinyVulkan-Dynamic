@@ -29,6 +29,10 @@
     #include <GLFW/glfw3native.h>
 
     #include <vulkan/vulkan.hpp>
+    #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+    VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+    #define MVK_DISPATCHER VULKAN_HPP_DEFAULT_DISPATCHER
+
     #define MVK_RENDERER_VERSION VK_MAKE_API_VERSION(0, 1, 0, 0)
     #define MVK_ENGINE_VERSION VK_MAKE_API_VERSION(0, 1, 3, 0)
     #define MVK_API_VERSION VK_API_VERSION_1_3
@@ -56,23 +60,30 @@
             DEBUG  : Console (/SUBSYSTEM:CONSOLE)
     */
     #ifndef _DEBUG
-    #define MINIVULKAN_MAIN __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+        #define MINIVULKAN_MAIN __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
     #else
-    #define MINIVULKAN_MAIN main(int argc, char* argv[])
+        #define MINIVULKAN_MAIN main(int argc, char* argv[])
     #endif
 
     /// The namespace can be quickly renamed to fix conflcits.
     #ifndef MINIVULKAN_NS
-    #define MINIVULKAN_NS minivulkan
+        #define MINIVULKAN_NS minivulkan
     #endif
     namespace MINIVULKAN_NS { /* Define Library Namespace */ }
 
     /// You can define MINIVULKCAN_SHORTREF for a shorter namespace reference. (:
     #ifdef MINIVULKAN_SHORTREF
-    namespace minivk = minivulkan;
+        namespace minivk = minivulkan;
     #endif
     #ifdef MINIVULKAN_SHORTERREF
-    namespace mvk = minivulkan;
+        namespace mvk = minivulkan;
+    #endif
+
+    #ifdef _DEBUG
+        #define MVK_ENABLE_VALIDATION_LAYERS
+        #define MVK_ENABLE_VALIDATION true
+    #elif
+        #define MVK_ENABLE_VALIDATION false
     #endif
 
     ////////////////////////////////////

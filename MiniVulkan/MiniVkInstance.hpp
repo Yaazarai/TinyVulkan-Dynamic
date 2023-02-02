@@ -76,11 +76,10 @@
 				appInfo.pEngineName = "MiniVulkan";
 				appInfo.engineVersion = MVK_ENGINE_VERSION;
 				appInfo.apiVersion = MVK_API_VERSION;
-
+				
 				VkInstanceCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 				createInfo.pApplicationInfo = &appInfo;
-
 				//////////////////////////////////////////////////////////////////////////////////////////
 				/////////////////////////// Validation Layer Support Handling ////////////////////////////
 				VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo {};
@@ -110,12 +109,12 @@
 				if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create Vulkan instance!");
 
+				#ifdef _DEBUG
 				uint32_t extensionCount = 0;
 				vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 				std::vector<VkExtensionProperties> extensionProperties(extensionCount);
 				vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionProperties.data());
 
-				#ifdef _DEBUG
 				for (const auto& extension : extensions)
 					std::cout << '\t' << extension << '\n';
 
@@ -214,8 +213,8 @@
 			}
 
 			/// <summary>Checks the VkPhysicalDevice for swap-chain availability.</summary>
-			MiniVkSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) {
-				MiniVkSwapChainSupportDetails details;
+			MiniVkSwapChainSupporter QuerySwapChainSupport(VkPhysicalDevice device) {
+				MiniVkSwapChainSupporter details;
 
 				uint32_t formatCount;
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device, presentationSurface, &formatCount, nullptr);
@@ -251,7 +250,7 @@
 
 				bool swapChainAdequate = false;
 				if (supportsExtensions) {
-					MiniVkSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
+					MiniVkSwapChainSupporter swapChainSupport = QuerySwapChainSupport(device);
 					swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 				}
 

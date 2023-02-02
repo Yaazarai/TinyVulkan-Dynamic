@@ -14,13 +14,20 @@
 		#define VKCOMP_RGBA VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		#define VKCOMP_BGRA VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT
 
+		struct MiniVkVertexDescription {
+			VkVertexInputBindingDescription binding;
+			const std::vector<VkVertexInputAttributeDescription> attributes;
+
+			MiniVkVertexDescription(VkVertexInputBindingDescription binding, const std::vector<VkVertexInputAttributeDescription> attributes)
+				: binding(binding), attributes(attributes) {}
+		};
+
 		class MiniVkDynamicPipeline : public MiniVkObject {
 		private:
 			MiniVkInstance& mvkLayer;
 		public:
 			/// GRAPHICS_PIPELINE ///
-			VkVertexInputBindingDescription vertexBindingDescription;
-			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition;
+			MiniVkVertexDescription vertexDescription;
 
 			VkDescriptorSetLayout descriptorLayout;
 			std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
@@ -45,10 +52,8 @@
 				vkDestroyPipelineLayout(mvkLayer.logicalDevice, pipelineLayout, nullptr);
 			}
 
-			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, VkFormat imageFormat, MiniVkShaderStages& shaderStages, VkVertexInputBindingDescription vertexBindingDescription,
-			std::array<VkVertexInputAttributeDescription, 3> vertexAttributeDescrition, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-			: mvkLayer(mvkLayer), shaderStages(shaderStages), vertexBindingDescription(vertexBindingDescription), vertexAttributeDescrition(vertexAttributeDescrition),
-			imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges) {
+			MiniVkDynamicPipeline(MiniVkInstance& mvkLayer, VkFormat imageFormat, MiniVkShaderStages& shaderStages, MiniVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+			: mvkLayer(mvkLayer), shaderStages(shaderStages), vertexDescription(vertexDescription), imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges) {
 				onDispose += std::callback<>(this, &MiniVkDynamicPipeline::Disposable);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(mvkLayer.physicalDevice, mvkLayer.presentationSurface);
@@ -64,8 +69,8 @@
 			void CreateGraphicsPipeline() {
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				/////////// This section specifies that MiniVkVertex provides the vertex layout description ///////////
-				auto bindingDescription = vertexBindingDescription;
-				auto attributeDescriptions = vertexAttributeDescrition;
+				auto bindingDescription = vertexDescription.binding;
+				auto attributeDescriptions = vertexDescription.attributes;
 
 				VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 				vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -171,7 +176,7 @@
 				VkGraphicsPipelineCreateInfo pipelineInfo{};
 				pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 				pipelineInfo.stageCount = 2;
-				pipelineInfo.pStages = shaderStages.shaderStages.data();
+				pipelineInfo.pStages = shaderStages.shaderCreateInfo.data();
 				pipelineInfo.pVertexInputState = &vertexInputInfo;
 				pipelineInfo.pInputAssemblyState = &inputAssembly;
 				pipelineInfo.pViewportState = &viewportState;

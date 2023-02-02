@@ -28,11 +28,7 @@
     #include <GLFW/glfw3.h>
     #include <GLFW/glfw3native.h>
 
-    #include <vulkan/vulkan.hpp>
-    #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-    VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-    #define MVK_DISPATCHER VULKAN_HPP_DEFAULT_DISPATCHER
-
+    #include <vulkan/vulkan.h>
     #define MVK_RENDERER_VERSION VK_MAKE_API_VERSION(0, 1, 0, 0)
     #define MVK_ENGINE_VERSION VK_MAKE_API_VERSION(0, 1, 3, 0)
     #define MVK_API_VERSION VK_API_VERSION_1_3

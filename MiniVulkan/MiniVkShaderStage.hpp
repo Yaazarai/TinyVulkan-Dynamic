@@ -9,10 +9,9 @@
 			MiniVkInstance& mvkLayer;
 
 		public:
-			std::vector<std::string> shaderPaths;
-			std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfo;
 			std::vector<VkShaderModule> shaderModules;
-			std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+			std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders;
+			std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfo;
 
 			void Disposable() {
 				vkDeviceWaitIdle(mvkLayer.logicalDevice);
@@ -20,20 +19,15 @@
 					vkDestroyShaderModule(mvkLayer.logicalDevice, shaderModule, nullptr);
 			}
 
-			MiniVkShaderStages(MiniVkInstance& mvkLayer, const std::vector<std::string>& shaderPaths, const std::vector<VkShaderStageFlagBits>& shaderFlagCreateBits) : mvkLayer(mvkLayer), shaderPaths(shaderPaths) {
+			MiniVkShaderStages(MiniVkInstance& mvkLayer, const std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders) : mvkLayer(mvkLayer), shaders(shaders) {
 				onDispose += std::callback<>(this, &MiniVkShaderStages::Disposable);
 
-				for (size_t i = 0; i < shaderPaths.size(); i++) {
-					std::cout << shaderPaths[i] << std::endl;
-					this->shaderPaths.push_back(shaderPaths[i]);
-					auto shaderCode = ReadFile(shaderPaths[i]);
+				for (size_t i = 0; i < shaders.size(); i++) {
+					auto shaderCode = ReadFile(std::get<1>(shaders[i]));
 					auto shaderModule = CreateShaderModule(shaderCode);
 					shaderModules.push_back(shaderModule);
-					shaderCreateInfo.push_back(CreateShaderInfo(shaderPaths[i], shaderModule, shaderFlagCreateBits[i]));
+					shaderCreateInfo.push_back(CreateShaderInfo(std::get<1>(shaders[i]), shaderModule, std::get<0>(shaders[i])));
 				}
-
-				for (auto stage : shaderCreateInfo)
-					shaderStages.push_back(stage);
 			}
 
 			MiniVkShaderStages operator=(const MiniVkShaderStages& shader) = delete;
@@ -54,13 +48,6 @@
 			}
 
 			VkPipelineShaderStageCreateInfo CreateShaderInfo(const std::string& path, VkShaderModule shaderModule, VkShaderStageFlagBits stageFlagBits) {
-				/*
-				ptrdiff_t pos = std::find(shaderPaths.begin(), shaderPaths.end(), path) - shaderPaths.begin();
-				if (pos >= static_cast<long long>(shaderPaths.size()))
-					throw std::runtime_error("MiniVulkan: Failed to create ShaderStageCreateInfo: " + path);
-			
-				VkShaderModule shaderModule = shaderModules[pos];
-				*/
 				VkPipelineShaderStageCreateInfo shaderStageInfo{};
 				shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				shaderStageInfo.stage = stageFlagBits;

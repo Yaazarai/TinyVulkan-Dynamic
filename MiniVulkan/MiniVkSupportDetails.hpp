@@ -27,14 +27,14 @@
 
 		enum class MiniVkBufferingMode { DOUBLE = 2, TRIPLE = 3, QUADRUPLE = 4 };
 
-		struct MiniVkSwapChainSupportDetails {
+		struct MiniVkSwapChainSupporter {
 		public:
 			VkSurfaceCapabilitiesKHR capabilities;
 			std::vector<VkSurfaceFormatKHR> formats;
 			std::vector<VkPresentModeKHR> presentModes;
 		};
 
-		struct MiniVkSurfaceSupportDetails {
+		struct MiniVkSurfaceSupporter {
 		public:
 			VkFormat dataFormat = VK_FORMAT_B8G8R8A8_SRGB;
 			VkColorSpaceKHR colorSpace = VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;

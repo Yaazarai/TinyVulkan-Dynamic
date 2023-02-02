@@ -10,7 +10,7 @@
 			MiniVkInstance& mvkLayer;
 		public:
 			/// VKSURFACE FOR PRESENTATION ///
-			MiniVkSurfaceSupportDetails presentDetails;
+			MiniVkSurfaceSupporter presentDetails;
 			std::invokable<int&, int&> onGetFrameBufferSize;
 
 			/// INVOKABLE EVENTS ///
@@ -37,7 +37,7 @@
 				vkDestroySwapchainKHR(mvkLayer.logicalDevice, swapChain, nullptr);
 			}
 
-			MiniVkSwapChain(MiniVkInstance& mvkLayer, MiniVkSurfaceSupportDetails presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			MiniVkSwapChain(MiniVkInstance& mvkLayer, MiniVkSurfaceSupporter presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			: mvkLayer(mvkLayer), bufferingMode(bufferingMode), presentDetails(presentDetails), swapChainImageUsage(imageUsage) {
 				onDispose += std::callback<>(this, &MiniVkSwapChain::Disposable);
 				CreateSwapChain();
@@ -66,7 +66,7 @@
 
 			/// <summary>Create the Vulkan surface swap-chain images and imageviews.</summary>
 			void CreateSwapChainImages() {
-				MiniVkSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(mvkLayer.physicalDevice);
+				MiniVkSwapChainSupporter swapChainSupport = QuerySwapChainSupport(mvkLayer.physicalDevice);
 				VkSurfaceFormatKHR surfaceFormat = QuerySwapSurfaceFormat(swapChainSupport.formats);
 				VkPresentModeKHR presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
 				VkExtent2D extent = QuerySwapExtent(swapChainSupport.capabilities);
@@ -153,8 +153,8 @@
 			}
 
 			/// <summary>Checks the VkPhysicalDevice for swap-chain availability.</summary>
-			MiniVkSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) {
-				MiniVkSwapChainSupportDetails details;
+			MiniVkSwapChainSupporter QuerySwapChainSupport(VkPhysicalDevice device) {
+				MiniVkSwapChainSupporter details;
 
 				uint32_t formatCount;
 				VkSurfaceKHR windowSurface = mvkLayer.presentationSurface;

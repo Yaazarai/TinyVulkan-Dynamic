@@ -31,19 +31,24 @@ int MINIVULKAN_MAIN {
     MiniVkWindow window(1920, 1080, true, "MINIVK WINDOW");
     mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
-    MiniVkSwapChain swapChain(mvkInstance, MiniVkSurfaceSupportDetails(), MiniVkBufferingMode::TRIPLE);
-    MiniVkMemAlloc memAlloc(mvkInstance);
-    MiniVkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
-    MiniVkShaderStages shaders(mvkInstance, { DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER }, { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT });
-    
-    MiniVkDynamicPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MiniVkVertex::GetBindingDescription(), MiniVkVertex::GetAttributeDescriptions(),
-    { MiniVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT)},
-    { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4),VK_SHADER_STAGE_VERTEX_BIT) });
-    MiniVkDynamicRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);
-
+    MiniVkSwapChain swapChain(mvkInstance, MiniVkSurfaceSupporter(), MiniVkBufferingMode::TRIPLE);
     window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
     swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
+    
+    MiniVkMemAlloc memAlloc(mvkInstance);
+    MiniVkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
+    MiniVkShaderStages shaders(mvkInstance,{
+        {VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, DEFAULT_VERTEX_SHADER},
+        {VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, DEFAULT_FRAGMENT_SHADER}
+    });
+
+    MiniVkDynamicPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MiniVkVertex::GetVertexDescription(),
+        { MiniVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) },
+        { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4),VK_SHADER_STAGE_VERTEX_BIT) }
+    );
+    
+    MiniVkDynamicRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);
 
     std::vector<MiniVkVertex> triangle {
         {{0.0,0.0}, {480.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
@@ -96,7 +101,6 @@ int MINIVULKAN_MAIN {
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
 
-        
         //    DEPTH BUFFER INFO:
         //        The depth buffer is an image where the depth of each fragment of every draw call is
         //        layered on top of eachother as each draw call is performed. This means that you have

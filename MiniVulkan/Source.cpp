@@ -45,7 +45,7 @@ int MINIVULKAN_MAIN {
 
     MiniVkDynamicPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MiniVkVertex::GetVertexDescription(),
         { MiniVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) },
-        { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4),VK_SHADER_STAGE_VERTEX_BIT) }
+        { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) }
     );
     
     MiniVkDynamicRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);

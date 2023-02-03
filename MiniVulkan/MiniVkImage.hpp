@@ -311,12 +311,16 @@
 					destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 				} else if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 					barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+					destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
 					if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
 						barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 					}
 				} else {
 					barrier.subresourceRange.aspectMask = aspectFlags;
+					destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 					throw std::invalid_argument("MiniVkImage: Unsupported layout transition!");
 				}
 

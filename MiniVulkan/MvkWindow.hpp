@@ -13,12 +13,6 @@
 		* ShouldClose() checks the GLFW close flag to see if the window should close.
 			If the window should NOT close this will call glfwPollEvents();
 
-		* RunMain() runs a loop until the program ShouldClose().
-			This function calls three invokable callbacks for event execution that can be subscribed to:
-				onEnterMain (just before main loop)
-				onRunMain   (during main loop, after glfwPollEvents())
-				onExitMain  (just after main loop)
-
 		* ~Window() destructor.
 			Calls onDestruct to execute destructor events.
 
@@ -85,12 +79,6 @@
 			inline static std::invokable<int,int> onResizeFrameBuffer;
 			// Invokable callback to respond to GLFWwindowrefreshfun: Window::onRefresh += callback<GLFWwindow*>(ClassInstance, &Class::Function);
 			inline static std::invokable<GLFWwindow*> onRefresh;
-			// Invokable callback that executes before the main loop executes.
-			std::invokable<void*> onEnterMain;
-			// Invokable callback that executes when the Window is running in it's main loop.
-			std::invokable<void*> onRunMain;
-			// Invokable callback that executes after the main loop closes.
-			std::invokable<void*> onExitMain;
 
 			void Disposable() {
 				glfwDestroyWindow(hwndWindow);

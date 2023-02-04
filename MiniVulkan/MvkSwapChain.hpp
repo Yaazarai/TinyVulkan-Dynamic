@@ -11,10 +11,9 @@
 		public:
 			/// VKSURFACE FOR PRESENTATION ///
 			MvkSurfaceSupporter presentDetails;
-			std::invokable<int&, int&> onGetFrameBufferSize;
 
 			/// INVOKABLE EVENTS ///
-			std::invokable<int&, int&> onReCreateSwapChain;
+			std::invokable<int&, int&> onGetFrameBufferSize;
 			bool framebufferResized = false;
 
 			/// SWAP_CHAINS ///
@@ -55,7 +54,7 @@
 			/// <summary>Re-creates the Vulkan surface swap-chain & resets the currentFrame to 0.</summary>
 			void ReCreateSwapChain() {
 				int w, h;
-				onReCreateSwapChain.invoke(w, h);
+				onGetFrameBufferSize.invoke(w, h);
 
 				vkDeviceWaitIdle(mvkInstance.logicalDevice);
 				createInfo.oldSwapchain = swapChain;
@@ -73,7 +72,7 @@
 				uint32_t imageCount = MIN(swapChainSupport.capabilities.maxImageCount, MAX(swapChainSupport.capabilities.minImageCount, static_cast<uint32_t>(bufferingMode)));
 				
 				while(extent.width == 0u || extent.height == 0u) {
-					int w, h; onReCreateSwapChain.invoke(w, h);
+					int w, h; onGetFrameBufferSize.invoke(w, h);
 					swapChainSupport = QuerySwapChainSupport(mvkInstance.physicalDevice);
 					surfaceFormat = QuerySwapSurfaceFormat(swapChainSupport.formats);
 					presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);

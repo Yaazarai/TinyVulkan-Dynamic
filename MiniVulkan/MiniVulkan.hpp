@@ -187,4 +187,33 @@
     /* 15 */ #include "./MvkMath.hpp"
     //// MINIVULKAN HEADER INCLUDES ////
     ////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// HOW TO USE MINIVULKAN: (In this order, every time) ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///      0. Setup your main function as: int MINIVULKAN_MAIN {}
+    ///      1. Create MvkInstance
+    ///      2. Create MvkWindow
+    ///      3. Initialize MvkInstance with MvkWindow.CreateSurface()
+    ///      4. Create MvkSwapChain with appropriate buffering mode.
+    ///      5. Add window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MvkSwapChain::OnFrameBufferResizeCallback);
+    ///         ** This creates a callback function for notifying the swapchain that gets called when the window is resized.
+    /// 
+    ///      6. swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MvkWindow::OnFrameBufferReSizeCallback);
+    ///         ** This create a callback function for updating the swapchain with the window size when it attempts to recreate itself.
+    /// 
+    ///      7. Create MvkMemAlloc (for runtime buffer/image memory management using VMA).
+    ///      8. Create MvkCommandPool for processing render commands.
+    ///      9. Create MvkShaderStages to specify the shaders in the render pipeline you wish to use.
+    ///     10. Create MvkDyPipeline to specify the hwo the render pipeline will operate (vertex descriptions, push descriptors, push constants, etc.).
+    ///     11. Create MvkDyRenderer to which will perform on-screen rendering with the appropriate command pool, swapChain, pipeline.
+    ///     12. Subscribe any render callback functions to be called for every frame prior to rendering to the screen.
+    ///         ** All commands must be written to command buffer with BeginRecordCommandBuffer before commands and after EndRecordCommandBuffer commands.
+    ///     13. Set infinite loop that calls dyRenderer.RenderFrame() to render the window/screen. Set loop to exit on !window.ShouldClosePollEvents()
+    ///         ** Alternatively setup the infinite loop on a thread with an exit call on !window.ShouldClose()
+    ///             and then set an infinite loop on the main thread with an exit call on !window.ShouldClosePollEvents()
+    ///         ** This will setup a basic multi-threaded window which won't block rendering when the window has to process OS events.
+    ///     14. After the loop called mvkInstance.WaitIdleLogicalDevice() before disposing of any in-use resources.
+    ///     15. Explicitly dispose of all Mvk* objects in reverse order that they were created.
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #endif

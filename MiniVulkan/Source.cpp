@@ -34,7 +34,6 @@ int MINIVULKAN_MAIN {
     MvkSwapChain swapChain(mvkInstance, MvkSurfaceSupporter(), MvkBufferingMode::TRIPLE);
     window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MvkSwapChain::OnFrameBufferResizeCallback);
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MvkWindow::OnFrameBufferReSizeCallback);
-    swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MvkWindow::OnFrameBufferReSizeCallback);
     
     MvkMemAlloc memAlloc(mvkInstance);
     MvkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
@@ -42,7 +41,7 @@ int MINIVULKAN_MAIN {
         {VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, DEFAULT_VERTEX_SHADER},
         {VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, DEFAULT_FRAGMENT_SHADER}
     });
-
+    
     MvkDyPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MvkVertex::GetVertexDescription(),
         { MvkDyPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) },
         { MvkDyPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) }
@@ -135,7 +134,7 @@ int MINIVULKAN_MAIN {
     shaders.Dispose();
     cmdPool.Dispose();
     memAlloc.Dispose();
-    mvkInstance.Dispose();
     window.Dispose();
+    mvkInstance.Dispose();
     return VK_SUCCESS;
 }

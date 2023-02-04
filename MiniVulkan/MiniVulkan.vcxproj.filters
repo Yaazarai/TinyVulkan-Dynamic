@@ -13,7 +13,7 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\MiniVk">
+    <Filter Include="Header Files\MiniVulkan">
       <UniqueIdentifier>{e4d8e465-5d8f-4686-96f4-a6e5282978c5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -23,59 +23,62 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MiniVk.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MiniVulkan.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkWindow.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkWindow.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkInstance.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkInstance.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkObject.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkObject.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkQueueFamily.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkQueueFamily.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkCommandPool.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkCommandPool.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkSwapChain.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkSwapChain.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkSupportDetails.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkSupportDetails.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkShaderStage.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkShaderStage.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkThreadPool.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkThreadPool.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkDynamicPipeline.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkDyPipeline.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkDynamicRenderer.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkDyRenderer.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
     <ClInclude Include="Invokable.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
     <ClInclude Include="VkMemAlloc.h">
-      <Filter>Header Files\MiniVk</Filter>
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkMemAlloc.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkMemAlloc.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkImage.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkImage.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
     <ClInclude Include="QuiteOkImageFormat.h">
-      <Filter>Header Files\MiniVk</Filter>
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
-    <ClInclude Include="MiniVkMath.hpp">
-      <Filter>Header Files\MiniVk</Filter>
+    <ClInclude Include="MvkMath.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="MvkBuffer.hpp">
+      <Filter>Header Files\MiniVulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

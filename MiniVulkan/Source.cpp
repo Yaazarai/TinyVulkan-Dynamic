@@ -19,7 +19,7 @@
         DEBUG  : ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;
 */
 #define MINIVULKAN_SHORTERREF //mvk
-#include "MiniVk.hpp"
+#include "MiniVulkan.hpp"
 using namespace mvk;
 
 /// SHADER FILE REFERENCE PATHS
@@ -27,30 +27,30 @@ using namespace mvk;
 #define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
 
 int MINIVULKAN_MAIN {
-    MiniVkInstance mvkInstance(MiniVkWindow::QueryRequiredExtensions(MVK_ENABLE_VALIDATION), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU});
-    MiniVkWindow window(1920, 1080, true, "MINIVK WINDOW");
+    MvkInstance mvkInstance(MvkWindow::QueryRequiredExtensions(MVK_ENABLE_VALIDATION), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU});
+    MvkWindow window(1920, 1080, true, "MINIVK WINDOW");
     mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
-    MiniVkSwapChain swapChain(mvkInstance, MiniVkSurfaceSupporter(), MiniVkBufferingMode::TRIPLE);
-    window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
-    swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
-    swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
+    MvkSwapChain swapChain(mvkInstance, MvkSurfaceSupporter(), MvkBufferingMode::TRIPLE);
+    window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MvkSwapChain::OnFrameBufferResizeCallback);
+    swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MvkWindow::OnFrameBufferReSizeCallback);
+    swapChain.onReCreateSwapChain += std::callback<int&, int&>(&window, &MvkWindow::OnFrameBufferReSizeCallback);
     
-    MiniVkMemAlloc memAlloc(mvkInstance);
-    MiniVkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
-    MiniVkShaderStages shaders(mvkInstance,{
+    MvkMemAlloc memAlloc(mvkInstance);
+    MvkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
+    MvkShaderStages shaders(mvkInstance, {
         {VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, DEFAULT_VERTEX_SHADER},
         {VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, DEFAULT_FRAGMENT_SHADER}
     });
 
-    MiniVkDynamicPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MiniVkVertex::GetVertexDescription(),
-        { MiniVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) },
-        { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) }
+    MvkDyPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MvkVertex::GetVertexDescription(),
+        { MvkDyPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) },
+        { MvkDyPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) }
     );
     
-    MiniVkDynamicRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);
+    MvkDyRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);
 
-    std::vector<MiniVkVertex> triangle {
+    std::vector<MvkVertex> triangle {
         {{0.0,0.0}, {480.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{1.0,0.0}, {1440.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{1.0,1.0}, {1440.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
@@ -62,19 +62,20 @@ int MINIVULKAN_MAIN {
     };
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
 
-    MiniVkBuffer vbuffer(mvkInstance, memAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
-    vbuffer.StageBufferData(dyPipe.graphicsQueue, cmdPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
-    MiniVkBuffer ibuffer(mvkInstance, memAlloc, indices.size() * sizeof(indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
-    ibuffer.StageBufferData(dyPipe.graphicsQueue, cmdPool.GetPool(), indices.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
+    MvkBuffer vbuffer(mvkInstance, memAlloc, triangle.size() * sizeof(MvkVertex), MvkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
+    vbuffer.StageBufferData(dyPipe.graphicsQueue, cmdPool.GetPool(), triangle.data(), triangle.size() * sizeof(MvkVertex), 0, 0);
+    MvkBuffer ibuffer(mvkInstance, memAlloc, indices.size() * sizeof(indices[0]), MvkBufferType::VKVMA_BUFFER_TYPE_INDEX);
+    ibuffer.StageBufferData(dyPipe.graphicsQueue, cmdPool.GetPool(), indices.data(), triangle.size() * sizeof(MvkVertex), 0, 0);
     
     int channels = 4;
     qoi_desc qoidesc;
+    
     FILE* test = fopen("./Screeny.qoi", "rb");
     if (test == NULL) { std::cout << "NO QOI IMAGE" << std::endl; } else { fclose(test); }
     void* qoiPixels = qoi_read("./Screeny.qoi", &qoidesc, channels);
     VkDeviceSize dataSize = qoidesc.width * qoidesc.height * qoidesc.channels;
     
-    MiniVkImage image = MiniVkImage(mvkInstance, memAlloc, qoidesc.width, qoidesc.height, false, VK_FORMAT_R8G8B8A8_SRGB);
+    MvkImage image = MvkImage(mvkInstance, memAlloc, qoidesc.width, qoidesc.height, false, VK_FORMAT_R8G8B8A8_SRGB);
     image.StageImageData(dyPipe.graphicsQueue, cmdPool.GetPool(), qoiPixels, dataSize);
     QOI_FREE(qoiPixels);
 
@@ -88,19 +89,19 @@ int MINIVULKAN_MAIN {
         
         VkBuffer vertexBuffers[] = { vbuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
-        glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
+        glm::mat4 projection = MvkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
 
         VkDescriptorImageInfo imageInfo;
         imageInfo.imageLayout = image.layout;
         imageInfo.imageView = image.imageView;
         imageInfo.sampler = image.imageSampler;
 
-        VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
+        VkWriteDescriptorSet writeDescriptorSets = MvkDyPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
         vkCmdPushDescriptorSetEKHR(mvkInstance.instance, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dyPipe.pipelineLayout, 0, 1, &writeDescriptorSets);
         vkCmdPushConstants(commandBuffer, dyPipe.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
-
+        
         //    DEPTH BUFFER INFO:
         //        The depth buffer is an image where the depth of each fragment of every draw call is
         //        layered on top of eachother as each draw call is performed. This means that you have
@@ -138,23 +139,3 @@ int MINIVULKAN_MAIN {
     window.Dispose();
     return VK_SUCCESS;
 }
-/*
-*   QOI EXAMPLE USAGE:
-    int channels = 4;
-    qoi_desc qoidesc;
-    FILE* test = fopen("./Screeny.qoi", "rb");
-    if (test == NULL) { std::cout << "NO QOI IMAGE" << std::endl; } else { fclose(test); }
-    void* qoiPixels = qoi_read("./Screeny.qoi", &qoidesc, channels);
-
-    std::cout << "QOI WIDTH: " << qoidesc.width << std::endl;
-    std::cout << "QOI HEIGHT: " << qoidesc.height << std::endl;
-    std::cout << "QOI CHANNELS: " << (uint32_t)qoidesc.channels << std::endl;
-
-    VkDeviceSize dataSize = qoidesc.width * qoidesc.height * qoidesc.channels;
-    std::cout << "QOI SIZE: " << (uint32_t)dataSize << std::endl;
-    MiniVkImage image = MiniVkImage(mvkInstance, memAlloc, qoidesc.width, qoidesc.height);
-    image.StageImageData(dynamicPipeline.graphicsQueue, commandPool.GetPool(), qoiPixels, dataSize);
-    QOI_FREE(qoiPixels);
-
-    image.Dispose();
-*/

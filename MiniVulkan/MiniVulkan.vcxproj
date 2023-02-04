@@ -177,21 +177,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Invokable.hpp" />
-    <ClInclude Include="MiniVk.hpp" />
-    <ClInclude Include="MiniVkCommandPool.hpp" />
-    <ClInclude Include="MiniVkDynamicPipeline.hpp" />
-    <ClInclude Include="MiniVkDynamicRenderer.hpp" />
-    <ClInclude Include="MiniVkInstance.hpp" />
-    <ClInclude Include="MiniVkMath.hpp" />
-    <ClInclude Include="MiniVkMemAlloc.hpp" />
-    <ClInclude Include="MiniVkObject.hpp" />
-    <ClInclude Include="MiniVkQueueFamily.hpp" />
-    <ClInclude Include="MiniVkImage.hpp" />
-    <ClInclude Include="MiniVkShaderStage.hpp" />
-    <ClInclude Include="MiniVkSupportDetails.hpp" />
-    <ClInclude Include="MiniVkSwapChain.hpp" />
-    <ClInclude Include="MiniVkThreadPool.hpp" />
-    <ClInclude Include="MiniVkWindow.hpp" />
+    <ClInclude Include="MiniVulkan.hpp" />
+    <ClInclude Include="MvkBuffer.hpp" />
+    <ClInclude Include="MvkCommandPool.hpp" />
+    <ClInclude Include="MvkDyPipeline.hpp" />
+    <ClInclude Include="MvkDyRenderer.hpp" />
+    <ClInclude Include="MvkInstance.hpp" />
+    <ClInclude Include="MvkMath.hpp" />
+    <ClInclude Include="MvkMemAlloc.hpp" />
+    <ClInclude Include="MvkObject.hpp" />
+    <ClInclude Include="MvkQueueFamily.hpp" />
+    <ClInclude Include="MvkImage.hpp" />
+    <ClInclude Include="MvkShaderStage.hpp" />
+    <ClInclude Include="MvkSupportDetails.hpp" />
+    <ClInclude Include="MvkSwapChain.hpp" />
+    <ClInclude Include="MvkThreadPool.hpp" />
+    <ClInclude Include="MvkWindow.hpp" />
     <ClInclude Include="QuiteOkImageFormat.h" />
     <ClInclude Include="VkMemAlloc.h" />
   </ItemGroup>

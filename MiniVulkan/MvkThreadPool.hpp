@@ -4,7 +4,7 @@
 	#include "./MiniVulkan.hpp"
 
 	namespace MINIVULKAN_NS {
-		class MvkThreadPool : MvkObject {
+		class MvkThreadPool : public MvkObject {
 		private:
 			void slave() {
 				while (working) {

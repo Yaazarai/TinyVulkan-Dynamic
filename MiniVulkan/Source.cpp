@@ -34,19 +34,17 @@ int MINIVULKAN_MAIN {
     MvkSwapChain swapChain(mvkInstance, MvkSurfaceSupporter(), MvkBufferingMode::TRIPLE);
     window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MvkSwapChain::OnFrameBufferResizeCallback);
     swapChain.onGetFrameBufferSize += std::callback<int&, int&>(&window, &MvkWindow::OnFrameBufferReSizeCallback);
-    
+
     MvkMemAlloc memAlloc(mvkInstance);
-    MvkCommandPool cmdPool(mvkInstance, (size_t)swapChain.bufferingMode);
+    MvkCommandPool cmdPool(mvkInstance, (size_t)MvkBufferingMode::TRIPLE);
     MvkShaderStages shaders(mvkInstance, {
         {VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, DEFAULT_VERTEX_SHADER},
         {VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, DEFAULT_FRAGMENT_SHADER}
     });
-    
     MvkDyPipeline dyPipe(mvkInstance, swapChain.swapChainImageFormat, shaders, MvkVertex::GetVertexDescription(),
         { MvkDyPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) },
         { MvkDyPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) }
     );
-    
     MvkDyRenderer dyRender(mvkInstance, memAlloc, cmdPool, swapChain, dyPipe);
 
     std::vector<MvkVertex> triangle {
@@ -85,16 +83,17 @@ int MINIVULKAN_MAIN {
         depthStencil.depthStencil = { 1.0f, 0 };
 
         dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
-        
+
+        glm::mat4 projection = MvkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
+
         VkBuffer vertexBuffers[] = { vbuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
-        glm::mat4 projection = MvkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
 
         VkDescriptorImageInfo imageInfo;
         imageInfo.imageLayout = image.layout;
         imageInfo.imageView = image.imageView;
         imageInfo.sampler = image.imageSampler;
-
+        
         VkWriteDescriptorSet writeDescriptorSets = MvkDyPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
         vkCmdPushDescriptorSetEKHR(mvkInstance.instance, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dyPipe.pipelineLayout, 0, 1, &writeDescriptorSets);
         vkCmdPushConstants(commandBuffer, dyPipe.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
@@ -112,8 +111,8 @@ int MINIVULKAN_MAIN {
         //
         //        THIS IS NOT DEPTH-SORTING, JUST DEPTH-TESTING.
         
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 6, 0, 0);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2.0, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 6, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 0, 0);
         
         dyRender.EndRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     });
@@ -123,18 +122,6 @@ int MINIVULKAN_MAIN {
     mythread.join();
     
     mvkInstance.WaitIdleLogicalDevice();
-    vbuffer.Dispose();
-    ibuffer.Dispose();
-    
-    image.Dispose();
-
-    swapChain.Dispose();
-    dyRender.Dispose();
-    dyPipe.Dispose();
-    shaders.Dispose();
-    cmdPool.Dispose();
-    memAlloc.Dispose();
-    window.Dispose();
-    mvkInstance.Dispose();
+    MvkObject::DisposeOrdered({&vbuffer, &ibuffer, &image, &swapChain, &dyRender, &dyPipe, &shaders, &cmdPool, &memAlloc, &window, &mvkInstance}, true);
     return VK_SUCCESS;
 }

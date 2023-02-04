@@ -59,11 +59,10 @@
 
 			MvkDyRenderer(MvkInstance& mvkInstance, MvkMemAlloc& memAlloc, MvkCommandPool& commandPool, MvkSwapChain& swapChain, MvkDyPipeline& graphicsPipeline) :
 			mvkInstance(mvkInstance), memAlloc(memAlloc), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline),
-			depthImage(mvkInstance, memAlloc, swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT) {
+			depthImage(mvkInstance, memAlloc, swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT) {
 				onDispose += std::callback<>(this, &MvkDyRenderer::Disposable);
 
 				CreateSwapChainSyncObjects();
-				depthImage.TransitionLayoutCmd(graphicsPipeline.graphicsQueue, commandPool.GetPool(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 			}
 
 			void CreateSwapChainSyncObjects() {
@@ -287,8 +286,7 @@
 					swapChain.ReCreateSwapChain();
 					
 					depthImage.Disposable();
-					depthImage.ReCreateImage(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, depthImage.isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
-					depthImage.TransitionLayoutCmd(graphicsPipeline.graphicsQueue, commandPool.GetPool(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+					depthImage.ReCreateImage(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, depthImage.isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					return;
 				} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 					throw std::runtime_error("MiniVulkan: Failed to acquire swap chain image!");
@@ -337,8 +335,7 @@
 					swapChain.ReCreateSwapChain();
 					
 					depthImage.Disposable();
-					depthImage.ReCreateImage(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, depthImage.isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
-					depthImage.TransitionLayoutCmd(graphicsPipeline.graphicsQueue, commandPool.GetPool(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+					depthImage.ReCreateImage(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, depthImage.isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 				} else if (result != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to present swap chain image!");
 			}

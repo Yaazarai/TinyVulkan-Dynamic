@@ -28,7 +28,7 @@ using namespace mvk;
 
 int MINIVULKAN_MAIN {
     MvkInstance mvkInstance(MvkWindow::QueryRequiredExtensions(MVK_ENABLE_VALIDATION), "MINIVK", {VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU});
-    MvkWindow window(1920, 1080, true, "MINIVK WINDOW");
+    MvkWindow window("MINIVK WINDOW", 1920, 1080, true, false);
     mvkInstance.Initialize(window.CreateWindowSurface(mvkInstance.instance));
 
     MvkSwapChain swapChain(mvkInstance, MvkSurfaceSupporter(), MvkBufferingMode::TRIPLE);
@@ -79,7 +79,7 @@ int MINIVULKAN_MAIN {
     dyRender.onRenderEvents += std::callback<VkCommandBuffer>([&mvkInstance, &image, &window, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dyRender, &dyPipe](VkCommandBuffer commandBuffer) {
         VkClearValue clearColor{};
         VkClearValue depthStencil{};
-        clearColor.color = { 0.0, 0.0, 0.0, 0.0 };
+        clearColor.color = { 0.0, 0.0, 0.0, 0.50 };
         depthStencil.depthStencil = { 1.0f, 0 };
 
         dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());

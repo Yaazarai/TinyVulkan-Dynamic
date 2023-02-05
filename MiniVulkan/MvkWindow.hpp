@@ -45,10 +45,11 @@
 			GLFWwindow* hwndWindow;
 
 			/// <summary>GLFWwindow unique pointer constructor.</summary>
-			virtual GLFWwindow* InitiateWindow(int width, int height, bool resizable, std::string title) {
+			virtual GLFWwindow* InitiateWindow(std::string title, int width, int height, bool resizable = true, bool transparentFramebuffer = false) {
 				glfwInit();
 				glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 				glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
+				glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 				
 				hwndResizable = resizable;
 				hwndWidth = width;
@@ -86,9 +87,9 @@
 			}
 
 			/// <summary>Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
-			MvkWindow(int width, int height, bool resizable, std::string title, bool hasMinSize = false, int minWidth = 200, int minHeight = 200) {
+			MvkWindow(std::string title, int width, int height, bool resizable, bool transparentFramebuffer = false, bool hasMinSize = false, int minWidth = 200, int minHeight = 200) {
 				onDispose += std::callback<>(this, &MvkWindow::Disposable);
-				hwndWindow = InitiateWindow(width, height, resizable, title);
+				hwndWindow = InitiateWindow(title, width, height, resizable, transparentFramebuffer);
 				glfwSetWindowUserPointer(hwndWindow, this);
 				glfwSetWindowRefreshCallback(hwndWindow, MvkWindow::OnRefreshCallback);
 				glfwSetFramebufferSizeCallback(hwndWindow, MvkWindow::OnFrameBufferNotifyReSizeCallback);

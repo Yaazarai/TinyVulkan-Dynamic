@@ -18,8 +18,7 @@
 			VkVertexInputBindingDescription binding;
 			const std::vector<VkVertexInputAttributeDescription> attributes;
 
-			MvkVertexDescription(VkVertexInputBindingDescription binding, const std::vector<VkVertexInputAttributeDescription> attributes)
-				: binding(binding), attributes(attributes) {}
+			MvkVertexDescription(VkVertexInputBindingDescription binding, const std::vector<VkVertexInputAttributeDescription> attributes) : binding(binding), attributes(attributes) {}
 		};
 
 		class MvkDyPipeline : public MvkObject {
@@ -139,7 +138,7 @@
 				colorBlending.logicOpEnable = VK_FALSE;
 				colorBlending.logicOp = VK_LOGIC_OP_COPY;
 				colorBlending.attachmentCount = 1;
-
+				
 				VkPipelineColorBlendAttachmentState blendDescription = GetBlendDescription(true);
 				colorBlending.pAttachments = &blendDescription;
 				colorBlending.blendConstants[0] = 0.0f;
@@ -147,12 +146,13 @@
 				colorBlending.blendConstants[2] = 0.0f;
 				colorBlending.blendConstants[3] = 0.0f;
 
-				std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+				const std::array<VkDynamicState, 3> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT };
 				dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 				dynamicState.flags = 0;
 				dynamicState.pDynamicStates = dynamicStateEnables.data();
 				dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
-
+				dynamicState.pNext = nullptr;
+				
 				VkPipelineRenderingCreateInfoKHR renderingCreateInfo{};
 				renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 				renderingCreateInfo.colorAttachmentCount = 1;

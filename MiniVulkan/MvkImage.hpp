@@ -274,6 +274,8 @@
 				vkQueueWaitIdle(graphicsQueue);
 				vkFreeCommandBuffers(mvkInstance.logicalDevice, commandPool, 1, &commandBuffer);
 			}
+
+			VkDescriptorImageInfo GetImageDescriptor() { return { imageSampler, imageView, layout }; }
 		};
 	}
 #endif

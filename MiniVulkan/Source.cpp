@@ -83,21 +83,16 @@ int MINIVULKAN_MAIN {
         depthStencil.depthStencil = { 1.0f, 0 };
 
         dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
+        vkCmdSetColorBlendEnableEKHR(mvkInstance.instance, commandBuffer, 0U, 1U, { (VkBool32)1U });
 
         glm::mat4 projection = MvkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
-
-        VkBuffer vertexBuffers[] = { vbuffer.buffer };
-        VkDeviceSize offsets[] = { 0 };
-
-        VkDescriptorImageInfo imageInfo;
-        imageInfo.imageLayout = image.layout;
-        imageInfo.imageView = image.imageView;
-        imageInfo.sampler = image.imageSampler;
-        
+        VkDescriptorImageInfo imageInfo = image.GetImageDescriptor();
         VkWriteDescriptorSet writeDescriptorSets = MvkDyPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
         vkCmdPushDescriptorSetEKHR(mvkInstance.instance, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dyPipe.pipelineLayout, 0, 1, &writeDescriptorSets);
         vkCmdPushConstants(commandBuffer, dyPipe.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vbuffer.buffer, offsets);
         vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
         
         //    DEPTH BUFFER INFO:
@@ -110,9 +105,8 @@ int MINIVULKAN_MAIN {
         //        discarded.
         //
         //        THIS IS NOT DEPTH-SORTING, JUST DEPTH-TESTING.
-        
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 6, 0, 0);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 6, 0, 0);
         
         dyRender.EndRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());
     });

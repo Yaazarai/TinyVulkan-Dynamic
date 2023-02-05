@@ -20,6 +20,13 @@
 			return VK_SUCCESS;
 		}
 
+		VkResult vkCmdSetColorBlendEnableEKHR(VkInstance instance, VkCommandBuffer commandBuffer, uint32_t first, uint32_t attachmentCount, const std::vector<VkBool32> blendTesting) {
+			auto func = (PFN_vkCmdSetColorBlendEnableEXT) vkGetInstanceProcAddr(instance, "vkCmdSetColorBlendEnableEXT");
+			if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdSetColorBlendEnableEXT");
+			func(commandBuffer, first, attachmentCount, blendTesting.data());
+			return VK_SUCCESS;
+		}
+
 		#pragma endregion
 
 		class MvkDyRenderer : public MvkObject {
@@ -152,7 +159,7 @@
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				colorAttachmentInfo.clearValue = clearColor;
-
+				
 				VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 				depthStencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 				depthStencilAttachmentInfo.imageView = depthImage.imageView;
@@ -279,12 +286,12 @@
 
 				uint32_t imageIndex;
 				VkResult result = vkAcquireNextImageKHR(mvkInstance.logicalDevice, swapChain.swapChain, UINT64_MAX, swapChain_imageAvailableSemaphores[swapChain.currentFrame], VK_NULL_HANDLE, &imageIndex);
-				VkCommandBuffer cmdBuffer = commandBuffers[imageIndex];
+				VkCommandBuffer cmdBuffer = commandBuffers[swapChain.currentFrame];
 
-				if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || swapChain.framebufferResized) {
-					swapChain.SetFrameBufferResized(false);
+				if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 					swapChain.ReCreateSwapChain();
-					
+					swapChain.SetFrameBufferResized(false);
+
 					depthImage.Disposable();
 					depthImage.ReCreateImage(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, depthImage.isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					return;
@@ -320,7 +327,7 @@
 				presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 				presentInfo.waitSemaphoreCount = 1;
 				presentInfo.pWaitSemaphores = signalSemaphores;
-			
+				
 				VkSwapchainKHR swapChainList[] { swapChain.swapChain };
 				presentInfo.swapchainCount = 1;
 				presentInfo.pSwapchains = swapChainList;
@@ -331,9 +338,9 @@
 				swapChain.currentFrame = (swapChain.currentFrame + 1) % swapChain.swapChainImages.size();
 
 				if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || swapChain.framebufferResized) {
-					swapChain.SetFrameBufferResized(false);
 					swapChain.ReCreateSwapChain();
-					
+					swapChain.SetFrameBufferResized(false);
+
 					depthImage.Disposable();
 					depthImage.ReCreateImage(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, depthImage.isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 				} else if (result != VK_SUCCESS)

@@ -49,7 +49,7 @@
 				glfwInit();
 				glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 				glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
-				glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+				glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, (transparentFramebuffer) ? GLFW_TRUE : GLFW_FALSE);
 				
 				hwndResizable = resizable;
 				hwndWidth = width;

@@ -52,10 +52,10 @@ int MINIVULKAN_MAIN {
         {{1.0,0.0}, {1440.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{1.0,1.0}, {1440.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
         {{0.0,1.0}, {480.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}},
-        {{0.0,0.0}, {480.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
-        {{0.5,0.0}, {1440.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
-        {{0.5,0.5}, {1440.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}},
-        {{0.0,0.5}, {480.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.1}}
+        {{0.0,0.0}, {480.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}},
+        {{0.5,0.0}, {1440.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}},
+        {{0.5,0.5}, {1440.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}},
+        {{0.0,0.5}, {480.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}}
     };
     std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
 
@@ -79,7 +79,7 @@ int MINIVULKAN_MAIN {
     dyRender.onRenderEvents += std::callback<VkCommandBuffer>([&mvkInstance, &image, &window, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dyRender, &dyPipe](VkCommandBuffer commandBuffer) {
         VkClearValue clearColor{};
         VkClearValue depthStencil{};
-        clearColor.color = { 0.0, 0.0, 0.0, 0.50 };
+        clearColor.color = { 0.0, 0.0, 0.0, 1.0 };
         depthStencil.depthStencil = { 1.0f, 0 };
 
         dyRender.BeginRecordCommandBuffer(commandBuffer, clearColor, depthStencil, swapChain.CurrentImageView(), swapChain.CurrentImage(), swapChain.CurrentExtent2D());

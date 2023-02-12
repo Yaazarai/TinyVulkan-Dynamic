@@ -97,7 +97,7 @@
 					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 					createInfo.ppEnabledLayerNames = validationLayers.data();
 					createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-				#elif
+				#else
 					createInfo.enabledLayerCount = 0;
 					createInfo.pNext = nullptr;
 				#endif
@@ -112,21 +112,14 @@
 				createInfo.ppEnabledExtensionNames = extensions.data();
 
 				VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-				if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
-					throw std::runtime_error("MiniVulkan: Failed to create Vulkan instance!");
+				if (result != VK_SUCCESS)
+					throw std::runtime_error("MiniVulkan: Failed to create Vulkan instance! " + result);
 
 				#ifdef _DEBUG
-				uint32_t extensionCount = 0;
-				vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-				std::vector<VkExtensionProperties> extensionProperties(extensionCount);
-				vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionProperties.data());
-
 				for (const auto& extension : extensions)
 					std::cout << '\t' << extension << '\n';
 
-
-
-				std::cout << "MiniVulkan: " << extensionCount << " extensions supported\n";
+				std::cout << "MiniVulkan: " << extensions.size() << " extensions supported\n";
 				#endif
 			}
 
@@ -312,6 +305,9 @@
 				vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 				std::vector<VkLayerProperties> availableLayers(layerCount);
 				vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+				for (const auto& layerProperties : availableLayers)
+					std::cout << layerProperties.layerName << std::endl;
 
 				for (const std::string layerName : validationLayers) {
 					bool layerFound = false;

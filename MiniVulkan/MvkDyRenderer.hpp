@@ -118,7 +118,7 @@
 				if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to command buffer!");
 
-				const VkImageMemoryBarrier swapchain_memory_barrier{
+				const VkImageMemoryBarrier swapchain_memory_barrier {
 					.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 					.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,

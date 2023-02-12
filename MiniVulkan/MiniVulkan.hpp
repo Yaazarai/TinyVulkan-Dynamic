@@ -18,8 +18,8 @@
             DEBUG  : ...\VulkanSDK\1.3.239.0\Include;...\glfw-3.3.7.bin.WIN64\glfw-3.3.7.bin.WIN64\include;
 
         Linker | General | Additional Library Directories:
-            RELEASE: ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;
-            DEBUG  : ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;
+            RELEASE: ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib; // C:\VulkanSDK\1.3.239.0\Lib
+            DEBUG  : ...\glfw-3.3.7.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib; // C:\VulkanSDK\1.3.239.0\Lib
     */
     // ** Make sure you've installed the Vulkan SDK binaries.
     #define GLFW_INCLUDE_VULKAN
@@ -78,28 +78,20 @@
     #ifdef _DEBUG
         #define MVK_ENABLE_VALIDATION_LAYERS
         #define MVK_ENABLE_VALIDATION true
-    #elif
+    #else
         #define MVK_ENABLE_VALIDATION false
     #endif
 
     ////////////////////////////////////
     /////////// DEPENDENCIES ///////////
-    #include <atomic>
     #include <functional>
     #include <fstream>
     #include <iostream>
-    #include <iterator>
     #include <array>
-    #include <map>
-    #include <memory>
-    #include <optional>
     #include <queue>
     #include <set>
     #include <string>
-    #include <tuple>
     #include <vector>
-    #include <stack>
-    #include <unordered_set>
 
     // VULKAN DEVICE MEMORY ALLOCATOR //
     #define VMA_IMPLEMENTATION
@@ -109,8 +101,6 @@
     #define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
     #define VMA_DEBUG_GLOBAL_MUTEX VK_TRUE
     #define VMA_USE_STL_CONTAINERS VK_TRUE
-    #define VMA_STATIC_VULKAN_FUNCTIONS VK_TRUE
-    #define VMA_DYNAMIC_VULKAN_FUNCTIONS VK_TRUE
     #include "./VkMemAlloc.h"
 
     /////// QuiteOK Image Format ///////

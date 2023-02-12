@@ -172,7 +172,7 @@
 				#ifdef MVK_ENABLE_VALIDATION_LAYERS
 					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 					createInfo.ppEnabledLayerNames = validationLayers.data();
-				#elif
+				#else
 					createInfo.enabledLayerCount = 0;
 				#endif
 

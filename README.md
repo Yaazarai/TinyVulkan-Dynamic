@@ -19,3 +19,5 @@ LIST OF FEATURES: (\** means future, not yet implemented)
 13. Thread-Pool implementation.
 14. Window transparency using GLFW `transparentFramebuffer`.
 15. \** Headless Rendering (NOT-IMPLEMENTED) for rendering outside the swapchain (surfaces).
+
+The `source.cpp` example loads QOI images (an example image is provided). Please see the official QOI repo for the full source code and any provided examples or commandline tools for dealing with QOI images (alternative to .png): https://qoiformat.org

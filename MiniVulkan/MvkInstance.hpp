@@ -193,9 +193,6 @@
 				if (deviceCount == 0)
 					throw std::runtime_error("MiniVulkan: Failed to find GPUs with Vulkan support!");
 
-				std::vector<VkPhysicalDevice> devices(deviceCount);
-				vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
 				auto suitableDevices = QuerySuitableDevices();
 				if (suitableDevices.size() > 0)
 					physicalDevice = suitableDevices.front();

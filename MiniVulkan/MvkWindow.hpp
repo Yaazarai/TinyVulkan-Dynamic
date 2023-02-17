@@ -58,9 +58,6 @@
 			}
 
 		public:
-			/// <summary>Callback for GLFW Window refresh event.</summary>
-			inline static void OnRefreshCallback(GLFWwindow* hwnd) { MvkWindow::onRefresh.invoke(hwnd); }
-
 			/// <summary>Pass to render engine for swapchain resizing.</summary>
 			void OnFrameBufferReSizeCallback(int& width, int& height) {
 				width = 0;
@@ -78,8 +75,6 @@
 
 			// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
 			inline static std::invokable<int,int> onResizeFrameBuffer;
-			// Invokable callback to respond to GLFWwindowrefreshfun: Window::onRefresh += callback<GLFWwindow*>(ClassInstance, &Class::Function);
-			inline static std::invokable<GLFWwindow*> onRefresh;
 
 			void Disposable() {
 				glfwDestroyWindow(hwndWindow);
@@ -91,7 +86,6 @@
 				onDispose += std::callback<>(this, &MvkWindow::Disposable);
 				hwndWindow = InitiateWindow(title, width, height, resizable, transparentFramebuffer);
 				glfwSetWindowUserPointer(hwndWindow, this);
-				glfwSetWindowRefreshCallback(hwndWindow, MvkWindow::OnRefreshCallback);
 				glfwSetFramebufferSizeCallback(hwndWindow, MvkWindow::OnFrameBufferNotifyReSizeCallback);
 				if (hasMinSize) glfwSetWindowSizeLimits(hwndWindow, minWidth, minHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 			}
@@ -102,7 +96,7 @@
 			MvkWindow& operator=(const MvkWindow&) = delete;
 
 			/// <summary>[overridable] Calls glfwPollEvents() then checks if the GLFW window should close.</summary>
-			virtual bool ShouldClose() { return glfwWindowShouldClose(hwndWindow); }
+			virtual bool ShouldClose() { return glfwWindowShouldClose(hwndWindow) == GLFW_TRUE; }
 
 			/// <summary>[overridable] Returns the active GLFW window handle.</summary>
 			virtual GLFWwindow* GetHandle() { return hwndWindow; }

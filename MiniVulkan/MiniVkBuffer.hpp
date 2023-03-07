@@ -33,7 +33,7 @@
 			VKVMA_BUFFER_TYPE_INDIRECT	/// For writing VkIndirectCommand's to a buffer for Indirect drawing.
 		};
 
-		class MiniVkBuffer : public MiniVkObject {
+		class MiniVkBuffer : public std::disposable {
 		private:
 			void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
 				VkBufferCreateInfo bufCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -57,19 +57,20 @@
 			VmaAllocationInfo description;
 			VkDeviceSize size;
 
-			void Disposable() {
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 				vmaDestroyBuffer(vmAlloc.GetAllocator(), buffer, memory);
 			}
 
 			MiniVkBuffer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), size(dataSize) {
-				onDispose += MiniVkCallback<>(this, &MiniVkBuffer::Disposable);
+				onDispose += std::callback<bool>(this, &MiniVkBuffer::Disposable);
 				CreateBuffer(size, usage, flags);
 			}
 
 			MiniVkBuffer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize dataSize, MiniVkBufferType type)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), size(dataSize) {
-				onDispose += MiniVkCallback<>(this, &MiniVkBuffer::Disposable);
+				onDispose += std::callback<bool>(this, &MiniVkBuffer::Disposable);
 
 				switch (type) {
 					case MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX:

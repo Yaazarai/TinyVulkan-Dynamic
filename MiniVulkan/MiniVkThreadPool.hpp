@@ -4,12 +4,12 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkThreadPool : public MiniVkObject {
+		class MiniVkThreadPool : public std::disposable {
 		private:
 			void slave() {
 				while (working) {
 					if (safety_lock.try_lock()) {
-						MiniVkCallback<std::atomic_bool&> callback = queue.front();
+						std::callback<std::atomic_bool&> callback = queue.front();
 						queue.pop();
 						safety_lock.unlock();
 						callback.invoke(working);
@@ -19,19 +19,19 @@
 		public:
 			std::mutex safety_lock;
 			std::atomic_bool working;
-			std::queue<MiniVkCallback<std::atomic_bool&>> queue;
+			std::queue<std::callback<std::atomic_bool&>> queue;
 			std::vector<std::thread> pool;
 
 			MiniVkThreadPool(const uint32_t potentialThreads = 2, bool startWorking = true) : working(startWorking) {
-				onDispose += MiniVkCallback<>(this, &MiniVkThreadPool::awaitClosePool);
+				onDispose += std::callback<bool>(this, &MiniVkThreadPool::awaitClosePool);
 				trySpawnThreads(potentialThreads, startWorking);
 			}
 
 			size_t getSize() { return pool.size(); }
 
-			void clearTasks() { std::queue<MiniVkCallback<std::atomic_bool&>>().swap(queue); }
+			void clearTasks() { std::queue<std::callback<std::atomic_bool&>>().swap(queue); }
 
-			void awaitClosePool() {
+			void awaitClosePool(bool lwaitIdle) {
 				working = false;
 				while (pool.size() > 0)
 					for (std::thread& t : pool)
@@ -55,7 +55,7 @@
 				return threadCount;
 			}
 
-			bool tryPushCallback(MiniVkCallback<std::atomic_bool&> task) {
+			bool tryPushCallback(std::callback<std::atomic_bool&> task) {
 				if (safety_lock.try_lock()) {
 					queue.push(task);
 					safety_lock.unlock();

@@ -13,11 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\MiniVulkan">
-      <UniqueIdentifier>{e4d8e465-5d8f-4686-96f4-a6e5282978c5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\MiniVK">
       <UniqueIdentifier>{79772bb6-f4cb-484b-ab7d-de8d6b159889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MiniVK\Dependencies">
+      <UniqueIdentifier>{f79777a8-4db2-4125-9a9b-536348c4f737}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -26,67 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MiniVulkan.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkWindow.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkInstance.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkObject.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkQueueFamily.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkCommandPool.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkSwapChain.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkSupportDetails.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkShaderStage.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkThreadPool.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkDyPipeline.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkDyRenderer.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Invokable.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VkMemAlloc.h">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkMemAlloc.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkImage.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkMath.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MvkBuffer.hpp">
-      <Filter>Header Files\MiniVulkan</Filter>
-    </ClInclude>
     <ClInclude Include="MiniVK.hpp">
-      <Filter>Header Files\MiniVK</Filter>
-    </ClInclude>
-    <ClInclude Include="MiniVkInvokable.hpp">
-      <Filter>Header Files\MiniVK</Filter>
-    </ClInclude>
-    <ClInclude Include="MiniVkObject.hpp">
       <Filter>Header Files\MiniVK</Filter>
     </ClInclude>
     <ClInclude Include="MiniVkThreadPool.hpp">
@@ -136,6 +76,12 @@
     </ClInclude>
     <ClInclude Include="QuiteOkImageFormat.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="invokable.hpp">
+      <Filter>Header Files\MiniVK\Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="disposable.hpp">
+      <Filter>Header Files\MiniVK\Dependencies</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

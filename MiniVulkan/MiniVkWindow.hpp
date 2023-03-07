@@ -38,7 +38,7 @@
 #include "./MiniVK.hpp"
 
 namespace MINIVULKAN_NAMESPACE {
-	class MiniVkWindow : public MiniVkObject {
+	class MiniVkWindow : public std::disposable {
 	private:
 		bool hwndResizable;
 		int hwndWidth, hwndHeight;
@@ -72,19 +72,25 @@ namespace MINIVULKAN_NAMESPACE {
 		}
 
 		/// <summary>[overridable] Pass to render engine for swapchain resizing.</summary>
-		inline static void OnFrameBufferNotifyReSizeCallback(GLFWwindow* hwnd, int width, int height) { onResizeFrameBuffer.invoke(width, height); }
+		inline static void OnFrameBufferNotifyReSizeCallback(GLFWwindow* hwnd, int width, int height) {
+			MiniVkWindow* window = (MiniVkWindow*) glfwGetWindowUserPointer(hwnd);
+			window->hwndWidth = width;
+			window->hwndHeight = height;
+
+			onResizeFrameBuffer.invoke(width, height);
+		}
 
 		// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
-		inline static MiniVkInvokable<int, int> onResizeFrameBuffer;
+		inline static std::invokable<int, int> onResizeFrameBuffer;
 
-		void Disposable() {
+		void Disposable(bool waitIdle) {
 			glfwDestroyWindow(hwndWindow);
 			glfwTerminate();
 		}
 
 		/// <summary>Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
 		MiniVkWindow(std::string title, int width, int height, bool resizable, bool transparentFramebuffer = false, bool hasMinSize = false, int minWidth = 200, int minHeight = 200) {
-			onDispose += MiniVkCallback<>(this, &MiniVkWindow::Disposable);
+			onDispose += std::callback<bool>(this, &MiniVkWindow::Disposable);
 			hwndWindow = InitiateWindow(title, width, height, resizable, transparentFramebuffer);
 			glfwSetWindowUserPointer(hwndWindow, this);
 			glfwSetFramebufferSizeCallback(hwndWindow, MiniVkWindow::OnFrameBufferNotifyReSizeCallback);
@@ -96,7 +102,7 @@ namespace MINIVULKAN_NAMESPACE {
 		// Remove default copy destructor.
 		MiniVkWindow& operator=(const MiniVkWindow&) = delete;
 
-		/// <summary>[overridable] Calls glfwPollEvents() then checks if the GLFW window should close.</summary>
+		/// <summary>[overridable] Checks if the GLFW window should close.</summary>
 		virtual bool ShouldClose() { return glfwWindowShouldClose(hwndWindow) == GLFW_TRUE; }
 
 		/// <summary>[overridable] Returns the active GLFW window handle.</summary>

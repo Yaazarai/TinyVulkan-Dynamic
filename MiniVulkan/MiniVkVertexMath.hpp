@@ -4,7 +4,7 @@
     #include "./MiniVK.hpp"
 
     namespace MINIVULKAN_NAMESPACE {
-	    class MvkMath {
+	    class MiniVkMath {
 	    public:
             constexpr static glm::mat4 Project2D(double width, double height, double znear, double zfar) {
                 //return glm::transpose(glm::mat4(

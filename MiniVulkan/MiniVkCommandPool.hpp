@@ -4,19 +4,20 @@
 	#include "./MiniVk.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkCommandPool : public MiniVkObject {
+		class MiniVkCommandPool : public std::disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 			VkCommandPool commandPool;
 			std::vector<VkCommandBuffer> commandBuffers;
 		public:
-			void Disposable() {
-				vkDeviceWaitIdle(renderDevice.logicalDevice);
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
 				vkDestroyCommandPool(renderDevice.logicalDevice, commandPool, nullptr);
 			}
 			
 			MiniVkCommandPool(MiniVkRenderDevice& renderDevice, size_t bufferCount = 1) : renderDevice(renderDevice) {
-				onDispose += MiniVkCallback<>(this, &MiniVkCommandPool::Disposable);
+				onDispose += std::callback<bool>(this, &MiniVkCommandPool::Disposable);
 				CreateCommandPool();
 				CreateCommandBuffers(bufferCount+1);
 			}

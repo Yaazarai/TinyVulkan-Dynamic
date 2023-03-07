@@ -21,7 +21,7 @@
 			MiniVkVertexDescription(VkVertexInputBindingDescription binding, const std::vector<VkVertexInputAttributeDescription> attributes) : binding(binding), attributes(attributes) {}
 		};
 
-		class MiniVkDynamicPipeline : public MiniVkObject {
+		class MiniVkDynamicPipeline : public std::disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 
@@ -40,32 +40,34 @@
 			VkFormat imageFormat;
 			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			bool enableBlending;
 
 			VkQueue graphicsQueue;
 			VkQueue presentQueue;
 
-			void Disposable() {
-				vkDeviceWaitIdle(renderDevice.logicalDevice);
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
 				vkDestroyDescriptorSetLayout(renderDevice.logicalDevice, descriptorLayout, nullptr);
 				vkDestroyPipeline(renderDevice.logicalDevice, graphicsPipeline, nullptr);
 				vkDestroyPipelineLayout(renderDevice.logicalDevice, pipelineLayout, nullptr);
 			}
 
-			MiniVkDynamicPipeline(MiniVkRenderDevice& renderDevice, VkFormat imageFormat, MiniVkShaderStages& shaderStages, MiniVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-			: renderDevice(renderDevice), shaderStages(shaderStages), vertexDescription(vertexDescription), imageFormat(imageFormat), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges) {
-				onDispose += MiniVkCallback<>(this, &MiniVkDynamicPipeline::Disposable);
+			MiniVkDynamicPipeline(MiniVkRenderDevice& renderDevice, VkFormat imageFormat, MiniVkShaderStages& shaderStages, MiniVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology) {
+				onDispose += std::callback<bool>(this, &MiniVkDynamicPipeline::Disposable);
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
 				vkGetDeviceQueue(renderDevice.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 				vkGetDeviceQueue(renderDevice.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 
-				CreateGraphicsPipeline();
+				CreateGraphicsPipeline(enableBlending);
 			}
 
 			MiniVkDynamicPipeline operator=(const MiniVkDynamicPipeline& pipeline) = delete;
 
 			/// <summary>Creates the graphics rendering pipeline: Automatically called on constructor call.</summary>
-			void CreateGraphicsPipeline() {
+			void CreateGraphicsPipeline(bool enableBlending = true) {
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				/////////// This section specifies that MvkVertex provides the vertex layout description ///////////
 				auto bindingDescription = vertexDescription.binding;
@@ -139,7 +141,7 @@
 				colorBlending.logicOp = VK_LOGIC_OP_COPY;
 				colorBlending.attachmentCount = 1;
 				
-				VkPipelineColorBlendAttachmentState blendDescription = GetBlendDescription(true);
+				VkPipelineColorBlendAttachmentState blendDescription = GetBlendDescription(enableBlending);
 				colorBlending.pAttachments = &blendDescription;
 				colorBlending.blendConstants[0] = 0.0f;
 				colorBlending.blendConstants[1] = 0.0f;

@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkInstance : public MiniVkObject {
+		class MiniVkInstance : public std::disposable {
 		private:
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 			const std::vector<const char*> instanceExtensions = { VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME };
@@ -14,7 +14,7 @@
 			VkApplicationInfo appInfo{};
 			VkInstance instance;
 
-			void Disposable() {
+			void Disposable(bool waitIdle) {
 				#if MVK_VALIDATION_LAYERS
 					DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 				#endif
@@ -23,7 +23,7 @@
 			}
 
 			MiniVkInstance(const std::vector<const char*> presentationExtensions, const std::string title) : presentationExtensions(presentationExtensions) {
-				onDispose += MiniVkCallback<>(this, &MiniVkInstance::Disposable);
+				onDispose += std::callback<bool>(this, &MiniVkInstance::Disposable);
 				CreateVkInstance(title);
 				SetupDebugMessenger();
 			}

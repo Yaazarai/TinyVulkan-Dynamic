@@ -4,73 +4,61 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkSwapChain : public MiniVkObject {
+		class MiniVkSwapChain : public std::disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 		public:
 			MiniVkSurfaceSupporter presentDetails;
-			VkSwapchainCreateInfoKHR createInfo;
 			VkSwapchainKHR swapChain = nullptr;
-			VkFormat swapChainImageFormat;
-			VkExtent2D swapChainExtent;
-			VkImageUsageFlags swapChainImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+			VkFormat imageFormat;
+			VkExtent2D imageExtent;
+			VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 			const MiniVkBufferingMode bufferingMode;
-			std::vector<VkImage> swapChainImages;
-			std::vector<VkImageView> swapChainImageViews;
+			std::vector<VkImage> images;
+			std::vector<VkImageView> imageViews;
 
-			MiniVkInvokable<int&, int&> onGetFrameBufferSize;
-			bool framebufferResized = false;
-			size_t currentFrame = 0;
+			inline static std::invokable<int&, int&> onResizeFrameBuffer;
+			bool presentable;
 
-			void Disposable() {
-				vkDeviceWaitIdle(renderDevice.logicalDevice);
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 
-				for (auto imageView : swapChainImageViews)
+				for (auto imageView : imageViews)
 					vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
 
 				vkDestroySwapchainKHR(renderDevice.logicalDevice, swapChain, nullptr);
 			}
 
 			MiniVkSwapChain(MiniVkRenderDevice& renderDevice, MiniVkSurfaceSupporter presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-			: renderDevice(renderDevice), bufferingMode(bufferingMode), presentDetails(presentDetails), swapChainImageUsage(imageUsage) {
-				onDispose += MiniVkCallback<>(this, &MiniVkSwapChain::Disposable);
+			: renderDevice(renderDevice), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
+				onDispose += std::callback<bool>(this, &MiniVkSwapChain::Disposable);
+				
 				CreateSwapChain();
+				presentable = true;
 			}
 
 			MiniVkSwapChain operator=(const MiniVkSwapChain& swapChain) = delete;
 
 			/// <summary>Create the Vulkan surface swapchain.</summary>
-			void CreateSwapChain() {
-				vkDeviceWaitIdle(renderDevice.logicalDevice);
-				CreateSwapChainImages();
+			void CreateSwapChain(uint32_t width = 0, uint32_t height = 0) {
+				CreateSwapChainImages(width, height);
 				CreateSwapChainImageViews();
 			}
 
-			/// <summary>Re-creates the Vulkan surface swap-chain & resets the currentFrame to 0.</summary>
-			void ReCreateSwapChain() {
-				int w, h;
-				onGetFrameBufferSize.invoke(w, h);
-
-				vkDeviceWaitIdle(renderDevice.logicalDevice);
-				createInfo.oldSwapchain = swapChain;
-				Disposable();
-				CreateSwapChain();
-				currentFrame = 0;
-			}
-
 			/// <summary>Create the Vulkan surface swap-chain images and imageviews.</summary>
-			void CreateSwapChainImages() {
+			void CreateSwapChainImages(uint32_t width = 0, uint32_t height = 0) {
 				MiniVkSwapChainSupporter swapChainSupport = QuerySwapChainSupport(renderDevice.physicalDevice);
 				VkSurfaceFormatKHR surfaceFormat = QuerySwapSurfaceFormat(swapChainSupport.formats);
 				VkPresentModeKHR presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
 				VkExtent2D extent = QuerySwapExtent(swapChainSupport.capabilities);
 				uint32_t imageCount = std::min(swapChainSupport.capabilities.maxImageCount, std::max(swapChainSupport.capabilities.minImageCount, static_cast<uint32_t>(bufferingMode)));
 				
-				while(extent.width == 0u || extent.height == 0u) {
-					int w, h; onGetFrameBufferSize.invoke(w, h);
-					swapChainSupport = QuerySwapChainSupport(renderDevice.physicalDevice);
-					surfaceFormat = QuerySwapSurfaceFormat(swapChainSupport.formats);
-					presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
+				if (width != 0 && height != 0) {
+					extent = {
+						std::min(std::max((uint32_t)width, swapChainSupport.capabilities.minImageExtent.width), swapChainSupport.capabilities.maxImageExtent.width),
+						std::min(std::max((uint32_t)height, swapChainSupport.capabilities.minImageExtent.height), swapChainSupport.capabilities.maxImageExtent.height)
+					};
+				} else {
 					extent = QuerySwapExtent(swapChainSupport.capabilities);
 				}
 
@@ -85,7 +73,7 @@
 				createInfo.imageColorSpace = surfaceFormat.colorSpace;
 				createInfo.imageExtent = extent;
 				createInfo.imageArrayLayers = 1; // Change when developing VR or other 3D stereoscopic applications
-				createInfo.imageUsage = swapChainImageUsage;
+				createInfo.imageUsage = imageUsage;
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
 				uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -104,30 +92,31 @@
 				createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 				createInfo.presentMode = presentMode;
 				createInfo.clipped = VK_TRUE;
+				createInfo.oldSwapchain = swapChain;
 
 				if (vkCreateSwapchainKHR(renderDevice.logicalDevice, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to create swap chain!");
 
 				vkGetSwapchainImagesKHR(renderDevice.logicalDevice, swapChain, &imageCount, nullptr);
-				swapChainImages.resize(imageCount);
-				vkGetSwapchainImagesKHR(renderDevice.logicalDevice, swapChain, &imageCount, swapChainImages.data());
+				images.resize(imageCount);
+				vkGetSwapchainImagesKHR(renderDevice.logicalDevice, swapChain, &imageCount, images.data());
 
-				swapChainImageFormat = surfaceFormat.format;
-				swapChainExtent = extent;
+				imageFormat = surfaceFormat.format;
+				imageExtent = extent;
 			}
 
 			/// <summary>Create the image views for rendering to images (including those in the swap-chain).</summary>
 			void CreateSwapChainImageViews(VkImageViewCreateInfo* createInfoEx = nullptr) {
-				swapChainImageViews.resize(swapChainImages.size());
+				imageViews.resize(images.size());
 
-				for (size_t i = 0; i < swapChainImages.size(); i++) {
+				for (size_t i = 0; i < images.size(); i++) {
 					VkImageViewCreateInfo createInfo{};
 
 					if (createInfoEx == nullptr) {
 						createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-						createInfo.image = swapChainImages[i];
+						createInfo.image = images[i];
 						createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-						createInfo.format = swapChainImageFormat;
+						createInfo.format = imageFormat;
 
 						createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 						createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -141,7 +130,7 @@
 						createInfo.subresourceRange.layerCount = 1;
 					} else { createInfo = *createInfoEx; }
 
-					if (vkCreateImageView(renderDevice.logicalDevice, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+					if (vkCreateImageView(renderDevice.logicalDevice, &createInfo, nullptr, &imageViews[i]) != VK_SUCCESS)
 						throw std::runtime_error("MiniVulkan: Failed to create swap chain image views!");
 				}
 			}
@@ -192,14 +181,16 @@
 			/// <summary>Select swap-chain extent (swap-chain surface resolution).</summary>
 			VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
 				int width, height;
-				onGetFrameBufferSize.invoke(width, height);
+				onResizeFrameBuffer.invoke(width, height);
 
-				VkExtent2D actualExtent{
+				VkExtent2D extent = {
 					std::min(std::max((uint32_t)width, capabilities.minImageExtent.width), capabilities.maxImageExtent.width),
 					std::min(std::max((uint32_t)height, capabilities.minImageExtent.height), capabilities.maxImageExtent.height)
 				};
 
-				return actualExtent;
+				extent.width = std::max(1u, extent.width);
+				extent.height = std::max(1u, extent.height);
+				return extent;
 			}
 
 			/// <summary>Acquires the next image from the swap chain and returns out that image index.</summary>
@@ -207,21 +198,21 @@
 				return vkAcquireNextImageKHR(renderDevice.logicalDevice, swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
 			}
 
-			/// <summary>Returns the current swap chain image.</summary>
-			VkImage& CurrentImage() { return swapChainImages[currentFrame]; }
-
-			/// <summary>Returns the current swap chain image view.</summary>
-			VkImageView& CurrentImageView() { return swapChainImageViews[currentFrame]; }
-
-			VkExtent2D CurrentExtent2D() { return swapChainExtent; }
-
-			size_t SelectCurrentIndex() { return currentFrame; }
-
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
-			void OnFrameBufferResizeCallback(int width, int height) { SetFrameBufferResized(true); }
+			void OnFrameBufferResizeCallback(int width, int height) {
+				std::lock_guard g(std::disposable::global_lock);
+				
+				presentable = (width > 0 && height > 0);
+				if (presentable) {
+					VkSwapchainKHR oldSwapChain = swapChain;
 
-			/// <summary>Notifies the swap chain of the presentation framebuffer resize status.</summary>
-			void SetFrameBufferResized(bool resized) { framebufferResized = resized; }
+					for (auto imageView : imageViews)
+						vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
+
+					CreateSwapChain(width, height);
+					vkDestroySwapchainKHR(renderDevice.logicalDevice, oldSwapChain, nullptr);
+				}
+			}
 		};
 	}
 #endif

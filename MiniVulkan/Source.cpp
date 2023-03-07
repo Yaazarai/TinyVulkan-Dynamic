@@ -4,8 +4,8 @@
 #include "./QuiteOkImageFormat.h"
 using namespace mvk;
 
-#define DEFAULT_VERTEX_SHADER "./Shader Files/sample_vert.spv"
-#define DEFAULT_FRAGMENT_SHADER "./Shader Files/sample_frag.spv"
+#define DEFAULT_VERTEX_SHADER "./sample_vert.spv"
+#define DEFAULT_FRAGMENT_SHADER "./sample_frag.spv"
 
 int MINIVULKAN_WINDOWMAIN {
     try {
@@ -18,19 +18,20 @@ int MINIVULKAN_WINDOWMAIN {
         const std::vector<VkPushConstantRange>& pushConstantRanges = { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
 
         MiniVkInstance instance(MiniVkWindow::QueryRequiredExtensions(MVK_VALIDATION_LAYERS), "MINIVK");
-        MiniVkWindow window("MINIVK WINDOW", 1920, 1080, true, true);
+        MiniVkWindow window("MINIVK WINDOW", 1920, 1080, true);
         MiniVkRenderDevice renderDevice(instance, window.CreateWindowSurface(instance.instance), renderDeviceTypes);
-        MiniVkSwapChain swapChain(renderDevice, MiniVkSurfaceSupporter(), bufferingMode);
-        MiniVkCommandPool cmdPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkVMAllocator memAlloc(instance, renderDevice);
+        MiniVkCommandPool cmdPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkShaderStages shaders(renderDevice, { vertexShader, fragmentShader });
-        MiniVkDynamicPipeline dyPipe(renderDevice, swapChain.swapChainImageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges);
+
+        MiniVkSwapChain swapChain(renderDevice, MiniVkSurfaceSupporter(), bufferingMode);
+        MiniVkDynamicPipeline dyPipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true);
         MiniVkDynamicRenderer dyRender(renderDevice, memAlloc, cmdPool, swapChain, dyPipe);
-
-        window.onResizeFrameBuffer += MiniVkCallback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
-        swapChain.onGetFrameBufferSize += MiniVkCallback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
-
-        std::vector<MiniVkVertex> triangle {
+        
+        window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
+        swapChain.onResizeFrameBuffer += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
+        
+        std::vector<MiniVkVertex> triangle{
             MiniVkVertex({0.0,0.0}, {480.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}),
             MiniVkVertex({1.0,0.0}, {1440.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}),
             MiniVkVertex({1.0,1.0}, {1440.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}),
@@ -58,36 +59,43 @@ int MINIVULKAN_WINDOWMAIN {
         image.StageImageData(dyPipe.graphicsQueue, cmdPool.GetPool(), qoiPixels, dataSize);
         QOI_FREE(qoiPixels);
 
-        dyRender.onRenderEvents += MiniVkCallback<VkCommandBuffer>([&instance, &image, &window, &vbuffer, &ibuffer, &memAlloc, &swapChain, &dyRender, &dyPipe](VkCommandBuffer commandBuffer) {
+        dyRender.onRenderEvents += std::callback<uint32_t, uint32_t>([&vbuffer, &ibuffer, &image, &instance, &window, &swapChain, &dyRender, &dyPipe](uint32_t swapFrame, uint32_t syncFrame) {
             VkClearValue clearColor{};
             VkClearValue depthStencil{};
             clearColor.color = { 0.0, 0.0, 0.0, 1.0 };
             depthStencil.depthStencil = { 1.0f, 0 };
 
-            dyRender.BeginRecordCommandBufferSwapChain(commandBuffer, clearColor, depthStencil);
+            dyRender.BeginRecordCmdBuffer(swapFrame, syncFrame, swapChain.imageExtent, clearColor, depthStencil);
+
+            VkCommandBuffer commandBuffer = dyRender.commandPool.GetBuffers()[syncFrame];
+
             vkCmdSetColorBlendEnableEKHR(instance.instance, commandBuffer, 0U, 1U, { (VkBool32)1U });
 
-            glm::mat4 projection = MvkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
             VkDescriptorImageInfo imageInfo = image.GetImageDescriptor();
             VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
             vkCmdPushDescriptorSetEKHR(instance.instance, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dyPipe.pipelineLayout, 0, 1, &writeDescriptorSets);
+
+            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
             vkCmdPushConstants(commandBuffer, dyPipe.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &projection);
 
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vbuffer.buffer, offsets);
             vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
+
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 0, 0);
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 4, 0);
 
-            dyRender.EndRecordCommandBufferSwapChain(commandBuffer, clearColor, depthStencil);
+            dyRender.EndRecordCmdBuffer(swapFrame, syncFrame, swapChain.imageExtent, clearColor, depthStencil);
         });
-
-        std::thread mythread([&window, &dyRender]() { while (!window.ShouldClose()) { dyRender.RenderFrame(); } });
+        
+        std::thread mythread([&window, &dyRender]() {
+            while (!window.ShouldClose()) { dyRender.RenderFrame(); }
+        });
         while (!window.ShouldClosePollEvents()) {}
         mythread.join();
 
-        renderDevice.WaitIdle();
-        MiniVkObject::DisposeOrdered({ &instance, &window, &renderDevice, &swapChain, &memAlloc, &cmdPool, &shaders, &dyPipe, &dyRender, &vbuffer, &ibuffer, &image }, false);
+        std::disposable::DisposeOrdered({ &instance, &window, &renderDevice, &memAlloc, &swapChain, &cmdPool, &shaders, &dyPipe, &dyRender, &image, &ibuffer, &vbuffer }, true);
+        
     } catch (std::runtime_error err) { std::cout << err.what() << std::endl; }
     return VK_SUCCESS;
 }

@@ -79,8 +79,9 @@
     #include <vector>
     #include <algorithm>
 
-    #include "./MiniVkInvokable.hpp"
-    #include "./MiniVkObject.hpp"
+    #include "./invokable.hpp"
+    #include "./disposable.hpp"
+
     #include "./MiniVkThreadPool.hpp"
     #include "./MiniVkSupporters.hpp"
     #include "./MiniVkQueueFamily.hpp"

@@ -4,14 +4,18 @@
 	#include "./MiniVK.hpp"
 	
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkVMAllocator : public MiniVkObject {
+		class MiniVkVMAllocator : public std::disposable {
 		public:
 			VmaAllocator memoryAllocator = VK_NULL_HANDLE;
+			MiniVkRenderDevice& renderDevice;
 
-			void Disposable() { vmaDestroyAllocator(memoryAllocator); }
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice); 
+				vmaDestroyAllocator(memoryAllocator);
+			}
 
-			MiniVkVMAllocator(MiniVkInstance& mvkInstance, MiniVkRenderDevice& renderDevice) {
-				onDispose += MiniVkCallback<>(this, &MiniVkVMAllocator::Disposable);
+			MiniVkVMAllocator(MiniVkInstance& mvkInstance, MiniVkRenderDevice& renderDevice) : renderDevice(renderDevice) {
+				onDispose += std::callback<bool>(this, &MiniVkVMAllocator::Disposable);
 				VmaAllocatorCreateInfo allocatorCreateInfo = {};
 				allocatorCreateInfo.vulkanApiVersion = MVK_RENDERER_VERSION;
 				allocatorCreateInfo.physicalDevice = renderDevice.physicalDevice;

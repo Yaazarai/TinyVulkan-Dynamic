@@ -154,6 +154,18 @@ namespace MINIVULKAN_NAMESPACE {
 
 		/// <summary>[overridable] Returns the window's framebuffer height.</summary>
 		virtual int GetHeight() { return std::max(hwndHeight, 1); }
+
+		/// <summary>Executes functions in the main window loop (w/ ref to bool to exit loop as needed).</summary>
+		std::invokable<bool&> onWhileMain;
+
+		/// <summary>[overridable] Executes the main window loop.</summary>
+		virtual void WhileMain() {
+			bool shouldRun = true;
+			while (shouldRun) {
+				onWhileMain.invoke(shouldRun);
+				shouldRun &= !ShouldClosePollEvents();
+			}
+		}
 	};
 }
 #endif

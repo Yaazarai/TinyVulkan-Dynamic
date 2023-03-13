@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		#pragma region DYNAMIC RENDERING FUNCTIONS
+		#pragma region DYNAMIC_RENDERING_FUNCTIONS
 
 		VkResult vkCmdBeginRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
 			auto func = (PFN_vkCmdBeginRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
@@ -44,7 +44,7 @@
 			std::vector<VkFence> inFlightFences;
 
 			/// INVOKABLE RENDER EVENTS: (executed in MiniVkDynamicRenderer::RenderFrame() ///
-			std::invokable<uint32_t,uint32_t> onRenderEvents;
+			std::invokable<uint32_t> onRenderEvents;
 
 			/// COMMAND POOL FOR RENDER COMMANDS ///
 			/// RENDERING DEPTH IMAGE ///
@@ -53,6 +53,7 @@
 
 			/// SWAPCHAIN FRAME MANAGEMENT ///
 			size_t currentSyncFrame = 0;
+			size_t currentSwapFrame = 0;
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -116,7 +117,7 @@
 				throw std::runtime_error("MiniVulkan: Failed to find supported format!");
 			}
 
-			void BeginRecordCmdBuffer(uint32_t swapFrame, uint32_t syncFrame, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
+			void BeginRecordCmdBuffer(uint32_t syncFrame, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil, bool enableColorBlending = true) {
 				VkCommandBuffer commandBuffer = commandPool.GetBuffers()[syncFrame];
 
 				VkCommandBufferBeginInfo beginInfo{};
@@ -132,7 +133,7 @@
 					.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 					.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-					.image = swapChain.images[swapFrame],
+					.image = swapChain.images[currentSwapFrame],
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 					  .baseMipLevel = 0,
@@ -163,7 +164,7 @@
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-				colorAttachmentInfo.imageView = swapChain.imageViews[swapFrame];
+				colorAttachmentInfo.imageView = swapChain.imageViews[currentSwapFrame];
 				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -204,9 +205,11 @@
 				if (vkCmdBeginRenderingEKHR(renderDevice.instance.instance, commandBuffer, &dynamicRenderInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to rendering!");
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
+
+				vkCmdSetColorBlendEnableEKHR(renderDevice.instance.instance, commandBuffer, 0U, 1U, { (VkBool32)enableColorBlending });
 			}
 
-			void EndRecordCmdBuffer(uint32_t swapFrame, uint32_t syncFrame, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
+			void EndRecordCmdBuffer(uint32_t syncFrame, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
 				VkCommandBuffer commandBuffer = commandPool.GetBuffers()[syncFrame];
 
 				if (vkCmdEndRenderingEKHR(renderDevice.instance.instance, commandBuffer) != VK_SUCCESS)
@@ -217,7 +220,7 @@
 					.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 					.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-					.image = swapChain.images[swapFrame],
+					.image = swapChain.images[currentSwapFrame],
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 					  .baseMipLevel = 0,
@@ -248,7 +251,7 @@
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-				colorAttachmentInfo.imageView = swapChain.imageViews[swapFrame];
+				colorAttachmentInfo.imageView = swapChain.imageViews[currentSwapFrame];
 				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -296,13 +299,14 @@
 			void RenderFrame() {
 				std::lock_guard g(std::disposable::global_lock);
 
-				uint32_t imageIndex;
-				VkResult result;
-
 				if (!swapChain.presentable) return;
 
 				vkWaitForFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame], VK_TRUE, UINT64_MAX);
-				result = vkAcquireNextImageKHR(renderDevice.logicalDevice, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphores[currentSyncFrame], VK_NULL_HANDLE, &imageIndex);
+				
+				uint32_t imageIndex;
+				VkResult result = vkAcquireNextImageKHR(renderDevice.logicalDevice, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphores[currentSyncFrame], VK_NULL_HANDLE, &imageIndex);
+				currentSwapFrame = imageIndex;
+				
 				vkResetFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame]);
 
 				if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -323,7 +327,7 @@
 					depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 				}
 				
-				onRenderEvents.invoke(imageIndex, currentSyncFrame);
+				onRenderEvents.invoke(currentSyncFrame);
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 				VkSubmitInfo submitInfo{};
@@ -362,6 +366,14 @@
 					currentSyncFrame = 0;
 				} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 					throw std::runtime_error("MiniVulkan: Failed to acquire swap chain image!");
+			}
+
+			VkResult PushDescriptorSet(uint32_t syncFrame, VkWriteDescriptorSet& writeDescriptorSet) {
+				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, commandPool.GetBuffers()[syncFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout, 0, 1, &writeDescriptorSet);
+			}
+
+			void PushConstants(uint32_t syncFrame, VkShaderStageFlagBits shaderFlags, uint32_t byteSize, const void* pValues) {
+				vkCmdPushConstants(commandPool.GetBuffers()[syncFrame], graphicsPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteSize, pValues);
 			}
 		};
 	}

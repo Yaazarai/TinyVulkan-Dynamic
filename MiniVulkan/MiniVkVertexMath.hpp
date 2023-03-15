@@ -6,7 +6,7 @@
     namespace MINIVULKAN_NAMESPACE {
 	    class MiniVkMath {
 	    public:
-            constexpr static glm::mat4 Project2D(double width, double height, double znear, double zfar) {
+            const static glm::mat4 Project2D(double width, double height, double camerax, double cameray, double znear = 1.0, double zfar = 0.0) {
                 //return glm::transpose(glm::mat4(
                 //    2.0/(width - 1), 0.0, 0.0, -1.0,
                 //    0.0, 2.0/(height-1), 0.0, -1.0,
@@ -14,7 +14,9 @@
                 //    0.0, 0.0, 0.0, 1.0));
                 // Defining the TOP and BOTTOM upside down will provide the proper translation transform for scaling
                 // with Vulkan due to Vulkan's inverted Y-Axis without having to transpose the matrix.
-                return glm::ortho(0.0, width, 0.0, height, znear, zfar);    
+                glm::mat4 projection = glm::ortho(0.0, width, 0.0, height, znear, zfar);
+                return glm::translate(projection, glm::vec3(-camerax, -cameray, 0.0));
+
             }
 	    };
 

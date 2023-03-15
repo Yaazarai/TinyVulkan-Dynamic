@@ -67,7 +67,7 @@ int MINIVULKAN_WINDOWMAIN {
             dyRender.BeginRecordCmdBuffer(syncFrame, swapChain.imageExtent, clearColor, depthStencil, true);
             VkCommandBuffer commandBuffer = dyRender.commandPool.GetBuffers()[syncFrame];
 
-            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 1.0, 0.0);
+            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), -352.0, -142.0, 1.0, 0.0);
             dyRender.PushConstants(syncFrame, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
 
             VkDescriptorImageInfo imageInfo = image.GetImageDescriptor();

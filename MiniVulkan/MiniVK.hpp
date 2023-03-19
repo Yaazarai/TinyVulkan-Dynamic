@@ -99,3 +99,32 @@
     #include "./MiniVkVertexMath.hpp"
     
 #endif
+
+/// 
+/// Rendering Pipeline Order:
+///     0. Determine MiniVkBufferingMode.
+///     1. Create MiniVkWindow
+///     2. Create MiniVkInstance
+///     3. Create MiniVkRenderDevice with window surface.
+///     4. Create MiniVkVMAllocator
+///     5. Create MiniVkCommandPool (size is swapchain buffering mode).
+///     6. Create MiniVkSwapChain with MiniVkSurfaceSupporter() and buffering mode.
+///     7. Create MiniVkShaderStages for each graphics pipeline.
+///     8. Create MiniVkDynamicPipeline for each graphics pipeline w/ their repsective shader stages.
+///     9. Create MiniVkSwapChainRenderer for rendering to the screen.
+///     10. Create MiniVkImageRenderer if rendering to a specific MiniVkImage(VkImage) target.
+///         a. This is optional if you plan on rendering directly to a specific MiniVkImage instead of the swap chain.
+///             If so create a new MiniVkImage as your render target.
+///         b. If using a MiniVkImageRenderer you will need a separate MiniVkCommandPool and MiniVkCommandPoolQueue
+///             for any and all render operations separate from the swapchain command pool.
+///         c. Either get a command buffer from your command pool queue and pre-record it
+///             or pass a render event to myMiniVkImageRenderer.onRenderEvents and record on execute.
+///     11. Add a std::callback to yoru swapchain renderer myMiniVkSwapChainRenderer.onRenderEvents.
+///         You may use a lambda, static or instance method for the callback--lambdas are superior.
+///         This event on the swap chain renderer is critical for rendering to the screen.
+///     12. If necessary create a new thread or retrieve one from a thread pool and execute your render functions.
+///         myMiniVkSwapChainRenderer.RenderExecute(...) or myMiniVkImageRenderer.RenderExecute(...).
+///         Make sure to check if the window should close to stop any executing threads when the program fails.
+///         Make sure to join threads as needed after program closes (window should close).
+///     13. Or add these render functions to your window's onWhileMain render event for single-threaded rendering.
+/// 

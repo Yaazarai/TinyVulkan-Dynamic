@@ -15,9 +15,9 @@
 				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency
 				VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, /// Allows for rendering without framebuffers and render passes.
 				VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, /// Allows for writing descriptors directly into a command buffer rather than allocating from sets/pools.
-				VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME, // Used for changing pipeline dynamic state such as blending/viewport/scissor operations.
-				VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME, // Used for changing pipeline dynamic state such as blending/viewport/scissor operations.
-				VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME // Used for extended line drawing support.
+				//VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+				//VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME
+				//VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME // Used for extended line drawing support.
 			};
 		public:
 			/// PHYSICAL_LOGICAL_DEVICES ///

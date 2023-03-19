@@ -16,7 +16,7 @@
 				vkDestroyCommandPool(renderDevice.logicalDevice, commandPool, nullptr);
 			}
 			
-			MiniVkCommandPool(MiniVkRenderDevice& renderDevice, size_t bufferCount = 1) : renderDevice(renderDevice) {
+			MiniVkCommandPool(MiniVkRenderDevice& renderDevice, size_t bufferCount = static_cast<size_t>(MiniVkBufferingMode::QUADRUPLE)) : renderDevice(renderDevice) {
 				onDispose += std::callback<bool>(this, &MiniVkCommandPool::Disposable);
 				CreateCommandPool();
 				CreateCommandBuffers(bufferCount+1);
@@ -51,6 +51,41 @@
 
 				if (vkAllocateCommandBuffers(renderDevice.logicalDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to allocate command buffers!");
+			}
+		};
+
+		class MiniVkCmdPoolQueue : public std::disposable {
+		private:
+			MiniVkCommandPool& cmdPool;
+			std::vector<bool> rentQueue;
+		public:
+			MiniVkCmdPoolQueue(MiniVkCommandPool& cmdPool) : cmdPool(cmdPool) {
+				rentQueue.resize(cmdPool.GetBufferCount());
+			}
+
+			bool HasBuffers() {
+				for (int32_t i = 0; i < rentQueue.size(); i++)
+					if (rentQueue[i] == false) return true;
+
+				return false;
+			}
+
+			VkCommandBuffer RentBuffer(int32_t& index) {
+				for (int32_t i = 0; i < rentQueue.size(); i++)
+					if (rentQueue[i] == false) {
+						rentQueue[i] = true;
+						return cmdPool.GetBuffers()[index = i];
+					}
+				
+				return nullptr;
+			}
+
+			void ReturnBuffer(int32_t index) {
+				if (index < 0 || index >= rentQueue.size())
+					throw std::runtime_error("MiniVulkan: Failed to return command buffer!");
+				
+				rentQueue[index] = false;
+				vkResetCommandBuffer(cmdPool.GetBuffers()[index], 0);
 			}
 		};
 	}

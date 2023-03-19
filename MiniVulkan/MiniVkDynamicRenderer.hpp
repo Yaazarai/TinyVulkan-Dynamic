@@ -222,7 +222,7 @@
 					.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 					.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-					.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+					.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 					.image = renderTarget.image,
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

@@ -32,7 +32,7 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkDynamicPipeline dyImagePipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, false, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
         MiniVkCommandPool cmdRenderPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkCmdPoolQueue cmdRenderQueue(cmdRenderPool);
-        MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false);
+        MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, renderSurface, dyImagePipe);
 
         window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
@@ -85,10 +85,6 @@ int MINIVULKAN_WINDOWMAIN {
             vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 4, 0);
         imageRenderer.EndRecordCmdBuffer(renderTargetBuffer, VkExtent2D{ .width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height }, clearColor, depthStencil);
         imageRenderer.RenderExecute(nullptr, renderTargetBuffer);
-
-        vkWaitForFences(renderDevice.logicalDevice, 1, &imageRenderer.imageWaitable, VK_TRUE, UINT64_MAX);
-        renderSurface.TransitionLayoutCmd(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        vkResetFences(renderDevice.logicalDevice, 1, &imageRenderer.imageWaitable);
 
 
 

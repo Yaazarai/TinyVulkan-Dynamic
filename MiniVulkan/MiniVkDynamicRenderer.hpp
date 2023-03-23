@@ -98,7 +98,7 @@
 
 			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkImage& renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), cmdPoolQueue(cmdPoolQueue), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
-				onDispose += std::callback<bool>(this, &MiniVkImageRenderer::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkImageRenderer::Disposable));
 
 				if (graphicsPipeline.DepthTestingIsEnabled())
 					optionalDepthImage = new MiniVkImage(renderDevice, vmAlloc, renderTarget.width, renderTarget.height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -307,7 +307,7 @@
 				vkCmdPushConstants(cmdBuffer, graphicsPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteSize, pValues);
 			}
 			
-			VkResult RenderExecute(std::mutex* optionalLock = nullptr, VkCommandBuffer preRecordedCmdBuffer = nullptr) {
+			void RenderExecute(std::mutex* optionalLock = nullptr, VkCommandBuffer preRecordedCmdBuffer = nullptr) {
 				std::mutex* lock = (optionalLock == nullptr) ? &std::disposable::global_lock : optionalLock;
 				std::lock_guard g(*lock);
 
@@ -315,6 +315,14 @@
 				vkResetFences(renderDevice.logicalDevice, 1, &imageWaitable);
 				
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+				if (graphicsPipeline.DepthTestingIsEnabled()) {
+					MiniVkImage* depthImage = optionalDepthImage;
+					if (depthImage->width < renderTarget.width || depthImage->height < renderTarget.height) {
+						depthImage->Disposable(false);
+						depthImage->ReCreateImage(renderTarget.width, renderTarget.height, depthImage->isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+					}
+				}
+				
 				VkCommandBuffer renderBuffer = preRecordedCmdBuffer;
 				if (renderBuffer == nullptr) {
 					int32_t cmdBufferIndex;
@@ -367,9 +375,6 @@
 			std::vector<VkSemaphore> renderFinishedSemaphores;
 			std::vector<VkFence> inFlightFences;
 
-			/// INVOKABLE RENDER EVENTS: (executed in MiniVkDynamicRenderer::RenderFrame() ///
-			std::invokable<VkCommandBuffer> onRenderEvents;
-
 			/// COMMAND POOL FOR RENDER COMMANDS ///
 			/// RENDERING DEPTH IMAGE ///
 			MiniVkCommandPool& commandPool;
@@ -378,6 +383,9 @@
 			/// SWAPCHAIN FRAME MANAGEMENT ///
 			size_t currentSyncFrame = 0;
 			size_t currentSwapFrame = 0;
+
+			/// INVOKABLE RENDER EVENTS: (executed in MiniVkDynamicRenderer::RenderFrame() ///
+			std::invokable<VkCommandBuffer> onRenderEvents;
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -398,7 +406,7 @@
 
 			MiniVkSwapChainRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& memAlloc, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline& graphicsPipeline)
 				: renderDevice(renderDevice), memAlloc(memAlloc), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
-				onDispose += std::callback<bool>(this, &MiniVkSwapChainRenderer::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkSwapChainRenderer::Disposable));
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					for (int32_t i = 0; i < swapChain.images.size(); i++)

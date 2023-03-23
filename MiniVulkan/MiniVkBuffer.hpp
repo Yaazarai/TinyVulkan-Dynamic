@@ -65,13 +65,13 @@
 
 			MiniVkBuffer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), size(dataSize) {
-				onDispose += std::callback<bool>(this, &MiniVkBuffer::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkBuffer::Disposable));
 				CreateBuffer(size, usage, flags);
 			}
 
 			MiniVkBuffer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize dataSize, MiniVkBufferType type)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), size(dataSize) {
-				onDispose += std::callback<bool>(this, &MiniVkBuffer::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkBuffer::Disposable));
 
 				switch (type) {
 					case MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX:

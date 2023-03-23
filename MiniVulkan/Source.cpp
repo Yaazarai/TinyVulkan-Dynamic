@@ -35,8 +35,8 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, renderSurface, dyImagePipe);
 
-        window.onResizeFrameBuffer += std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback);
-        swapChain.onResizeFrameBuffer += std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback);
+        window.onResizeFrameBuffer.hook(std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback));
+        swapChain.onResizeFrameBuffer.hook(std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback));
 
         VkClearValue clearColor{ .color = { 1.0, 0.0, 0.0, 1.0 } };
         VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
@@ -60,6 +60,7 @@ int MINIVULKAN_WINDOWMAIN {
         vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
         MiniVkBuffer ibuffer(renderDevice, vmAlloc, indices.size() * sizeof(indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
         ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), indices.data(), indices.size() * sizeof(MiniVkVertex), 0, 0);
+        
         FILE* test = fopen("./Screeny.qoi", "rb");
         if (test == NULL) { std::cout << "NO QOI IMAGE" << std::endl; } else { fclose(test); }
         qoi_desc qoidesc;
@@ -71,7 +72,6 @@ int MINIVULKAN_WINDOWMAIN {
 
         int32_t rentBufferIndex;
         VkCommandBuffer renderTargetBuffer = cmdRenderQueue.RentBuffer(rentBufferIndex);
-
         imageRenderer.BeginRecordCmdBuffer(renderTargetBuffer, VkExtent2D {.width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height}, clearColor, depthStencil, true);
             glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
             imageRenderer.PushConstants(renderTargetBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
@@ -85,6 +85,9 @@ int MINIVULKAN_WINDOWMAIN {
             vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 4, 0);
         imageRenderer.EndRecordCmdBuffer(renderTargetBuffer, VkExtent2D{ .width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height }, clearColor, depthStencil);
         imageRenderer.RenderExecute(nullptr, renderTargetBuffer);
+        
+        renderDevice.WaitIdle();
+        cmdRenderQueue.ReturnBuffer(rentBufferIndex);
 
 
 
@@ -102,7 +105,7 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkBuffer sw_ibuffer(renderDevice, vmAlloc, sw_indices.size() * sizeof(sw_indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
         sw_ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_indices.data(), sw_indices.size() * sizeof(MiniVkVertex), 0, 0);
 
-        dyRender.onRenderEvents += std::callback<VkCommandBuffer>([&instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
+        dyRender.onRenderEvents.hook(std::callback<VkCommandBuffer>([&instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
             VkClearValue clearColor{ .color = { 0.0, 0.0, 0.0, 1.0 } };
             VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
         
@@ -121,14 +124,11 @@ int MINIVULKAN_WINDOWMAIN {
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sw_ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
             
             dyRender.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
-        });
+        }));
 
         std::thread mythread([&window, &dyRender]() { while (!window.ShouldClose()) { dyRender.RenderExecute(); } });
         window.WhileMain();
         mythread.join();
-
-        renderDevice.WaitIdle();
-        cmdRenderQueue.ReturnBuffer(rentBufferIndex);
 
         std::disposable::DisposeOrdered({ &instance, &window, &renderDevice, &vmAlloc, &swapChain, &cmdSwapPool, &shaders, &dySwapChainPipe, &dyRender,
             &dyImagePipe, &cmdRenderPool, &cmdRenderQueue, &renderSurface, &imageRenderer, &vbuffer, &ibuffer, &image, &sw_vbuffer, &sw_ibuffer }, true);

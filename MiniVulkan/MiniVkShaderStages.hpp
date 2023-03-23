@@ -21,7 +21,7 @@
 			}
 
 			MiniVkShaderStages(MiniVkRenderDevice& renderDevice, const std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders) : renderDevice(renderDevice), shaders(shaders) {
-				onDispose += std::callback<bool>(this, &MiniVkShaderStages::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkShaderStages::Disposable));
 
 				for (size_t i = 0; i < shaders.size(); i++) {
 					auto shaderCode = ReadFile(std::get<1>(shaders[i]));

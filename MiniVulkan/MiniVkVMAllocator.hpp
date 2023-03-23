@@ -15,7 +15,7 @@
 			}
 
 			MiniVkVMAllocator(MiniVkInstance& mvkInstance, MiniVkRenderDevice& renderDevice) : renderDevice(renderDevice) {
-				onDispose += std::callback<bool>(this, &MiniVkVMAllocator::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkVMAllocator::Disposable));
 				VmaAllocatorCreateInfo allocatorCreateInfo = {};
 				allocatorCreateInfo.vulkanApiVersion = MVK_RENDERER_VERSION;
 				allocatorCreateInfo.physicalDevice = renderDevice.physicalDevice;

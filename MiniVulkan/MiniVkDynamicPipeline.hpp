@@ -56,7 +56,7 @@
 
 			MiniVkDynamicPipeline(MiniVkRenderDevice& renderDevice, VkFormat imageFormat, MiniVkShaderStages& shaderStages, MiniVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology) {
-				onDispose += std::callback<bool>(this, &MiniVkDynamicPipeline::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkDynamicPipeline::Disposable));
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
 				vkGetDeviceQueue(renderDevice.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);

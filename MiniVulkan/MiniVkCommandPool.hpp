@@ -17,7 +17,7 @@
 			}
 			
 			MiniVkCommandPool(MiniVkRenderDevice& renderDevice, size_t bufferCount = static_cast<size_t>(MiniVkBufferingMode::QUADRUPLE)) : renderDevice(renderDevice) {
-				onDispose += std::callback<bool>(this, &MiniVkCommandPool::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkCommandPool::Disposable));
 				CreateCommandPool();
 				CreateCommandBuffers(bufferCount+1);
 			}

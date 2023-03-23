@@ -31,7 +31,7 @@
 
 			MiniVkSwapChain(MiniVkRenderDevice& renderDevice, MiniVkSurfaceSupporter presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			: renderDevice(renderDevice), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
-				onDispose += std::callback<bool>(this, &MiniVkSwapChain::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkSwapChain::Disposable));
 				
 				CreateSwapChain();
 				presentable = true;

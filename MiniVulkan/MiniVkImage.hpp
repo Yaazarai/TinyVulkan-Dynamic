@@ -102,7 +102,7 @@
 
 			MiniVkImage(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), layout(layout), addressingMode(addressingMode), aspectFlags(aspectFlags) {
-				onDispose += std::callback<bool>(this, &MiniVkImage::Disposable);
+				onDispose.hook(std::callback<bool>(this, &MiniVkImage::Disposable));
 
 				ReCreateImage(width, height, isDepthImage, format, layout, addressingMode, aspectFlags);
 			}

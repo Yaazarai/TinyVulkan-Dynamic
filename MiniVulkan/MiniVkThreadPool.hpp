@@ -23,7 +23,7 @@
 			std::vector<std::thread> pool;
 
 			MiniVkThreadPool(const uint32_t potentialThreads = 2, bool startWorking = true) : working(startWorking) {
-				onDispose += std::callback<bool>(this, &MiniVkThreadPool::awaitClosePool);
+				onDispose.hook(std::callback<bool>(this, &MiniVkThreadPool::awaitClosePool));
 				trySpawnThreads(potentialThreads, startWorking);
 			}
 

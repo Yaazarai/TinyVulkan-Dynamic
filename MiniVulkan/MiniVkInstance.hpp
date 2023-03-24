@@ -23,7 +23,7 @@
 			}
 
 			MiniVkInstance(const std::vector<const char*> presentationExtensions, const std::string title) : presentationExtensions(presentationExtensions) {
-				onDispose.hook(std::callback<bool>(this, &MiniVkInstance::Disposable));
+				onDispose.hook(callback<bool>(this, &MiniVkInstance::Disposable));
 				CreateVkInstance(title);
 				SetupDebugMessenger();
 			}

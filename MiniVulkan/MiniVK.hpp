@@ -119,7 +119,7 @@
 ///             for any and all render operations separate from the swapchain command pool.
 ///         c. Either get a command buffer from your command pool queue and pre-record it
 ///             or pass a render event to myMiniVkImageRenderer.onRenderEvents and record on execute.
-///     11. Add a std::callback to yoru swapchain renderer myMiniVkSwapChainRenderer.onRenderEvents.
+///     11. Add a callback to yoru swapchain renderer myMiniVkSwapChainRenderer.onRenderEvents.
 ///         You may use a lambda, static or instance method for the callback--lambdas are superior.
 ///         This event on the swap chain renderer is critical for rendering to the screen.
 ///     12. If necessary create a new thread or retrieve one from a thread pool and execute your render functions.

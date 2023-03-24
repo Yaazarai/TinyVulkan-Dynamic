@@ -81,7 +81,7 @@ namespace MINIVULKAN_NAMESPACE {
 		}
 
 		// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
-		inline static std::invokable<int, int> onResizeFrameBuffer;
+		inline static invokable<int, int> onResizeFrameBuffer;
 
 		void Disposable(bool waitIdle) {
 			glfwDestroyWindow(hwndWindow);
@@ -90,7 +90,7 @@ namespace MINIVULKAN_NAMESPACE {
 
 		/// <summary>Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
 		MiniVkWindow(std::string title, int width, int height, bool resizable, bool transparentFramebuffer = false, bool hasMinSize = false, int minWidth = 200, int minHeight = 200) {
-			onDispose.hook(std::callback<bool>(this, &MiniVkWindow::Disposable));
+			onDispose.hook(callback<bool>(this, &MiniVkWindow::Disposable));
 			hwndWindow = InitiateWindow(title, width, height, resizable, transparentFramebuffer);
 			glfwSetWindowUserPointer(hwndWindow, this);
 			glfwSetFramebufferSizeCallback(hwndWindow, MiniVkWindow::OnFrameBufferNotifyReSizeCallback);
@@ -156,7 +156,7 @@ namespace MINIVULKAN_NAMESPACE {
 		virtual int GetHeight() { return std::max(hwndHeight, 1); }
 
 		/// <summary>Executes functions in the main window loop (w/ ref to bool to exit loop as needed).</summary>
-		std::invokable<bool&> onWhileMain;
+		invokable<bool&> onWhileMain;
 
 		/// <summary>[overridable] Executes the main window loop.</summary>
 		virtual void WhileMain() {

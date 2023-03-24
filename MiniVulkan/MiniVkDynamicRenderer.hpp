@@ -35,7 +35,7 @@
 		///		Call RenderExecute(mutex[optional], preRecordedCommandBuffer[optiona]) to render to the image.
 		///			You may pass a pre-recorded command buffer ready to go, or retrieve a command buffer from
 		///			the underlying command pool queue and build your command buffer with a render event (onRenderEvent).
-		///				onRenderEvent += std::callback<VkCommandBuffer>(...);
+		///				onRenderEvent += callback<VkCommandBuffer>(...);
 		///				
 		///			If you use a render event, the command buffer will be returned to the command pool queue after execution.
 		///		
@@ -81,7 +81,7 @@
 			VkSemaphore imageFinished;
 			VkFence imageWaitable;
 
-			std::invokable<VkCommandBuffer> onRenderEvent;
+			invokable<VkCommandBuffer> onRenderEvent;
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -98,7 +98,7 @@
 
 			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkImage& renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), cmdPoolQueue(cmdPoolQueue), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
-				onDispose.hook(std::callback<bool>(this, &MiniVkImageRenderer::Disposable));
+				onDispose.hook(callback<bool>(this, &MiniVkImageRenderer::Disposable));
 
 				if (graphicsPipeline.DepthTestingIsEnabled())
 					optionalDepthImage = new MiniVkImage(renderDevice, vmAlloc, renderTarget.width, renderTarget.height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -385,7 +385,7 @@
 			size_t currentSwapFrame = 0;
 
 			/// INVOKABLE RENDER EVENTS: (executed in MiniVkDynamicRenderer::RenderFrame() ///
-			std::invokable<VkCommandBuffer> onRenderEvents;
+			invokable<VkCommandBuffer> onRenderEvents;
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -406,7 +406,7 @@
 
 			MiniVkSwapChainRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& memAlloc, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline& graphicsPipeline)
 				: renderDevice(renderDevice), memAlloc(memAlloc), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
-				onDispose.hook(std::callback<bool>(this, &MiniVkSwapChainRenderer::Disposable));
+				onDispose.hook(callback<bool>(this, &MiniVkSwapChainRenderer::Disposable));
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					for (int32_t i = 0; i < swapChain.images.size(); i++)

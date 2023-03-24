@@ -12,7 +12,7 @@
 		public:
 			static std::mutex global_lock;
 
-			std::invokable<bool> onDispose;
+			invokable<bool> onDispose;
 			
 			void Dispose() {
 				if (disposed) return;

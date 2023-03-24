@@ -35,8 +35,8 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, renderSurface, dyImagePipe);
 
-        window.onResizeFrameBuffer.hook(std::callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback));
-        swapChain.onResizeFrameBuffer.hook(std::callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback));
+        window.onResizeFrameBuffer.hook(callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback));
+        swapChain.onResizeFrameBuffer.hook(callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback));
 
         VkClearValue clearColor{ .color = { 1.0, 0.0, 0.0, 1.0 } };
         VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
@@ -105,7 +105,7 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkBuffer sw_ibuffer(renderDevice, vmAlloc, sw_indices.size() * sizeof(sw_indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
         sw_ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_indices.data(), sw_indices.size() * sizeof(MiniVkVertex), 0, 0);
 
-        dyRender.onRenderEvents.hook(std::callback<VkCommandBuffer>([&instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
+        dyRender.onRenderEvents.hook(callback<VkCommandBuffer>([&instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
             VkClearValue clearColor{ .color = { 0.0, 0.0, 0.0, 1.0 } };
             VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
         

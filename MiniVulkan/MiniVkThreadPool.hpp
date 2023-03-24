@@ -9,7 +9,7 @@
 			void slave() {
 				while (working) {
 					if (safety_lock.try_lock()) {
-						std::callback<std::atomic_bool&> callback = queue.front();
+						callback<std::atomic_bool&> callback = queue.front();
 						queue.pop();
 						safety_lock.unlock();
 						callback.invoke(working);
@@ -19,17 +19,17 @@
 		public:
 			std::mutex safety_lock;
 			std::atomic_bool working;
-			std::queue<std::callback<std::atomic_bool&>> queue;
+			std::queue<callback<std::atomic_bool&>> queue;
 			std::vector<std::thread> pool;
 
 			MiniVkThreadPool(const uint32_t potentialThreads = 2, bool startWorking = true) : working(startWorking) {
-				onDispose.hook(std::callback<bool>(this, &MiniVkThreadPool::awaitClosePool));
+				onDispose.hook(callback<bool>(this, &MiniVkThreadPool::awaitClosePool));
 				trySpawnThreads(potentialThreads, startWorking);
 			}
 
 			size_t getSize() { return pool.size(); }
 
-			void clearTasks() { std::queue<std::callback<std::atomic_bool&>>().swap(queue); }
+			void clearTasks() { std::queue<callback<std::atomic_bool&>>().swap(queue); }
 
 			void awaitClosePool(bool lwaitIdle) {
 				working = false;
@@ -55,7 +55,7 @@
 				return threadCount;
 			}
 
-			bool tryPushCallback(std::callback<std::atomic_bool&> task) {
+			bool tryPushCallback(callback<std::atomic_bool&> task) {
 				if (safety_lock.try_lock()) {
 					queue.push(task);
 					safety_lock.unlock();

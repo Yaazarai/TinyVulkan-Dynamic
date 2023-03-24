@@ -17,7 +17,7 @@
 			std::vector<VkImage> images;
 			std::vector<VkImageView> imageViews;
 
-			inline static std::invokable<int&, int&> onResizeFrameBuffer;
+			inline static invokable<int&, int&> onResizeFrameBuffer;
 			bool presentable;
 
 			void Disposable(bool waitIdle) {
@@ -31,7 +31,7 @@
 
 			MiniVkSwapChain(MiniVkRenderDevice& renderDevice, MiniVkSurfaceSupporter presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			: renderDevice(renderDevice), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
-				onDispose.hook(std::callback<bool>(this, &MiniVkSwapChain::Disposable));
+				onDispose.hook(callback<bool>(this, &MiniVkSwapChain::Disposable));
 				
 				CreateSwapChain();
 				presentable = true;

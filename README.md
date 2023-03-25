@@ -1,7 +1,7 @@
 # MiniVulkan-Dynamic
 Vulkan Graphics render engine using extension `VK_KHR_DYNAMIC_RENDERING`, `VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME`, `VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME`.
 
-LIST OF FEATURES: (\** means future, not yet implemented)
+LIST OF FEATURES: (FUTR\** means future, not yet implemented)
 
 1. Push Descriptors & Push Constants
 2. Dynamic VIewports & Scissors
@@ -18,6 +18,6 @@ LIST OF FEATURES: (\** means future, not yet implemented)
 12. Multiple Screen Buffering Modes: Double, Triple, Quadruple.
 13. Thread-Pool implementation.
 14. Window transparency using GLFW `transparentFramebuffer`.
-15. \** Headless Rendering (NOT-IMPLEMENTED) for rendering outside the swapchain (surfaces).
+15. Headless Rendering via `MiniVkImageRenderer` for rendering outside the swapchain (`MiniVkSwapChainRenderer`).
 
 The `source.cpp` example loads QOI images (an example image is provided). Please see the official QOI repo for the full source code and any provided examples or commandline tools for dealing with QOI images (alternative to .png): https://qoiformat.org

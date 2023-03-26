@@ -22,6 +22,13 @@
         ** If Debug mode is enabled the console window will be visible, but not on Release.
         **** Make sure you've installed the Vulkan SDK binaries.
         **** Make sure you've installed the GLFW SDK binaries.
+        
+        DEVICE EXTENSIONS:
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+                VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+                VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
     */
 
     #define GLFW_INCLUDE_VULKAN

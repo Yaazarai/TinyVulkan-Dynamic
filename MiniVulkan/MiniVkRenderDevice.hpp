@@ -10,14 +10,14 @@
 			const VkPhysicalDeviceFeatures deviceFeatures { .multiDrawIndirect = VK_TRUE, .multiViewport = VK_TRUE };
 			const std::vector<const char*> deviceExtensions = {
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME, /// Swapchain support for buffering frame images with the device driver to reduce tearing.
-				VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, // Used to enable high memory priority for VMA.
-				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, // Dynamic Rendering Dependency
-				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency
+				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, // Dynamic Rendering Dependency.
+				VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, // Dynamic Rendering Dependency.
 				VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, /// Allows for rendering without framebuffers and render passes.
 				VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, /// Allows for writing descriptors directly into a command buffer rather than allocating from sets/pools.
-				//VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
-				//VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME
-				//VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME // Used for extended line drawing support.
+				//VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, // Used to enable high memory priority for VMA (March 2023, poor device--no AMD APU--support: 29%).
+				//VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME, // No Logner Using Dynamic State (Not Supported by RenderDoc for debugging).
+				//VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME  // No Logner Using Dynamic State (Not Supported by RenderDoc for debugging).
+				//VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME // Used for extended line drawing support (March 2023, OK device support: 57%).
 			};
 		public:
 			/// PHYSICAL_LOGICAL_DEVICES ///
@@ -61,14 +61,14 @@
 					queueCreateInfos.push_back(queueCreateInfo);
 				}
 				
-				VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
-				dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-				dynamicState3Features.extendedDynamicState3ColorBlendEnable = VK_TRUE;
+				//VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
+				//dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+				//dynamicState3Features.extendedDynamicState3ColorBlendEnable = VK_TRUE;
 				
-				VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingCreateInfo{};
+				VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingCreateInfo{};
 				dynamicRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
 				dynamicRenderingCreateInfo.dynamicRendering = VK_TRUE;
-				dynamicRenderingCreateInfo.pNext = &dynamicState3Features;
+				//dynamicRenderingCreateInfo.pNext = &dynamicState3Features;
 
 				VkDeviceCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -159,9 +159,9 @@
 				// You can uncomment this to add check for specific device features.
 				VkPhysicalDeviceFeatures2 deviceFeatures {};
 				deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-				VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
-				dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-				deviceFeatures.pNext = &dynamicState3Features;
+				//VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
+				//dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+				//deviceFeatures.pNext = &dynamicState3Features;
 				vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
 				
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(device, presentationSurface);
@@ -181,8 +181,8 @@
 					}
 
 				return indices.IsComplete() && hasType && supportsExtensions && swapChainAdequate
-					&& deviceFeatures.features.multiViewport && deviceFeatures.features.multiDrawIndirect
-					&& dynamicState3Features.extendedDynamicState3ColorBlendEnable;
+					&& deviceFeatures.features.multiViewport && deviceFeatures.features.multiDrawIndirect;
+					//&& dynamicState3Features.extendedDynamicState3ColorBlendEnable;
 			}
 
 			/// <summary>Returns BOOL(true/false) if the VkPhysicalDevice (GPU/iGPU) supports extensions.</summary>

@@ -4,6 +4,10 @@
 	#include <mutex>
 	#include "invokable.hpp"
 	
+	#ifndef DISPOSABLE_INTERFACE_DEFAULT
+		#define DISPOSABLE_BOOL_DEFAULT true
+	#endif
+
 	namespace std {
 		class disposable {
 		protected:
@@ -16,7 +20,7 @@
 			
 			void Dispose() {
 				if (disposed) return;
-				onDispose.invoke(true);
+				onDispose.invoke(DISPOSABLE_BOOL_DEFAULT);
 				disposed = true;
 			}
 

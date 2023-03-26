@@ -90,9 +90,10 @@
     #include "./disposable.hpp"
 
     #include "./MiniVkThreadPool.hpp"
+    #include "./MiniVkWindow.hpp"
+
     #include "./MiniVkSupporters.hpp"
     #include "./MiniVkQueueFamily.hpp"
-    #include "./MiniVkWindow.hpp"
     #include "./MiniVkInstance.hpp"
     #include "./MiniVkRenderDevice.hpp"
     #include "./MiniVkSwapChain.hpp"

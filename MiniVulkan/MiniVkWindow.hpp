@@ -52,6 +52,9 @@ namespace MINIVULKAN_NAMESPACE {
 			glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
 			glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, (transparentFramebuffer) ? GLFW_TRUE : GLFW_FALSE);
 
+			if (!glfwVulkanSupported())
+				throw new std::runtime_error("MiniVulkan: GLFW implementation could not locate Vulkan loader.");
+
 			hwndResizable = resizable;
 			hwndWidth = width;
 			hwndHeight = height;

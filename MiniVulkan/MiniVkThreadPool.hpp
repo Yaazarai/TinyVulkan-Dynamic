@@ -16,6 +16,7 @@
 						callback.invoke(working);
 					} else { std::this_thread::yield(); }
 			}
+
 		public:
 			std::mutex safety_lock;
 			std::atomic_bool working = true;
@@ -99,7 +100,7 @@
 				while (!safety_lock.try_lock()) {
 					endTime = duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
 					if (endTime.count() - startTime.count() >= static_cast<long long>(timeout))
-						return;
+						return false;
 				}
 
 				queue.push(task);

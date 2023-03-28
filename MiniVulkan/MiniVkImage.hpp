@@ -29,7 +29,7 @@
 		private:
 			MiniVkRenderDevice& renderDevice;
 			MiniVkVMAllocator& vmAlloc;
-						
+			
 			VkSamplerAddressMode addressingMode;
 
 			void CreateImageView() {
@@ -87,6 +87,10 @@
 				vkDestroySampler(renderDevice.logicalDevice, imageSampler, nullptr);
 				vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
 				vmaDestroyImage(vmAlloc.GetAllocator(), image, memory);
+
+				vkDestroySemaphore(renderDevice.logicalDevice, imageAvailable, nullptr);
+				vkDestroySemaphore(renderDevice.logicalDevice, imageFinished, nullptr);
+				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
 			}
 
 			VmaAllocation memory = VK_NULL_HANDLE;
@@ -95,6 +99,10 @@
 			VkSampler imageSampler = VK_NULL_HANDLE;
 			VkImageLayout layout;
 			VkImageAspectFlags aspectFlags;
+
+			VkSemaphore imageAvailable;
+			VkSemaphore imageFinished;
+			VkFence imageWaitable;
 
 			VkDeviceSize width, height;
 			VkFormat format;
@@ -105,6 +113,7 @@
 				onDispose.hook(callback<bool>(this, &MiniVkImage::Disposable));
 
 				ReCreateImage(width, height, isDepthImage, format, layout, addressingMode, aspectFlags);
+				CreateImageSyncObjects();
 			}
 
 			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT) {
@@ -127,15 +136,29 @@
 				}
 
 				VmaAllocationCreateInfo allocCreateInfo = {};
-				allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+				allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 				allocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 				allocCreateInfo.priority = 1.0f;
-
+				
 				if (vmaCreateImage(vmAlloc.GetAllocator(), &imgCreateInfo, &allocCreateInfo, &image, &memory, nullptr) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Could not allocate GPU image data for MiniVkImage!");
 
 				CreateTextureSampler();
 				CreateImageView();
+			}
+
+			void CreateImageSyncObjects() {
+				VkSemaphoreCreateInfo semaphoreInfo{};
+				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+				VkFenceCreateInfo fenceInfo{};
+				fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+				fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+				if (vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageAvailable) != VK_SUCCESS ||
+					vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageFinished) != VK_SUCCESS ||
+					vkCreateFence(renderDevice.logicalDevice, &fenceInfo, nullptr, &imageWaitable) != VK_SUCCESS)
+					throw std::runtime_error("MiniVulkan: Failed to create synchronization objects for a image renderer!");
 			}
 
 			void TransitionLayoutCmd(VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout newLayout) {

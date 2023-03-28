@@ -42,7 +42,7 @@
 				bufCreateInfo.usage = usage;
 
 				VmaAllocationCreateInfo allocCreateInfo = {};
-				allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+				allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 				allocCreateInfo.flags = flags;
 				
 				if (vmaCreateBuffer(vmAlloc.GetAllocator(), &bufCreateInfo, &allocCreateInfo, &buffer, &memory, &description) != VK_SUCCESS)

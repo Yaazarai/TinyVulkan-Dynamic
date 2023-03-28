@@ -33,7 +33,7 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkCommandPool cmdRenderPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkCmdPoolQueue cmdRenderQueue(cmdRenderPool);
         MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, renderSurface, dyImagePipe);
+        MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, &renderSurface, dyImagePipe);
 
         window.onResizeFrameBuffer.hook(callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback));
         swapChain.onResizeFrameBuffer.hook(callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback));

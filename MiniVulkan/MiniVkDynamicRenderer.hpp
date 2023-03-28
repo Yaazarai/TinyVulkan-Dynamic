@@ -76,10 +76,7 @@
 				throw std::runtime_error("MiniVulkan: Failed to find supported format!");
 			}
 		public:
-			MiniVkImage& renderTarget;
-			VkSemaphore imageAvailable;
-			VkSemaphore imageFinished;
-			VkFence imageWaitable;
+			MiniVkImage* renderTarget;
 
 			invokable<VkCommandBuffer> onRenderEvent;
 
@@ -90,34 +87,23 @@
 					optionalDepthImage->Dispose();
 					delete optionalDepthImage;
 				}
-
-				vkDestroySemaphore(renderDevice.logicalDevice, imageAvailable, nullptr);
-				vkDestroySemaphore(renderDevice.logicalDevice, imageFinished, nullptr);
-				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
 			}
 
-			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkImage& renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
+			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkImage* renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), cmdPoolQueue(cmdPoolQueue), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
 				onDispose.hook(callback<bool>(this, &MiniVkImageRenderer::Disposable));
 
 				if (graphicsPipeline.DepthTestingIsEnabled())
-					optionalDepthImage = new MiniVkImage(renderDevice, vmAlloc, renderTarget.width, renderTarget.height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-				CreateImageSyncObjects();
+					optionalDepthImage = new MiniVkImage(renderDevice, vmAlloc, renderTarget->width, renderTarget->height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 			}
 
-			void CreateImageSyncObjects() {
-				VkSemaphoreCreateInfo semaphoreInfo{};
-				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+			void SetRenderTarget(MiniVkImage* renderTarget, bool waitOldTarget = true) {
+				if (this->renderTarget != nullptr && waitOldTarget) {
+					vkWaitForFences(renderDevice.logicalDevice, 1, &renderTarget->imageWaitable, VK_TRUE, UINT64_MAX);
+					vkResetFences(renderDevice.logicalDevice, 1, &renderTarget->imageWaitable);
+				}
 
-				VkFenceCreateInfo fenceInfo{};
-				fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-				fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-				if (vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageAvailable) != VK_SUCCESS ||
-					vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageFinished) != VK_SUCCESS ||
-					vkCreateFence(renderDevice.logicalDevice, &fenceInfo, nullptr, &imageWaitable) != VK_SUCCESS)
-					throw std::runtime_error("MiniVulkan: Failed to create synchronization objects for a image renderer!");
+				this->renderTarget = renderTarget;
 			}
 
 			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil, bool enableColorBlending = true) {
@@ -125,6 +111,9 @@
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 				beginInfo.pInheritanceInfo = nullptr; // Optional
+
+				if (renderTarget == nullptr)
+					throw new std::runtime_error("MiniVulkan: RenderTarget for MiniVkImageRenderer is not set [nullptr]!");
 
 				if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to command buffer!");
@@ -134,7 +123,7 @@
 					.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 					.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-					.image = renderTarget.image,
+					.image = renderTarget->image,
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 					  .baseMipLevel = 0,
@@ -149,7 +138,7 @@
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-				colorAttachmentInfo.imageView = renderTarget.imageView;
+				colorAttachmentInfo.imageView = renderTarget->imageView;
 				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -215,6 +204,9 @@
 			}
 
 			void EndRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
+				if (renderTarget == nullptr)
+					throw new std::runtime_error("MiniVulkan: RenderTarget for MiniVkImageRenderer is not set [nullptr]!");
+
 				if (vkCmdEndRenderingEKHR(renderDevice.instance.instance, commandBuffer) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [end] to rendering!");
 
@@ -223,7 +215,7 @@
 					.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 					.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-					.image = renderTarget.image,
+					.image = renderTarget->image,
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 					  .baseMipLevel = 0,
@@ -238,7 +230,7 @@
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-				colorAttachmentInfo.imageView = renderTarget.imageView;
+				colorAttachmentInfo.imageView = renderTarget->imageView;
 				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -311,15 +303,18 @@
 				std::mutex* lock = (optionalLock == nullptr) ? &std::disposable::global_lock : optionalLock;
 				std::lock_guard g(*lock);
 
-				vkWaitForFences(renderDevice.logicalDevice, 1, &imageWaitable, VK_TRUE, UINT64_MAX);
-				vkResetFences(renderDevice.logicalDevice, 1, &imageWaitable);
+				if (renderTarget == nullptr)
+					throw new std::runtime_error("MiniVulkan: RenderTarget for MiniVkImageRenderer is not set [nullptr]!");
+
+				vkWaitForFences(renderDevice.logicalDevice, 1, &renderTarget->imageWaitable, VK_TRUE, UINT64_MAX);
+				vkResetFences(renderDevice.logicalDevice, 1, &renderTarget->imageWaitable);
 				
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					MiniVkImage* depthImage = optionalDepthImage;
-					if (depthImage->width < renderTarget.width || depthImage->height < renderTarget.height) {
+					if (depthImage->width < renderTarget->width || depthImage->height < renderTarget->height) {
 						depthImage->Disposable(false);
-						depthImage->ReCreateImage(renderTarget.width, renderTarget.height, depthImage->isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+						depthImage->ReCreateImage(renderTarget->width, renderTarget->height, depthImage->isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					}
 				}
 				
@@ -340,7 +335,7 @@
 				submitInfo.commandBufferCount = 1;
 				submitInfo.pCommandBuffers = &renderBuffer;
 
-				if (vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, imageWaitable) != VK_SUCCESS)
+				if (vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, renderTarget->imageWaitable) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to submit draw command buffer!");
 			}
 		};

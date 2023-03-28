@@ -285,6 +285,20 @@
 			}
 
 			VkDescriptorImageInfo GetImageDescriptor() { return { imageSampler, imageView, layout }; }
+
+			glm::vec2 GetUVCoords(glm::vec2 xy, bool forceClamp = true) {
+				if (forceClamp)
+					xy = glm::clamp(xy, glm::vec2(0.0,0.0), glm::vec2(static_cast<float>(width), static_cast<float>(height)));
+				
+				return glm::vec2(xy.x * (1.0 / static_cast<float>(width)), xy.y * (1.0 / static_cast<float>(height)));
+			}
+
+			glm::vec2 GetXYCoords(glm::vec2 uv, bool forceClamp = true) {
+				if (forceClamp)
+					uv = glm::clamp(uv, glm::vec2(0.0, 0.0), glm::vec2(1.0, 1.0));
+
+				return glm::vec2(uv.x * static_cast<float>(width), uv.y * static_cast<float>(height));
+			}
 		};
 	}
 #endif

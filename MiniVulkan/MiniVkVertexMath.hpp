@@ -18,6 +18,20 @@
                 return glm::translate(projection, glm::vec3(-camerax, -cameray, 0.0));
 
             }
+            
+            const static glm::vec2 GetUVCoords(glm::vec2 xy, glm::vec2 wh, bool forceClamp = true) {
+                if (forceClamp)
+                    xy = glm::clamp(xy, glm::vec2(0.0, 0.0), wh);
+
+                return glm::vec2(xy.x * (1.0 / wh.x), xy.y * (1.0 / wh.y));
+            }
+
+            const static glm::vec2 GetXYCoords(glm::vec2 uv, glm::vec2 wh, bool forceClamp = true) {
+                if (forceClamp)
+                    uv = glm::clamp(uv, glm::vec2(0.0, 0.0), glm::vec2(1.0, 1.0));
+
+                return glm::vec2(uv.x * wh.x, uv.y * wh.y);
+            }
 	    };
 
         struct MiniVkVertex {
@@ -27,7 +41,9 @@
 
             MiniVkVertex(glm::vec2 tex, glm::vec3 pos, glm::vec4 col) : texcoord(tex), position(pos), color(col) {}
 
-            static MiniVkVertexDescription GetVertexDescription() { return MiniVkVertexDescription(GetBindingDescription(), GetAttributeDescriptions()); }
+            static MiniVkVertexDescription GetVertexDescription() {
+                return MiniVkVertexDescription(GetBindingDescription(), GetAttributeDescriptions());
+            }
 
             static VkVertexInputBindingDescription GetBindingDescription() {
                 VkVertexInputBindingDescription bindingDescription {};

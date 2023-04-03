@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkRenderDevice : public std::disposable {
+		class MiniVkRenderDevice : public disposable {
 		private:
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 			const VkPhysicalDeviceFeatures deviceFeatures { .multiDrawIndirect = VK_TRUE, .multiViewport = VK_TRUE };

@@ -52,7 +52,7 @@
 		/// 
 
 		/// <summary>Offscreen Rendering: Render to VkImage.</summary>
-		class MiniVkImageRenderer : public std::disposable {
+		class MiniVkImageRenderer : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 			MiniVkVMAllocator& vmAlloc;
@@ -299,10 +299,10 @@
 				vkCmdPushConstants(cmdBuffer, graphicsPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteSize, pValues);
 			}
 			
-			void RenderExecute(std::mutex* optionalLock = nullptr, VkCommandBuffer preRecordedCmdBuffer = nullptr) {
-				std::mutex* lock = (optionalLock == nullptr) ? &std::disposable::global_lock : optionalLock;
-				std::lock_guard g(*lock);
-
+			void RenderExecute(VkCommandBuffer preRecordedCmdBuffer = nullptr) {
+				atomic_lock swapChainLock(renderTarget->image_islocked, renderTarget->image_lock);
+				if (!swapChainLock.AcquiredLock()) return;
+				
 				if (renderTarget == nullptr)
 					throw new std::runtime_error("MiniVulkan: RenderTarget for MiniVkImageRenderer is not set [nullptr]!");
 
@@ -341,7 +341,7 @@
 		};
 
 		/// <summary>Onscreen Rendering: Render to SwapChain.</summary>
-		class MiniVkSwapChainRenderer : public std::disposable {
+		class MiniVkSwapChainRenderer : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 			MiniVkVMAllocator& memAlloc;
@@ -361,6 +361,7 @@
 
 				throw std::runtime_error("MiniVulkan: Failed to find supported format!");
 			}
+		
 		public:
 			MiniVkSwapChain& swapChain;
 			MiniVkDynamicPipeline& graphicsPipeline;
@@ -622,9 +623,9 @@
 				vkCmdPushConstants(cmdBuffer, graphicsPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteSize, pValues);
 			}
 
-			void RenderExecute(std::mutex* optionalLock = nullptr) {
-				std::mutex* lock = (optionalLock == nullptr)? &std::disposable::global_lock : optionalLock;
-				std::lock_guard g(*lock);
+			void RenderExecute() {
+				atomic_lock swapChainLock(swapChain.swapChain_islocked, swapChain.swapChain_lock);
+				if (!swapChainLock.AcquiredLock()) return;
 
 				if (!swapChain.presentable) return;
 

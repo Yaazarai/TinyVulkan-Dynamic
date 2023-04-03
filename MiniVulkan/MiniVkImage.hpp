@@ -25,7 +25,7 @@
 					Finally for use in shaders you need to change the layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
 		*/
 
-		class MiniVkImage : public std::disposable {
+		class MiniVkImage : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 			MiniVkVMAllocator& vmAlloc;
@@ -81,17 +81,8 @@
 					throw std::runtime_error("MiniVulkan: Failed to create image texture sampler!");
 			}
 		public:
-			void Disposable(bool waitIdle) {
-				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
-
-				vkDestroySampler(renderDevice.logicalDevice, imageSampler, nullptr);
-				vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
-				vmaDestroyImage(vmAlloc.GetAllocator(), image, memory);
-
-				vkDestroySemaphore(renderDevice.logicalDevice, imageAvailable, nullptr);
-				vkDestroySemaphore(renderDevice.logicalDevice, imageFinished, nullptr);
-				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
-			}
+			std::atomic_bool image_islocked;
+			std::mutex image_lock;
 
 			VmaAllocation memory = VK_NULL_HANDLE;
 			VkImage image = VK_NULL_HANDLE;
@@ -107,6 +98,18 @@
 			VkDeviceSize width, height;
 			VkFormat format;
 			bool isDepthImage = false;
+
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
+				vkDestroySampler(renderDevice.logicalDevice, imageSampler, nullptr);
+				vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
+				vmaDestroyImage(vmAlloc.GetAllocator(), image, memory);
+
+				vkDestroySemaphore(renderDevice.logicalDevice, imageAvailable, nullptr);
+				vkDestroySemaphore(renderDevice.logicalDevice, imageFinished, nullptr);
+				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
+			}
 
 			MiniVkImage(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), layout(layout), addressingMode(addressingMode), aspectFlags(aspectFlags) {

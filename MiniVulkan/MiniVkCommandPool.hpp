@@ -4,7 +4,7 @@
 	#include "./MiniVk.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkCommandPool : public std::disposable {
+		class MiniVkCommandPool : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 			VkCommandPool commandPool;
@@ -54,7 +54,7 @@
 			}
 		};
 
-		class MiniVkCmdPoolQueue : public std::disposable {
+		class MiniVkCmdPoolQueue : public disposable {
 		private:
 			MiniVkCommandPool& cmdPool;
 			std::vector<bool> rentQueue;

@@ -2,10 +2,9 @@
 #ifndef MINIVK_MINIVKTHREADPOOL
 #define MINIVK_MINIVKTHREADPOOL
 	#include "./MiniVK.hpp"
-	#include <chrono>
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkThreadPool : public std::disposable {
+		class MiniVkThreadPool : public disposable {
 		private:
 			void slave() {
 				while (working)

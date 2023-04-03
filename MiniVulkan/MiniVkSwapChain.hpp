@@ -4,10 +4,13 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkSwapChain : public std::disposable {
+		class MiniVkSwapChain : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 		public:
+			std::atomic_bool swapChain_islocked;
+			std::mutex swapChain_lock;
+
 			MiniVkSurfaceSupporter presentDetails;
 			VkSwapchainKHR swapChain = nullptr;
 			VkFormat imageFormat;
@@ -200,8 +203,9 @@
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
 			void OnFrameBufferResizeCallback(int width, int height) {
-				std::lock_guard g(std::disposable::global_lock);
-				
+				atomic_lock swapChainLock(swapChain_islocked, swapChain_lock, true);
+				if (!swapChainLock.AcquiredLock()) return;
+
 				presentable = (width > 0 && height > 0);
 				if (presentable) {
 					VkSwapchainKHR oldSwapChain = swapChain;

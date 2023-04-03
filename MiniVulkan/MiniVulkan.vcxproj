@@ -176,6 +176,7 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="atomic_lock.hpp" />
     <ClInclude Include="disposable.hpp" />
     <ClInclude Include="invokable.hpp" />
     <ClInclude Include="MiniVK.hpp" />

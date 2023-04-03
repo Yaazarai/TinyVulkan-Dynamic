@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkShaderStages : public std::disposable {
+		class MiniVkShaderStages : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 

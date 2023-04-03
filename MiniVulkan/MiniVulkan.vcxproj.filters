@@ -9,15 +9,15 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Shader Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Header Files\MiniVK">
       <UniqueIdentifier>{79772bb6-f4cb-484b-ab7d-de8d6b159889}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\MiniVK\Dependencies">
       <UniqueIdentifier>{f79777a8-4db2-4125-9a9b-536348c4f737}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Shader Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +83,9 @@
     <ClInclude Include="disposable.hpp">
       <Filter>Header Files\MiniVK\Dependencies</Filter>
     </ClInclude>
+    <ClInclude Include="atomic_lock.hpp">
+      <Filter>Header Files\MiniVK\Dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt">
@@ -91,13 +94,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="sample_shader.vert">
-      <Filter>Shader Files</Filter>
+      <Filter>Header Files\Shader Files</Filter>
     </None>
     <None Include="sample_shader.frag">
-      <Filter>Shader Files</Filter>
+      <Filter>Header Files\Shader Files</Filter>
     </None>
     <None Include="compile.bat">
-      <Filter>Shader Files</Filter>
+      <Filter>Header Files\Shader Files</Filter>
     </None>
   </ItemGroup>
 </Project>

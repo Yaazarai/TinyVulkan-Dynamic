@@ -4,7 +4,7 @@
 	#include "./MinIVK.hpp"
 	
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkQueueFamily : public std::disposable {
+		class MiniVkQueueFamily : public disposable {
 		public:
 			std::optional<uint32_t> graphicsFamily;
 			std::optional<uint32_t> presentFamily;

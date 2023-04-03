@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 	
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkVMAllocator : public std::disposable {
+		class MiniVkVMAllocator : public disposable {
 		public:
 			VmaAllocator memoryAllocator = VK_NULL_HANDLE;
 			MiniVkRenderDevice& renderDevice;

@@ -34,7 +34,7 @@
 			VKVMA_BUFFER_TYPE_BINDLESS  /// For passing per-indexed draw their instanced data (bindless uniform buffer).
 		};
 
-		class MiniVkBuffer : public std::disposable {
+		class MiniVkBuffer : public disposable {
 		private:
 			void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
 				VkBufferCreateInfo bufCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };

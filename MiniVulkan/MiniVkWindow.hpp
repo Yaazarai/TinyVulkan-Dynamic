@@ -1,44 +1,44 @@
 #pragma once
-/*
-	minivulkan::Window is the GLFW window handler for MiniVulkan that will link to
-	and initialize GLFW and Vulkan to create you game / application window.
-		* Window::onRefresh is an event callback that is called when the window needs to be refreshed.
-			This gets called when GLFW calls the GLFWwindowrefreshfun callback.
-			This callback type is in Invokable.hpp and can be initialized like so:
-				Window::onRefresh += callback<GLFWwindow*>(this, &Window::RefreshNeeded);
-				void RefreshNeeded(GLFWwindow* hwnd) { ... }
-
-		* GetHandle() returns the window handle for the application from GLFW.
-			NOTE: this is wrapped w/ unique_ptr and does not need to be manually free'd with GLFWDestroyWindow.
-
-		* ShouldClose() checks the GLFW close flag to see if the window should close.
-			If the window should NOT close this will call glfwPollEvents();
-
-		* ~Window() destructor.
-			Calls onDestruct to execute destructor events.
-
-		* InitiateWindow and TerminateWindow
-			are automatically called when the GLFWwindow* window handle is cleaned up by std::unique_ptr<> hwndWindow.
-
-		* CreateWindowSurface(), GetFrameBufferSize() and GetRequiredExtensions() must be puiblically exposed
-			for MiniVulkan, more specifically the class MvkLayer to call them for the Vulkan API.
-
-	NOTE: That this class is marked with a defaulted template for GLFW. You can override this template
-		and then override/redefine ALL virtual methods/constructors/destructors
-		[Constructor, Destructor, CreateWindow, ShouldClose, GetHandle, RunMain] to use a different window system from GLFW.
-
-		This template is largely redundant and not used as it is simply there to provide the default type
-		for explicitly defining the API, in this case GLFW. You can remove it and change T to GLFWwindow or change the
-		window API entirely as long as you expose [public] these functions:
-			CreateWindowSurface(), GetFrameBufferSize() and GetRequiredExtensions().
-*/
-#pragma once
 #ifndef MINIVULKAN_MINIVKWINDOW
 #define MINIVULKAN_MINIVKWINDOW
 #include "./MiniVK.hpp"
 
 namespace MINIVULKAN_NAMESPACE {
-	class MiniVkWindow : public std::disposable {
+	/*
+		minivulkan::Window is the GLFW window handler for MiniVulkan that will link to
+		and initialize GLFW and Vulkan to create you game / application window.
+			* Window::onRefresh is an event callback that is called when the window needs to be refreshed.
+				This gets called when GLFW calls the GLFWwindowrefreshfun callback.
+				This callback type is in Invokable.hpp and can be initialized like so:
+					Window::onRefresh += callback<GLFWwindow*>(this, &Window::RefreshNeeded);
+					void RefreshNeeded(GLFWwindow* hwnd) { ... }
+
+			* GetHandle() returns the window handle for the application from GLFW.
+				NOTE: this is wrapped w/ unique_ptr and does not need to be manually free'd with GLFWDestroyWindow.
+
+			* ShouldClose() checks the GLFW close flag to see if the window should close.
+				If the window should NOT close this will call glfwPollEvents();
+
+			* ~Window() destructor.
+				Calls onDestruct to execute destructor events.
+
+			* InitiateWindow and TerminateWindow
+				are automatically called when the GLFWwindow* window handle is cleaned up by std::unique_ptr<> hwndWindow.
+
+			* CreateWindowSurface(), GetFrameBufferSize() and GetRequiredExtensions() must be puiblically exposed
+				for MiniVulkan, more specifically the class MvkLayer to call them for the Vulkan API.
+
+		NOTE: That this class is marked with a defaulted template for GLFW. You can override this template
+			and then override/redefine ALL virtual methods/constructors/destructors
+			[Constructor, Destructor, CreateWindow, ShouldClose, GetHandle, RunMain] to use a different window system from GLFW.
+
+			This template is largely redundant and not used as it is simply there to provide the default type
+			for explicitly defining the API, in this case GLFW. You can remove it and change T to GLFWwindow or change the
+			window API entirely as long as you expose [public] these functions:
+				CreateWindowSurface(), GetFrameBufferSize() and GetRequiredExtensions().
+	*/
+
+	class MiniVkWindow : public disposable {
 	private:
 		bool hwndResizable;
 		int hwndWidth, hwndHeight;
@@ -111,13 +111,17 @@ namespace MINIVULKAN_NAMESPACE {
 		/// <summary>[overridable] Returns the active GLFW window handle.</summary>
 		virtual GLFWwindow* GetHandle() { return hwndWindow; }
 
-		/// <summary>[overridable] Polls for window user input events.</summary>
-		virtual void PollWindowEvents() { glfwPollEvents(); }
-
 		/// <summary>[overridable] Returns [BOOL] should close and polls input events (optional).</summary>
 		virtual bool ShouldClosePollEvents() {
 			bool shouldClose = glfwWindowShouldClose(hwndWindow) == GLFW_TRUE;
-			PollWindowEvents();
+			glfwPollEvents();
+			return shouldClose;
+		}
+
+		/// <summary>[overridable] Returns [BOOL] should close and polls input events (optional).</summary>
+		virtual bool ShouldCloseWaitEvents() {
+			bool shouldClose = glfwWindowShouldClose(hwndWindow) == GLFW_TRUE;
+			glfwWaitEvents();
 			return shouldClose;
 		}
 
@@ -159,14 +163,15 @@ namespace MINIVULKAN_NAMESPACE {
 		virtual int GetHeight() { return std::max(hwndHeight, 1); }
 
 		/// <summary>Executes functions in the main window loop (w/ ref to bool to exit loop as needed).</summary>
-		invokable<bool&> onWhileMain;
+		invokable<std::atomic_bool&> onWhileMain;
 
 		/// <summary>[overridable] Executes the main window loop.</summary>
 		virtual void WhileMain() {
-			bool shouldRun = true;
+			std::atomic_bool shouldRun = true;
+
 			while (shouldRun) {
 				onWhileMain.invoke(shouldRun);
-				shouldRun &= !ShouldClosePollEvents();
+				shouldRun = !ShouldCloseWaitEvents();
 			}
 		}
 	};

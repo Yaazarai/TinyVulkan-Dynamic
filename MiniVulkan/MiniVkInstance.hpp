@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkInstance : public std::disposable {
+		class MiniVkInstance : public disposable {
 		private:
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 			const std::vector<const char*> instanceExtensions = { /*VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME*/ };

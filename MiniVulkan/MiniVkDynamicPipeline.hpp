@@ -21,7 +21,7 @@
 			MiniVkVertexDescription(VkVertexInputBindingDescription binding, const std::vector<VkVertexInputAttributeDescription> attributes) : binding(binding), attributes(attributes) {}
 		};
 
-		class MiniVkDynamicPipeline : public std::disposable {
+		class MiniVkDynamicPipeline : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
 

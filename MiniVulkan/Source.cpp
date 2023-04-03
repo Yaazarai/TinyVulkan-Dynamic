@@ -84,7 +84,7 @@ int MINIVULKAN_WINDOWMAIN {
             vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 0, 0);
             vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 4, 0);
         imageRenderer.EndRecordCmdBuffer(renderTargetBuffer, VkExtent2D{ .width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height }, clearColor, depthStencil);
-        imageRenderer.RenderExecute(nullptr, renderTargetBuffer);
+        imageRenderer.RenderExecute(renderTargetBuffer);
         
         renderDevice.WaitIdle();
         cmdRenderQueue.ReturnBuffer(rentBufferIndex);
@@ -105,13 +105,15 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkBuffer sw_ibuffer(renderDevice, vmAlloc, sw_indices.size() * sizeof(sw_indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
         sw_ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_indices.data(), sw_indices.size() * sizeof(MiniVkVertex), 0, 0);
 
-        dyRender.onRenderEvents.hook(callback<VkCommandBuffer>([&instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
+        size_t frame = 0;
+        bool swap = false;
+        dyRender.onRenderEvents.hook(callback<VkCommandBuffer>([&swap, &frame, &instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
             VkClearValue clearColor{ .color = { 0.0, 0.0, 0.0, 1.0 } };
             VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
         
             dyRender.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil, true);
-        
-            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
+            
+            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 120 * (size_t) swap, 0.0, 1.0, 0.0);
             dyRender.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
             
             VkDescriptorImageInfo imageInfo = renderSurface.GetImageDescriptor();
@@ -124,13 +126,20 @@ int MINIVULKAN_WINDOWMAIN {
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sw_ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
             
             dyRender.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
+
+            frame ++;
+
+            if (frame > 60) {
+                frame = 0;
+                swap = (swap == true)? false : true;
+            }
         }));
 
         std::thread mythread([&window, &dyRender]() { while (!window.ShouldClose()) { dyRender.RenderExecute(); } });
         window.WhileMain();
         mythread.join();
 
-        std::disposable::DisposeOrdered({ &instance, &window, &renderDevice, &vmAlloc, &swapChain, &cmdSwapPool, &shaders, &dySwapChainPipe, &dyRender,
+        disposable::DisposeOrdered({ &instance, &window, &renderDevice, &vmAlloc, &swapChain, &cmdSwapPool, &shaders, &dySwapChainPipe, &dyRender,
             &dyImagePipe, &cmdRenderPool, &cmdRenderQueue, &renderSurface, &imageRenderer, &vbuffer, &ibuffer, &image, &sw_vbuffer, &sw_ibuffer }, true);
         
     } catch (std::runtime_error err) { std::cout << err.what() << std::endl; }

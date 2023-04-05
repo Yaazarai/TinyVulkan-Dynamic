@@ -72,5 +72,56 @@
                 return attributeDescriptions;
             }
         };
+
+        struct MiniVkQuad {
+        public:
+            static const std::vector<glm::vec4> defvcolors;
+
+            static std::vector<MiniVkVertex> CreateExt(glm::vec3 whd, const std::vector<glm::vec4> vcolors = defvcolors) {
+                return {
+                    MiniVkVertex({0.0,0.0}, {0.0, 0.0, whd.z}, vcolors[0]),
+                    MiniVkVertex({1.0,0.0}, {whd.x, 0.0, whd.z}, vcolors[1]),
+                    MiniVkVertex({1.0,1.0}, {whd.x, whd.y, whd.z}, vcolors[2]),
+                    MiniVkVertex({0.0,1.0}, {0.0, whd.y, whd.z}, vcolors[3]),
+                };
+            }
+
+            static std::vector<MiniVkVertex> CreateWithOffsetExt(glm::vec2 xy, glm::vec3 whd, const std::vector<glm::vec4> vcolors = defvcolors) {
+                return {
+                    MiniVkVertex({0.0,0.0}, {xy.x, xy.y, whd.z}, vcolors[0]),
+                    MiniVkVertex({1.0,0.0}, {xy.x + whd.x, xy.y, whd.z}, vcolors[1]),
+                    MiniVkVertex({1.0,1.0}, {xy.x + whd.x, xy.y + whd.y, whd.z}, vcolors[2]),
+                    MiniVkVertex({0.0,1.0}, {xy.x, xy.y + whd.y, whd.z}, vcolors[3]),
+                };
+            }
+
+            static std::vector<MiniVkVertex> CreateFromAtlasExt(glm::vec2 xy, glm::vec3 whd, glm::vec2 atlaswh, const std::vector<glm::vec4> vcolors = defvcolors) {
+                glm::vec2 uv1 = { xy.x / whd.x, xy.y / whd.y };
+                glm::vec2 uv2 = uv1 + glm::vec2(whd.x / atlaswh.x, whd.y / atlaswh.y);
+
+                return {
+                    MiniVkVertex({uv1.x, uv1.y}, {xy.x, xy.y, whd.z}, vcolors[0]),
+                    MiniVkVertex({uv2.x, uv1.y}, {xy.x + whd.x, xy.y, whd.z}, vcolors[1]),
+                    MiniVkVertex({uv2.x, uv2.y}, {xy.x + whd.x, xy.y + whd.y, whd.z}, vcolors[2]),
+                    MiniVkVertex({uv1.x, uv2.y}, {xy.x, xy.y + whd.y, whd.z}, vcolors[3]),
+                };
+            }
+
+            static std::vector<MiniVkVertex> Create(glm::vec3 whd, const glm::vec4 vcolor = defvcolors[0]) {
+                return CreateExt(whd, { vcolor,vcolor,vcolor,vcolor });
+            }
+
+            static std::vector<MiniVkVertex> CreateWithOffset(glm::vec2 xy, glm::vec3 whd, const glm::vec4 vcolor = defvcolors[0]) {
+                return CreateWithOffsetExt(xy, whd, { vcolor,vcolor,vcolor,vcolor });
+            }
+
+            static std::vector<MiniVkVertex> CreateFromAtlas(glm::vec2 xy, glm::vec3 whd, glm::vec2 atlaswh, const glm::vec4 vcolor = defvcolors[0]) {
+                return CreateFromAtlasExt(xy, whd, atlaswh, {vcolor,vcolor,vcolor,vcolor});
+            }
+        };
+
+        const std::vector<glm::vec4> MiniVkQuad::defvcolors = {
+            {1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},
+        };
     }
 #endif

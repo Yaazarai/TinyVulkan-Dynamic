@@ -44,17 +44,12 @@ int MINIVULKAN_WINDOWMAIN {
 
 
 
-
-        std::vector<MiniVkVertex> triangle {
-            MiniVkVertex({0.0,0.0}, {480.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({1.0,0.0}, {1440.0,270.0, 0.5}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({1.0,1.0}, {1440.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({0.0,1.0}, {480.0,810.0, 0.5}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({0.0,0.0}, {480.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}),
-            MiniVkVertex({0.5,0.0}, {1440.0 - 128.0,270.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}),
-            MiniVkVertex({0.5,0.5}, {1440.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5}),
-            MiniVkVertex({0.0,0.5}, {480.0 - 128.0,810.0 - 128.0, 1.0}, {1.0,1.0,1.0,0.5})
-        };
+        std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.5}, {1.0,1.0,1.0,0.75});
+        std::vector<MiniVkVertex> quad2 = MiniVkQuad::CreateWithOffset({128.0,128.0}, {960.0,540.0,1.0}, {1.0,1.0,1.0,0.1});
+        std::vector<MiniVkVertex> triangle;
+        triangle.insert(triangle.end(), quad1.begin(), quad1.end());
+        triangle.insert(triangle.end(), quad2.begin(), quad2.end());
+        
         std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
         MiniVkBuffer vbuffer(renderDevice, vmAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
         vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
@@ -93,12 +88,7 @@ int MINIVULKAN_WINDOWMAIN {
 
 
 
-        std::vector<MiniVkVertex> sw_triangles {
-            MiniVkVertex({0.0,0.0}, {0.0, 0.0, 0.0}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({1.0,0.0}, {1920.0, 0.0, 0.0}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({1.0,1.0}, {1920.0, 1080.0, 0.0}, {1.0,1.0,1.0,1.0}),
-            MiniVkVertex({0.0,1.0}, {0.0, 1080.0, 0.0}, {1.0,1.0,1.0,1.0}),
-        };
+        std::vector<MiniVkVertex> sw_triangles = MiniVkQuad::Create(glm::vec3(1920.0, 1080.0,0.0));
         std::vector<uint32_t> sw_indices = { 0, 1, 2, 2, 3, 0 };
         MiniVkBuffer sw_vbuffer(renderDevice, vmAlloc, sw_triangles.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
         sw_vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_triangles.data(), sw_triangles.size() * sizeof(MiniVkVertex), 0, 0);
@@ -108,7 +98,7 @@ int MINIVULKAN_WINDOWMAIN {
         size_t frame = 0;
         bool swap = false;
         dyRender.onRenderEvents.hook(callback<VkCommandBuffer>([&swap, &frame, &instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
-            VkClearValue clearColor{ .color = { 0.0, 0.0, 0.0, 1.0 } };
+            VkClearValue clearColor{ .color = { 0.25, 0.25, 0.25, 1.0 } };
             VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
         
             dyRender.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil, true);
@@ -129,7 +119,7 @@ int MINIVULKAN_WINDOWMAIN {
 
             frame ++;
 
-            if (frame > 60) {
+            if (frame > 120) {
                 frame = 0;
                 swap = (swap == true)? false : true;
             }

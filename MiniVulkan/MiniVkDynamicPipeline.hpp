@@ -178,7 +178,7 @@
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				VkGraphicsPipelineCreateInfo pipelineInfo{};
 				pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-				pipelineInfo.stageCount = 2;
+				pipelineInfo.stageCount = shaderStages.shaderCreateInfo.size();
 				pipelineInfo.pStages = shaderStages.shaderCreateInfo.data();
 				pipelineInfo.pVertexInputState = &vertexInputInfo;
 				pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -277,13 +277,14 @@
 				VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				colorBlendAttachment.blendEnable = isBlendingEnabled;
-				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
 				colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 				colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-				colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 				colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+
 				colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-				colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+				colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+				colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 				return colorBlendAttachment;
 			}
 		};

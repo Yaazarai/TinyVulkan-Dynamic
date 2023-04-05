@@ -81,8 +81,7 @@
 					throw std::runtime_error("MiniVulkan: Failed to create image texture sampler!");
 			}
 		public:
-			std::atomic_bool image_islocked;
-			std::mutex image_lock;
+			atomic_mutex image_lock;
 
 			VmaAllocation memory = VK_NULL_HANDLE;
 			VkImage image = VK_NULL_HANDLE;

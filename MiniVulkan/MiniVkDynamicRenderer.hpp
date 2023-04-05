@@ -300,7 +300,7 @@
 			}
 			
 			void RenderExecute(VkCommandBuffer preRecordedCmdBuffer = nullptr) {
-				atomic_lock swapChainLock(renderTarget->image_islocked, renderTarget->image_lock);
+				atomic_lock swapChainLock(renderTarget->image_lock);
 				if (!swapChainLock.AcquiredLock()) return;
 				
 				if (renderTarget == nullptr)
@@ -624,7 +624,7 @@
 			}
 
 			void RenderExecute() {
-				atomic_lock swapChainLock(swapChain.swapChain_islocked, swapChain.swapChain_lock);
+				atomic_lock swapChainLock(swapChain.swapChain_lock);
 				if (!swapChainLock.AcquiredLock()) return;
 
 				if (!swapChain.presentable) return;

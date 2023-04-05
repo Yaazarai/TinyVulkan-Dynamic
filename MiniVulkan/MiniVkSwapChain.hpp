@@ -8,8 +8,7 @@
 		private:
 			MiniVkRenderDevice& renderDevice;
 		public:
-			std::atomic_bool swapChain_islocked;
-			std::mutex swapChain_lock;
+			atomic_mutex swapChain_lock;
 
 			MiniVkSurfaceSupporter presentDetails;
 			VkSwapchainKHR swapChain = nullptr;
@@ -203,7 +202,7 @@
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
 			void OnFrameBufferResizeCallback(int width, int height) {
-				atomic_lock swapChainLock(swapChain_islocked, swapChain_lock, true);
+				atomic_lock swapChainLock(swapChain_lock, true);
 				if (!swapChainLock.AcquiredLock()) return;
 
 				presentable = (width > 0 && height > 0);

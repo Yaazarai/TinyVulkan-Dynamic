@@ -44,8 +44,16 @@ int MINIVULKAN_WINDOWMAIN {
 
 
 
+
         std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.5}, {1.0,1.0,1.0,0.75});
-        std::vector<MiniVkVertex> quad2 = MiniVkQuad::CreateWithOffset({128.0,128.0}, {960.0,540.0,1.0}, {1.0,1.0,1.0,0.1});
+        std::vector<MiniVkVertex> quad2 = MiniVkQuad::CreateWithOffset({128.0,128.0}, {960.0,540.0,1.0}, {1.0,1.0,1.0,0.5});
+        constexpr glm::float32 angle = 45.0f * (glm::pi<glm::float32>() / 180.0f);
+        constexpr glm::float32 scale = 0.5f;
+        glm::vec3 origin = quad2[0].position;
+        MiniVkQuad::RotateFromOrigin(quad2, origin, angle);
+        MiniVkQuad::ScaleFromOrigin(quad2, origin, scale);
+        MiniVkQuad::RotateScaleFromOrigin(quad2, origin, -angle * 1.5, 2.0f);
+
         std::vector<MiniVkVertex> triangle;
         triangle.insert(triangle.end(), quad1.begin(), quad1.end());
         triangle.insert(triangle.end(), quad2.begin(), quad2.end());
@@ -85,7 +93,7 @@ int MINIVULKAN_WINDOWMAIN {
         cmdRenderQueue.ReturnBuffer(rentBufferIndex);
 
 
-
+        
 
 
         std::vector<MiniVkVertex> sw_triangles = MiniVkQuad::Create(glm::vec3(1920.0, 1080.0,0.0));

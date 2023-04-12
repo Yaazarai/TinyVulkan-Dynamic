@@ -118,6 +118,53 @@
             static std::vector<MiniVkVertex> CreateFromAtlas(glm::vec2 xy, glm::vec3 whd, glm::vec2 atlaswh, const glm::vec4 vcolor = defvcolors[0]) {
                 return CreateFromAtlasExt(xy, whd, atlaswh, {vcolor,vcolor,vcolor,vcolor});
             }
+
+            static void RotateFromOrigin(std::vector<MiniVkVertex>& quad, glm::vec3 origin, glm::float32 radians) {
+                glm::mat2 rotation = glm::mat2(glm::cos(radians), -glm::sin(radians), glm::sin(radians), glm::cos(radians));
+                glm::vec2 pivot = origin;
+                glm::vec2 position;
+
+                for (size_t i = 0; i < quad.size(); i++) {
+                    position = quad[i].position;
+                    
+                    position -= pivot;
+                    position = rotation * position;
+                    position += pivot;
+
+                    quad[i].position = glm::vec3(position, quad[i].position.z);
+                }
+            }
+
+            static void ScaleFromOrigin(std::vector<MiniVkVertex>& quad, glm::vec3 origin, glm::float32 scale) {
+                glm::vec2 pivot = origin;
+                glm::vec2 position;
+
+                for (size_t i = 0; i < quad.size(); i++) {
+                    position = quad[i].position;
+
+                    position -= pivot;
+                    position = scale * position;
+                    position += pivot;
+
+                    quad[i].position = glm::vec3(position, quad[i].position.z);
+                }
+            }
+
+            static void RotateScaleFromOrigin(std::vector<MiniVkVertex>& quad, glm::vec3 origin, glm::float32 radians, glm::float32 scale) {
+                glm::mat2 rotation = glm::mat2(glm::cos(radians), -glm::sin(radians), glm::sin(radians), glm::cos(radians));
+                glm::vec2 pivot = origin;
+                glm::vec2 position;
+
+                for (size_t i = 0; i < quad.size(); i++) {
+                    position = quad[i].position;
+
+                    position -= pivot;
+                    position = rotation * scale * position;
+                    position += pivot;
+
+                    quad[i].position = glm::vec3(position, quad[i].position.z);
+                }
+            }
         };
 
         const std::vector<glm::vec4> MiniVkQuad::defvcolors = {

@@ -9,6 +9,7 @@
     #include <vector>
     #include <mutex>
     #include <utility>
+    #include "./atomic_lock.hpp"
 
     template<typename... A>
     class callback {
@@ -56,14 +57,14 @@
     class invokable {
     protected:
         /// Resource lock for thread-safe accessibility.
-        std::mutex safety_lock;
+        atomic_mutex safety_lock;
         /// Record of stored callbacks to invoke.
         std::vector<callback<A...>> callbacks;
 
     public:
         /// Adds a callback to this event, operator +=
         invokable<A...>& hook(const callback<A...> cb) {
-            std::lock_guard<std::mutex> g(safety_lock);
+            atomic_lock g(safety_lock);
 
             #ifdef INVOKABLE_ERRORON_DUPLICATEHOOKS
             if (std::find(callbacks.begin(), callbacks.end(), cb) != callbacks.end())
@@ -76,14 +77,14 @@
 
         /// Removes a callback from this event, operator -=
         invokable<A...>& unhook(const callback<A...> cb) {
-            std::lock_guard<std::mutex> g(safety_lock);
+            atomic_lock g(safety_lock);
             std::erase_if(callbacks, [cb](callback<A...> c){ return cb.hash_code() == c.hash_code(); });
             return (*this);
         }
 
         /// Removes all registered callbacks and adds a new callback, operator =
         invokable<A...>& rehook(const callback<A...> cb) {
-            std::lock_guard<std::mutex> g(safety_lock);
+            atomic_lock g(safety_lock);
             callbacks.clear();
             callbacks.push_back(cb);
             return (*this);
@@ -91,15 +92,23 @@
 
         /// Removes all registered callbacks.
         invokable<A...>& empty() {
-            std::lock_guard<std::mutex> g(safety_lock);
+            atomic_lock g(safety_lock);
             callbacks.clear();
             return (*this);
         }
 
         /// Execute all registered callbacks, operator ()
         invokable<A...>& invoke(A... args) {
-            std::lock_guard<std::mutex> g(safety_lock);
-            for(callback<A...> cb : callbacks) cb.invoke(args...);
+            atomic_lock g(safety_lock);
+            std::vector<callback<A...>> clonecb(callbacks);
+            for (callback<A...> cb : clonecb) cb.invoke(args...);
+            return (*this);
+        }
+
+        /// Execute all registered callbacks, operator ()
+        invokable<A...>& invoke_blocking(A... args) {
+            atomic_lock g(safety_lock);
+            for (callback<A...> cb : callbacks) cb.invoke(args...);
             return (*this);
         }
     };

@@ -87,9 +87,12 @@
     #include <algorithm>
     #include <chrono>
 
-    #include "./invokable.hpp"
-    #include "./disposable.hpp"
     #include "./atomic_lock.hpp"
+    #include "./disposable.hpp"
+    
+    /// You can define this macro to throw a new std::runtime error when a duplicate hook is made.
+    #define INVOKABLE_ERRORON_DUPLICATEHOOKS
+    #include "./invokable.hpp"
 
     #include "./MiniVkThreadPool.hpp"
     #include "./MiniVkWindow.hpp"

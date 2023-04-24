@@ -196,6 +196,7 @@
     <ClInclude Include="MiniVkVMAllocator.hpp" />
     <ClInclude Include="MiniVkWindow.hpp" />
     <ClInclude Include="QuiteOkImageFormat.h" />
+    <ClInclude Include="triangulate.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt" />

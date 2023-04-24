@@ -86,6 +86,9 @@
     <ClInclude Include="atomic_lock.hpp">
       <Filter>Header Files\MiniVK\Dependencies</Filter>
     </ClInclude>
+    <ClInclude Include="triangulate.hpp">
+      <Filter>Header Files\MiniVK\Dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt">

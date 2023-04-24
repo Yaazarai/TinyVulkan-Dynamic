@@ -73,7 +73,7 @@
             }
         };
 
-        struct MiniVkQuad {
+        class MiniVkQuad {
         public:
             static const std::vector<glm::vec4> defvcolors;
 
@@ -170,5 +170,72 @@
         const std::vector<glm::vec4> MiniVkQuad::defvcolors = {
             {1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},
         };
+
+        class MiniVkPolygon {
+        public:
+            static glm::float32 AngleClamp(glm::float32 a) {
+                #ifndef GLM_FORCE_RADIANS
+                    return std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
+                #else
+                    constexpr glm::float32 pi2 = glm::pi<glm::float32>() * 2.0f;
+                    a = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
+                #endif
+            }
+
+            static glm::float32 AngleDelta(glm::float32 a, glm::float32 b) {
+                //// https://gamedev.stackexchange.com/a/4472
+                glm::float32 absa, absb;
+                #ifndef GLM_FORCE_RADIANS
+                    absa = std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
+                    absb = std::fmod((360.0f + std::fmod(b, 360.0f)), 360.0f);
+                    glm::float32 delta = glm::abs(absa - absb);
+                    glm::float32 sign = absa > absb || delta >= 180.0f? -1.0f : 1.0f;
+                    return (180.0f - glm::abs(delta - 180.0f) * sign;
+                #else
+                    constexpr glm::float32 pi = glm::pi<glm::float32>();
+                    constexpr glm::float32 pi2 = pi * 2.0f;
+                    absa = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
+                    absb = std::fmod((pi2 + std::fmod(b, pi2)), pi2);
+                    glm::float32 delta = glm::abs(absa - absb);
+                    glm::float32 sign = (absa > absb || delta >= pi) ? -1.0f : 1.0f;
+                    return (pi - glm::abs(delta - pi)) * sign;
+                #endif
+            }
+
+            static glm::vec3 TriangleCircumcircle(glm::vec2 a, glm::vec2 b, glm::vec2 c) {
+                glm::vec2 A(a), B(b), C(c);
+                glm::vec2 sqrA = glm::pow(glm::vec2(a), { 2.0f, 2.0f });
+                glm::vec2 sqrB = glm::pow(glm::vec2(b), { 2.0f, 2.0f });
+                glm::vec2 sqrC = glm::pow(glm::vec2(c), { 2.0f, 2.0f });
+                
+                glm::vec3 XYR; // X-coord, Y-coord, Radius.
+                XYR.z = 1 / ((A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y)) * 2.0f);
+                XYR.x = ((sqrA.x + sqrA.y) * (B.y - C.y) + (sqrB.x + sqrB.y) * (C.y - A.y) + (sqrC.x + sqrC.y) * (A.y - B.y)) * XYR.z;
+                XYR.y = ((sqrA.x + sqrA.y) * (C.x - B.x) + (sqrB.x + sqrB.y) * (A.x - C.x) + (sqrC.x + sqrC.y) * (B.x - A.x)) * XYR.z;
+                XYR.z = glm::distance(glm::vec2(XYR.x, XYR.y), A);
+                return XYR;
+            }
+
+            static bool TriangleIsClockwise(MiniVkVertex a, MiniVkVertex b, MiniVkVertex c) {
+                glm::vec2 A(a.position), B(b.position), C(c.position);
+                return ((B.x - A.x) * (C.y - A.y) - (C.x - A.x) * (B.y - A.y)) <= 0.0f;
+            }
+
+            static glm::float32 SquaredDistance(glm::vec2 xy1, glm::vec2 xy2) {
+                return glm::pow(xy2.x - xy1.x, 2); + glm::pow(xy2.y - xy1.y, 2);
+            }
+
+            static std::vector<uint32_t> TriangulatePointList(std::vector<MiniVkVertex> plist) {
+                using Point = std::array<glm::float32, 2>;
+                std::vector<std::vector<Point>> polygon;
+
+                std::vector<Point> poly;
+                for (MiniVkVertex& v : plist)
+                    poly.push_back({v.position.x, v.position.y});
+                
+                polygon.push_back(poly);
+                return mapbox::earcut<uint32_t>(polygon);
+            }
+        };
     }
-#endif
+#endif`

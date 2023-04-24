@@ -47,6 +47,8 @@ int MINIVULKAN_WINDOWMAIN {
 
         std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.5}, {1.0,1.0,1.0,0.75});
         std::vector<MiniVkVertex> quad2 = MiniVkQuad::CreateWithOffset({128.0,128.0}, {960.0,540.0,1.0}, {1.0,1.0,1.0,0.5});
+        quad2.insert(quad2.end() - 1, MiniVkVertex({ 0.5, 1.0 }, { 620.0,640.0,1.0 }, { 1.0,1.0,1.0,0.5 }));
+
         constexpr glm::float32 angle = 45.0f * (glm::pi<glm::float32>() / 180.0f);
         constexpr glm::float32 scale = 0.5f;
         glm::vec3 origin = quad2[0].position;
@@ -55,14 +57,21 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkQuad::RotateScaleFromOrigin(quad2, origin, -angle * 1.5, 2.0f);
 
         std::vector<MiniVkVertex> triangle;
-        triangle.insert(triangle.end(), quad1.begin(), quad1.end());
         triangle.insert(triangle.end(), quad2.begin(), quad2.end());
         
-        std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
+        std::vector<uint32_t> indices = MiniVkPolygon::TriangulatePointList(quad2);
+        
+        std::cout << "HELLO WORLD" << std::endl;
+        for (size_t i = 0; i < indices.size(); i++) {
+            std::cout << (size_t)indices[i] << ", ";
+        }
+        std::cout << std::endl;
+        std::cout << "GOODBYE WORLD" << std::endl;
+
         MiniVkBuffer vbuffer(renderDevice, vmAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
         vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
         MiniVkBuffer ibuffer(renderDevice, vmAlloc, indices.size() * sizeof(indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
-        ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), indices.data(), indices.size() * sizeof(MiniVkVertex), 0, 0);
+        ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), indices.data(), indices.size() * sizeof(indices[0]), 0, 0);
         
         FILE* test = fopen("./Screeny.qoi", "rb");
         if (test == NULL) { std::cout << "NO QOI IMAGE" << std::endl; } else { fclose(test); }
@@ -84,8 +93,7 @@ int MINIVULKAN_WINDOWMAIN {
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(renderTargetBuffer, 0, 1, &vbuffer.buffer, offsets);
             vkCmdBindIndexBuffer(renderTargetBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 0, 0);
-            vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t) / 2, 1, 0, 4, 0);
+            vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
         imageRenderer.EndRecordCmdBuffer(renderTargetBuffer, VkExtent2D{ .width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height }, clearColor, depthStencil);
         imageRenderer.RenderExecute(renderTargetBuffer);
         
@@ -101,7 +109,7 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkBuffer sw_vbuffer(renderDevice, vmAlloc, sw_triangles.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
         sw_vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_triangles.data(), sw_triangles.size() * sizeof(MiniVkVertex), 0, 0);
         MiniVkBuffer sw_ibuffer(renderDevice, vmAlloc, sw_indices.size() * sizeof(sw_indices[0]), MiniVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
-        sw_ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_indices.data(), sw_indices.size() * sizeof(MiniVkVertex), 0, 0);
+        sw_ibuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_indices.data(), sw_indices.size() * sizeof(sw_indices[0]), 0, 0);
 
         size_t frame = 0;
         bool swap = false;

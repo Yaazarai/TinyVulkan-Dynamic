@@ -236,6 +236,21 @@
                 polygon.push_back(poly);
                 return mapbox::earcut<uint32_t>(polygon);
             }
+
+            static std::vector<uint32_t> TriangulatePointListHoles(std::vector<std::vector<MiniVkVertex>> plist_holes) {
+                using Point = std::array<glm::float32, 2>;
+                std::vector<std::vector<Point>> polygon;
+
+                for(size_t i = 0; i < plist_holes.size(); i++) {
+                    std::vector<MiniVkVertex>& vh = plist_holes[i];
+                    polygon.push_back(std::vector<Point>());
+
+                    for (MiniVkVertex& v : vh)
+                        polygon[i].push_back({v.position.x, v.position.y});
+                }
+
+                return mapbox::earcut<uint32_t>(polygon);
+            }
         };
     }
 #endif`

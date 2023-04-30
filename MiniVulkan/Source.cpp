@@ -50,23 +50,14 @@ int MINIVULKAN_WINDOWMAIN {
         quad2.insert(quad2.end() - 1, MiniVkVertex({ 0.5, 1.0 }, { 620.0,640.0,1.0 }, { 1.0,1.0,1.0,0.5 }));
 
         constexpr glm::float32 angle = 45.0f * (glm::pi<glm::float32>() / 180.0f);
-        constexpr glm::float32 scale = 0.5f;
+        constexpr glm::float32 scale = 1.0;
         glm::vec3 origin = quad2[0].position;
-        MiniVkQuad::RotateFromOrigin(quad2, origin, angle);
-        MiniVkQuad::ScaleFromOrigin(quad2, origin, scale);
-        MiniVkQuad::RotateScaleFromOrigin(quad2, origin, -angle * 1.5, 2.0f);
+        MiniVkQuad::RotateScaleFromOrigin(quad2, origin, -angle * 0.5f, scale);
 
         std::vector<MiniVkVertex> triangle;
         triangle.insert(triangle.end(), quad2.begin(), quad2.end());
         
         std::vector<uint32_t> indices = MiniVkPolygon::TriangulatePointList(quad2);
-        
-        std::cout << "HELLO WORLD" << std::endl;
-        for (size_t i = 0; i < indices.size(); i++) {
-            std::cout << (size_t)indices[i] << ", ";
-        }
-        std::cout << std::endl;
-        std::cout << "GOODBYE WORLD" << std::endl;
 
         MiniVkBuffer vbuffer(renderDevice, vmAlloc, triangle.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
         vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdRenderPool.GetPool(), triangle.data(), triangle.size() * sizeof(MiniVkVertex), 0, 0);
@@ -87,9 +78,10 @@ int MINIVULKAN_WINDOWMAIN {
         imageRenderer.BeginRecordCmdBuffer(renderTargetBuffer, VkExtent2D {.width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height}, clearColor, depthStencil, true);
             glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
             imageRenderer.PushConstants(renderTargetBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
-            VkDescriptorImageInfo imageInfo = image.GetImageDescriptor();
-            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
-            imageRenderer.PushDescriptorSet(renderTargetBuffer, writeDescriptorSets);
+            
+            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, image.GetImageDescriptor());
+            imageRenderer.PushDescriptorSet(renderTargetBuffer, { writeDescriptorSets });
+            
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(renderTargetBuffer, 0, 1, &vbuffer.buffer, offsets);
             vkCmdBindIndexBuffer(renderTargetBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
@@ -119,12 +111,11 @@ int MINIVULKAN_WINDOWMAIN {
         
             dyRender.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil, true);
             
-            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 120 * (size_t) swap, 0.0, 1.0, 0.0);
+            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 120.0F * (double) swap, 0.0, 1.0, 0.0);
             dyRender.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
             
-            VkDescriptorImageInfo imageInfo = renderSurface.GetImageDescriptor();
-            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo);
-            dyRender.PushDescriptorSet(commandBuffer, writeDescriptorSets);
+            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, renderSurface.GetImageDescriptor());
+            dyRender.PushDescriptorSet(commandBuffer, { writeDescriptorSets });
             
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &sw_vbuffer.buffer, offsets);

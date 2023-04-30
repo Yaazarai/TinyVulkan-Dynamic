@@ -119,37 +119,6 @@
                 return CreateFromAtlasExt(xy, whd, atlaswh, {vcolor,vcolor,vcolor,vcolor});
             }
 
-            static void RotateFromOrigin(std::vector<MiniVkVertex>& quad, glm::vec3 origin, glm::float32 radians) {
-                glm::mat2 rotation = glm::mat2(glm::cos(radians), -glm::sin(radians), glm::sin(radians), glm::cos(radians));
-                glm::vec2 pivot = origin;
-                glm::vec2 position;
-
-                for (size_t i = 0; i < quad.size(); i++) {
-                    position = quad[i].position;
-                    
-                    position -= pivot;
-                    position = rotation * position;
-                    position += pivot;
-
-                    quad[i].position = glm::vec3(position, quad[i].position.z);
-                }
-            }
-
-            static void ScaleFromOrigin(std::vector<MiniVkVertex>& quad, glm::vec3 origin, glm::float32 scale) {
-                glm::vec2 pivot = origin;
-                glm::vec2 position;
-
-                for (size_t i = 0; i < quad.size(); i++) {
-                    position = quad[i].position;
-
-                    position -= pivot;
-                    position = scale * position;
-                    position += pivot;
-
-                    quad[i].position = glm::vec3(position, quad[i].position.z);
-                }
-            }
-
             static void RotateScaleFromOrigin(std::vector<MiniVkVertex>& quad, glm::vec3 origin, glm::float32 radians, glm::float32 scale) {
                 glm::mat2 rotation = glm::mat2(glm::cos(radians), -glm::sin(radians), glm::sin(radians), glm::cos(radians));
                 glm::vec2 pivot = origin;
@@ -158,18 +127,16 @@
                 for (size_t i = 0; i < quad.size(); i++) {
                     position = quad[i].position;
 
-                    position -= pivot;
+                    position -= pivot * scale;
                     position = rotation * scale * position;
-                    position += pivot;
+                    position += pivot * scale;
 
                     quad[i].position = glm::vec3(position, quad[i].position.z);
                 }
             }
         };
 
-        const std::vector<glm::vec4> MiniVkQuad::defvcolors = {
-            {1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},
-        };
+        const std::vector<glm::vec4> MiniVkQuad::defvcolors = { {1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0} };
 
         class MiniVkPolygon {
         public:
@@ -222,7 +189,7 @@
             }
 
             static glm::float32 SquaredDistance(glm::vec2 xy1, glm::vec2 xy2) {
-                return glm::pow(xy2.x - xy1.x, 2); + glm::pow(xy2.y - xy1.y, 2);
+                return static_cast<glm::float32>(glm::pow(xy2.x - xy1.x, 2) + glm::pow(xy2.y - xy1.y, 2));
             }
 
             static std::vector<uint32_t> TriangulatePointList(std::vector<MiniVkVertex> plist) {

@@ -93,6 +93,7 @@
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), cmdPoolQueue(cmdPoolQueue), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
 				onDispose.hook(callback<bool>(this, &MiniVkImageRenderer::Disposable));
 
+				optionalDepthImage = nullptr;
 				if (graphicsPipeline.DepthTestingIsEnabled())
 					optionalDepthImage = new MiniVkImage(renderDevice, vmAlloc, renderTarget->width, renderTarget->height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 			}
@@ -291,8 +292,9 @@
 					throw std::runtime_error("MiniVulkan: Failed to record [end] to command buffer!");
 			}
 
-			VkResult PushDescriptorSet(VkCommandBuffer cmdBuffer, VkWriteDescriptorSet& writeDescriptorSet) {
-				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout, 0, 1, &writeDescriptorSet);
+			VkResult PushDescriptorSet(VkCommandBuffer cmdBuffer, std::vector<VkWriteDescriptorSet> writeDescriptorSets) {
+				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout,
+					0, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data());
 			}
 
 			void PushConstants(VkCommandBuffer cmdBuffer, VkShaderStageFlagBits shaderFlags, uint32_t byteSize, const void* pValues) {
@@ -615,8 +617,9 @@
 					throw std::runtime_error("MiniVulkan: Failed to record [end] to command buffer!");
 			}
 
-			VkResult PushDescriptorSet(VkCommandBuffer cmdBuffer, VkWriteDescriptorSet& writeDescriptorSet) {
-				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout, 0, 1, &writeDescriptorSet);
+			VkResult PushDescriptorSet(VkCommandBuffer cmdBuffer, std::vector<VkWriteDescriptorSet> writeDescriptorSets) {
+				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout,
+					0, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data());
 			}
 
 			void PushConstants(VkCommandBuffer cmdBuffer, VkShaderStageFlagBits shaderFlags, uint32_t byteSize, const void* pValues) {

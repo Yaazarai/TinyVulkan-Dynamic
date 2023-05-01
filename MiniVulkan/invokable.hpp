@@ -22,10 +22,7 @@
 
     public:
         // Create a new callback with the specified arguments.
-        callback(std::function<void(A...)> func) {
-            bound = [func = std::move(func)](A... args) { std::invoke(func, args...); };
-            hash = bound.target_type().hash_code();
-        }
+        callback(std::function<void(A...)> func) : hash(func.target_type().hash_code()), bound(std::move(func)) {}
 
         /// Compares the underlying hash_code of the callback function(s).
         bool operator == (const callback<A...>& cb) { return hash == cb.hash; }
@@ -37,10 +34,10 @@
         constexpr size_t hash_code() const throw() { return hash; }
         
         /// Invoke this callback with required arguments.
-        callback<A...>& invoke(A... args) { bound(args...); return (*this); }
+        callback<A...>& invoke(A... args) { bound(static_cast<A&&>(args)...); return (*this); }
 
         /// Operator() invoke this callback with required arguments.
-        void operator()(A... args) { bound(args...); }
+        void operator()(A... args) { bound(static_cast<A&&>(args)...); }
     };
 
     template<typename... A>
@@ -91,14 +88,15 @@
         invokable<A...>& invoke(A... args) {
             atomic_lock g(safety_lock);
             std::vector<callback<A...>> clonecb(callbacks);
-            for (callback<A...> cb : clonecb) cb.invoke(args...);
+            g.ForceUnlock();
+            for (callback<A...> cb : clonecb) cb.invoke(static_cast<A&&>(args)...);
             return (*this);
         }
 
         /// Execute all registered callbacks, operator ()
         invokable<A...>& invoke_blocking(A... args) {
             atomic_lock g(safety_lock);
-            for (callback<A...> cb : callbacks) cb.invoke(args...);
+            for (callback<A...> cb : callbacks) cb.invoke(static_cast<A&&>(args)...);
             return (*this);
         }
     };

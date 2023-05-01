@@ -4,7 +4,7 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		class MiniVkThreadPool : public disposable {
+		class MiniVkThreadPool {
 		private:
 			void slave() {
 				while (working)
@@ -21,10 +21,13 @@
 			std::atomic_bool working = true;
 			std::queue<callback<std::atomic_bool&>> queue;
 			std::vector<std::thread> pool;
+			size_t timeout;
 
-			MiniVkThreadPool(const uint32_t potentialThreads = 2, bool startWorking = true) : working(startWorking) {
-				onDispose.hook(callback<bool>(this, &MiniVkThreadPool::AwaitClosePool));
-				
+			~MiniVkThreadPool() {
+				AwaitClosePool(timeout);
+			}
+
+			MiniVkThreadPool(const uint32_t potentialThreads = 2, bool startWorking = true, size_t timeout = 100) : working(startWorking), timeout(timeout) {
 				if (startWorking)
 					TrySpawnThreads(potentialThreads);
 			}

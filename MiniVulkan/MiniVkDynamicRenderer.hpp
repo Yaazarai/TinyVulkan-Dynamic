@@ -91,7 +91,8 @@
 
 			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkImage* renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), cmdPoolQueue(cmdPoolQueue), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
-				onDispose.hook(callback<bool>(this, &MiniVkImageRenderer::Disposable));
+				//onDispose.hook(callback<bool>(this, &MiniVkImageRenderer::Disposable));
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				optionalDepthImage = nullptr;
 				if (graphicsPipeline.DepthTestingIsEnabled())
@@ -404,7 +405,7 @@
 
 			MiniVkSwapChainRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& memAlloc, MiniVkCommandPool& commandPool, MiniVkSwapChain& swapChain, MiniVkDynamicPipeline& graphicsPipeline)
 				: renderDevice(renderDevice), memAlloc(memAlloc), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
-				onDispose.hook(callback<bool>(this, &MiniVkSwapChainRenderer::Disposable));
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					for (int32_t i = 0; i < swapChain.images.size(); i++)

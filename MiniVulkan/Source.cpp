@@ -35,8 +35,8 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, &renderSurface, dyImagePipe);
 
-        window.onResizeFrameBuffer.hook(callback<int, int>(&swapChain, &MiniVkSwapChain::OnFrameBufferResizeCallback));
-        swapChain.onResizeFrameBuffer.hook(callback<int&, int&>(&window, &MiniVkWindow::OnFrameBufferReSizeCallback));
+        window.onResizeFrameBuffer.hook(callback<int, int>([&swapChain](int x, int y){ swapChain.OnFrameBufferResizeCallback(x, y); }));
+        swapChain.onResizeFrameBuffer.hook(callback<int&, int&>([&window](int x, int y) { window.OnFrameBufferReSizeCallback(x, y); }));
 
         VkClearValue clearColor{ .color = { 1.0, 0.0, 0.0, 1.0 } };
         VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };

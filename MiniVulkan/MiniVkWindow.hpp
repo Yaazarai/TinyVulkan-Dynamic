@@ -83,9 +83,10 @@ namespace MINIVULKAN_NAMESPACE {
 			onResizeFrameBuffer.invoke(width, height);
 		}
 
-		// Invokable callback to respond to Vulkan API when the active frame buffer is resized.
+		/// <summary>Invokable callback to respond to Vulkan API when the active frame buffer is resized.</suimmary>
 		inline static invokable<int, int> onResizeFrameBuffer;
 
+		/// <summary>Disposable function for disposable class interface and window resource cleanup.</summary>
 		void Disposable(bool waitIdle) {
 			glfwDestroyWindow(hwndWindow);
 			glfwTerminate();
@@ -93,16 +94,17 @@ namespace MINIVULKAN_NAMESPACE {
 
 		/// <summary>Initiialize managed GLFW Window and Vulkan API. Initialize GLFW window unique_ptr.</summary>
 		MiniVkWindow(std::string title, int width, int height, bool resizable, bool transparentFramebuffer = false, bool hasMinSize = false, int minWidth = 200, int minHeight = 200) {
-			onDispose.hook(callback<bool>(this, &MiniVkWindow::Disposable));
+			onDispose.hook(callback<bool>([this](bool forceDispose){this->Disposable(forceDispose); }));
+
 			hwndWindow = InitiateWindow(title, width, height, resizable, transparentFramebuffer);
 			glfwSetWindowUserPointer(hwndWindow, this);
 			glfwSetFramebufferSizeCallback(hwndWindow, MiniVkWindow::OnFrameBufferNotifyReSizeCallback);
 			if (hasMinSize) glfwSetWindowSizeLimits(hwndWindow, minWidth, minHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 		}
 
-		// Remove default copy constructor.
+		/// <summary>Remove default copy constructor.</summary>
 		MiniVkWindow(const MiniVkWindow&) = delete;
-		// Remove default copy destructor.
+		/// <summary>Remove default copy destructor.</summary>
 		MiniVkWindow& operator=(const MiniVkWindow&) = delete;
 
 		/// <summary>[overridable] Checks if the GLFW window should close.</summary>

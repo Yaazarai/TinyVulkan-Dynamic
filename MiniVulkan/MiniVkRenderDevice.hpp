@@ -35,7 +35,8 @@
 			}
 
 			MiniVkRenderDevice(MiniVkInstance& instance, VkSurfaceKHR presentSurface, const std::vector<VkPhysicalDeviceType> pTypes) : instance(instance), presentationSurface(presentSurface), physicalDeviceTypes(pTypes) {
-				onDispose.hook(callback<bool>(this, &MiniVkRenderDevice::Disposable));
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+
 				QueryPhysicalDevice();
 				CreateLogicalDevice();
 			}

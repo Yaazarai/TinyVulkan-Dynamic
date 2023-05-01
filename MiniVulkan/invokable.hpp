@@ -1,7 +1,5 @@
 /// Source: https://stackoverflow.com/questions/9568150/what-is-a-c-delegate/9568485#9568485
 /// Source: https://en.cppreference.com/w/cpp/utility/functional/invoke
-/// #define INVOKABLE_ERRORON_DUPLICATEHOOKS
-/// You can define the above macro to throw a new std::runtime error when a duplicate hook is made.
 #pragma once
 #ifndef INVOKABLE_CALLBACKS
 #define INVOKABLE_CALLBACKS
@@ -52,12 +50,6 @@
         /// Adds a callback to this event, operator +=
         invokable<A...>& hook(const callback<A...> cb) {
             atomic_lock g(safety_lock);
-
-            #ifdef INVOKABLE_ERRORON_DUPLICATEHOOKS
-            if (std::find(callbacks.begin(), callbacks.end(), cb) != callbacks.end())
-                throw new std::runtime_error("Invokable: Attempted to insert a duplicate callback<T> in invokable<T>.");
-            #endif
-
             callbacks.push_back(cb);
             return (*this);
         }

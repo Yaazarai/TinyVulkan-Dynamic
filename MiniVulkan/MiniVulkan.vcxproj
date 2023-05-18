@@ -184,6 +184,7 @@
     <ClInclude Include="MiniVkCommandPool.hpp" />
     <ClInclude Include="MiniVkDynamicPipeline.hpp" />
     <ClInclude Include="MiniVkDynamicRenderer.hpp" />
+    <ClInclude Include="MiniVkGLFWInputEnums.hpp" />
     <ClInclude Include="MiniVkImage.hpp" />
     <ClInclude Include="MiniVkInstance.hpp" />
     <ClInclude Include="MiniVkQueueFamily.hpp" />

@@ -7,6 +7,8 @@
 		class MiniVkSwapChain : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
+			MiniVkWindow& renderWindow;
+
 		public:
 			atomic_mutex swapChain_lock;
 
@@ -31,9 +33,11 @@
 				vkDestroySwapchainKHR(renderDevice.logicalDevice, swapChain, nullptr);
 			}
 
-			MiniVkSwapChain(MiniVkRenderDevice& renderDevice, MiniVkSurfaceSupporter presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-			: renderDevice(renderDevice), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
+			MiniVkSwapChain(MiniVkRenderDevice& renderDevice, MiniVkWindow& renderWindow, MiniVkSurfaceSupporter presentDetails, MiniVkBufferingMode bufferingMode = MiniVkBufferingMode::TRIPLE, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+				renderWindow.onResizeFrameBuffer.hook(callback<GLFWwindow*, int, int>([this](GLFWwindow* w, int x, int y) { this->OnFrameBufferResizeCallback(w, x, y); }));
+
 				CreateSwapChain();
 				presentable = true;
 			}
@@ -182,7 +186,7 @@
 			/// <summary>Select swap-chain extent (swap-chain surface resolution).</summary>
 			VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
 				int width, height;
-				onResizeFrameBuffer.invoke(width, height);
+				renderWindow.OnFrameBufferReSizeCallback(width, height);
 
 				VkExtent2D extent = {
 					std::min(std::max((uint32_t)width, capabilities.minImageExtent.width), capabilities.maxImageExtent.width),
@@ -200,9 +204,10 @@
 			}
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
-			void OnFrameBufferResizeCallback(int width, int height) {
+			void OnFrameBufferResizeCallback(GLFWwindow* hwndWindow, int width, int height) {
 				atomic_lock swapChainLock(swapChain_lock, true);
 				if (!swapChainLock.AcquiredLock()) return;
+				if (hwndWindow != renderWindow.GetHandle()) return;
 
 				presentable = (width > 0 && height > 0);
 				if (presentable) {

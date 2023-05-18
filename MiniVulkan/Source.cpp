@@ -18,12 +18,14 @@ int MINIVULKAN_WINDOWMAIN {
         const std::vector<VkPushConstantRange>& pushConstantRanges = { MiniVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
 
         MiniVkWindow window("MINIVK WINDOW", 1920, 1080, true);
+        MiniVkWindowInputEvents inputs(window);
+
         MiniVkInstance instance(MiniVkWindow::QueryRequiredExtensions(MVK_VALIDATION_LAYERS), "MINIVK");
         MiniVkRenderDevice renderDevice(instance, window.CreateWindowSurface(instance.instance), renderDeviceTypes);
         MiniVkVMAllocator vmAlloc(instance, renderDevice);
 
+        MiniVkSwapChain swapChain(renderDevice, window, MiniVkSurfaceSupporter(), bufferingMode);
         MiniVkCommandPool cmdSwapPool(renderDevice, static_cast<size_t>(bufferingMode));
-        MiniVkSwapChain swapChain(renderDevice, MiniVkSurfaceSupporter(), bufferingMode);
         MiniVkShaderStages shaders(renderDevice, { vertexShader, fragmentShader });
 
         MiniVkDynamicPipeline dySwapChainPipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, false, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -34,9 +36,6 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkCmdPoolQueue cmdRenderQueue(cmdRenderPool);
         MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, &renderSurface, dyImagePipe);
-
-        window.onResizeFrameBuffer.hook(callback<int, int>([&swapChain](int x, int y){ swapChain.OnFrameBufferResizeCallback(x, y); }));
-        swapChain.onResizeFrameBuffer.hook(callback<int&, int&>([&window](int x, int y) { window.OnFrameBufferReSizeCallback(x, y); }));
 
         VkClearValue clearColor{ .color = { 1.0, 0.0, 0.0, 1.0 } };
         VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };

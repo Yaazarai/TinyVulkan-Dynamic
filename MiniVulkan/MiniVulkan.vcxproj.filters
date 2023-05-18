@@ -89,6 +89,9 @@
     <ClInclude Include="triangulate.hpp">
       <Filter>Header Files\MiniVK\Dependencies</Filter>
     </ClInclude>
+    <ClInclude Include="MiniVkGLFWInputEnums.hpp">
+      <Filter>Header Files\MiniVK</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Documentation.txt">

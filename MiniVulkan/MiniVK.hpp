@@ -96,15 +96,16 @@
     #include "./invokable.hpp"
 
     #include "./MiniVkThreadPool.hpp"
+    #include "./MiniVkGLFWInputEnums.hpp"
     #include "./MiniVkWindow.hpp"
 
     #include "./MiniVkSupporters.hpp"
     #include "./MiniVkQueueFamily.hpp"
     #include "./MiniVkInstance.hpp"
     #include "./MiniVkRenderDevice.hpp"
+    #include "./MiniVkVMAllocator.hpp"
     #include "./MiniVkSwapChain.hpp"
     #include "./MiniVkCommandPool.hpp"
-    #include "./MiniVkVMAllocator.hpp"
     #include "./MiniVkBuffer.hpp"
     #include "./MiniVkImage.hpp"
     #include "./MiniVkShaderStages.hpp"

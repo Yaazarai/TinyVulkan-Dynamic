@@ -41,7 +41,7 @@ int MINIVULKAN_WINDOWMAIN {
         VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
 
 
-
+        
 
 
         std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.5}, {1.0,1.0,1.0,0.75});
@@ -78,9 +78,10 @@ int MINIVULKAN_WINDOWMAIN {
             glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
             imageRenderer.PushConstants(renderTargetBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
             
-            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, image.GetImageDescriptor());
+            auto descr = image.GetImageDescriptor();
+            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descr);
             imageRenderer.PushDescriptorSet(renderTargetBuffer, { writeDescriptorSets });
-            
+
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(renderTargetBuffer, 0, 1, &vbuffer.buffer, offsets);
             vkCmdBindIndexBuffer(renderTargetBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
@@ -113,7 +114,8 @@ int MINIVULKAN_WINDOWMAIN {
             glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 120.0F * (double) swap, 0.0, 1.0, 0.0);
             dyRender.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
             
-            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, renderSurface.GetImageDescriptor());
+            auto descr = renderSurface.GetImageDescriptor();
+            VkWriteDescriptorSet writeDescriptorSets = MiniVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descr);
             dyRender.PushDescriptorSet(commandBuffer, { writeDescriptorSets });
             
             VkDeviceSize offsets[] = { 0 };

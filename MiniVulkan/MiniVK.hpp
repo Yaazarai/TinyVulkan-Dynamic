@@ -46,6 +46,11 @@
     #else
         #ifdef _WIN32
             #define MINIVULKAN_WINDOWMAIN __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+            
+            // For debugging w/ Console on Release change from /WINDOW to /CONSOLE: Linker -> System -> Subsystem.
+            // Then swap the line above with the line below (since we're accessing via console not Win32).
+            // Lastly enable validation layers on line 57 for Release mode.
+            //#define MINIVULKAN_WINDOWMAIN main(int argc, char* argv[])
         #else
             #define MINIVULKAN_WINDOWMAIN main(int argc, char* argv[])
         #endif

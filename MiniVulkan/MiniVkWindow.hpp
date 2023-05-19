@@ -274,7 +274,7 @@
 			inline static std::unordered_map<MiniVkKeyboardButtons, MiniVkInputEvents> cachedKeyboardStates;
 			inline static MiniVkInputEvents cachedMouseStates[static_cast<int32_t>(MiniVkMouseButtons::BUTTON_LAST) + 1];
 
-			typedef struct MiniVkGamepadStruct { int32_t id; MiniVkInputEvents buttons[GLFW_JOYSTICK_LAST + 1]; };
+			struct MiniVkGamepadStruct { int32_t id; MiniVkInputEvents buttons[GLFW_JOYSTICK_LAST + 1]; };
 			inline static MiniVkGamepadStruct cachedGamepadStates[GLFW_JOYSTICK_LAST + 1];
 
 			inline static invokable<GLFWwindow*, MiniVkKeyboardButtons, MiniVkInputEvents, MiniVkModKeyBits> KeyboardButton;

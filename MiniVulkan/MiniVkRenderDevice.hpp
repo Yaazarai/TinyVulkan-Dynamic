@@ -156,10 +156,13 @@
 				VkPhysicalDeviceProperties2 deviceProperties {};
 				deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 				vkGetPhysicalDeviceProperties2(device, &deviceProperties);
-
-				// You can uncomment this to add check for specific device features.
+				//VkPhysicalDevicePushDescriptorPropertiesKHR pushDescriptorProp {};
+				//pushDescriptorProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR;
+				//deviceProperties.pNext = &pushDescriptorProp;
+				
 				VkPhysicalDeviceFeatures2 deviceFeatures {};
 				deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+				// You can uncomment this to add check for specific device features.
 				//VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
 				//dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
 				//deviceFeatures.pNext = &dynamicState3Features;

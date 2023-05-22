@@ -111,10 +111,10 @@
     #include "./MiniVkVMAllocator.hpp"
     #include "./MiniVkSwapChain.hpp"
     #include "./MiniVkCommandPool.hpp"
-    #include "./MiniVkBuffer.hpp"
-    #include "./MiniVkImage.hpp"
     #include "./MiniVkShaderStages.hpp"
     #include "./MiniVkDynamicPipeline.hpp"
+    #include "./MiniVkBuffer.hpp"
+    #include "./MiniVkImage.hpp"
     #include "./MiniVkDynamicRenderer.hpp"
     #include "./MiniVkVertexMath.hpp"
     

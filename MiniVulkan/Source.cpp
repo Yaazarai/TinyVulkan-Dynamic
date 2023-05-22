@@ -34,14 +34,14 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkDynamicPipeline dyImagePipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, false, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
         MiniVkCommandPool cmdRenderPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkCmdPoolQueue cmdRenderQueue(cmdRenderPool);
-        MiniVkImage renderSurface(renderDevice, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        MiniVkImageRenderer imageRenderer(renderDevice, vmAlloc, cmdRenderQueue, &renderSurface, dyImagePipe);
+        MiniVkImage renderSurface(renderDevice, dySwapChainPipe, cmdRenderPool, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, MINIVK_SHADER_READONLY_OPTIMAL);
+        MiniVkImageRenderer imageRenderer(renderDevice, cmdRenderQueue, vmAlloc, &renderSurface, dyImagePipe);
 
         VkClearValue clearColor{ .color = { 1.0, 0.0, 0.0, 1.0 } };
         VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
 
 
-        
+
 
 
         std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.5}, {1.0,1.0,1.0,0.75});
@@ -68,8 +68,8 @@ int MINIVULKAN_WINDOWMAIN {
         qoi_desc qoidesc;
         void* qoiPixels = qoi_read("./Screeny.qoi", &qoidesc, 4);
         VkDeviceSize dataSize = qoidesc.width * qoidesc.height * qoidesc.channels;
-        MiniVkImage image = MiniVkImage(renderDevice, vmAlloc, qoidesc.width, qoidesc.height, false, VK_FORMAT_R8G8B8A8_SRGB);
-        image.StageImageData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), qoiPixels, dataSize);
+        MiniVkImage image = MiniVkImage(renderDevice, dyImagePipe, cmdRenderPool, vmAlloc, qoidesc.width, qoidesc.height, false, VK_FORMAT_R8G8B8A8_SRGB, MINIVK_SHADER_READONLY_OPTIMAL);
+        image.StageImageData(qoiPixels, dataSize);
         QOI_FREE(qoiPixels);
 
         int32_t rentBufferIndex;

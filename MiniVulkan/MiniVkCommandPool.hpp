@@ -88,6 +88,8 @@
 				rentQueue[index] = false;
 				vkResetCommandBuffer(cmdPool.GetBuffers()[index], 0);
 			}
+
+			MiniVkCommandPool& GetPool() { return cmdPool; }
 		};
 	}
 #endif

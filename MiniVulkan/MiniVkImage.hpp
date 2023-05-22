@@ -25,9 +25,19 @@
 					Finally for use in shaders you need to change the layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
 		*/
 
+		enum MiniVkImageLayout {
+			MINIVK_TRANSFER_SRC_OPTIMAL = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			MINIVK_TRANSFER_DST_OPTIMAL = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			MINIVK_SHADER_READONLY_OPTIMAL = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			MINIVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			MINIVK_UNDEFINED = VK_IMAGE_LAYOUT_UNDEFINED
+		};
+
 		class MiniVkImage : public disposable {
 		private:
 			MiniVkRenderDevice& renderDevice;
+			MiniVkDynamicPipeline& graphicsPipeline;
+			MiniVkCommandPool& commandPool;
 			MiniVkVMAllocator& vmAlloc;
 			
 			VkSamplerAddressMode addressingMode;
@@ -87,7 +97,7 @@
 			VkImage image = VK_NULL_HANDLE;
 			VkImageView imageView = VK_NULL_HANDLE;
 			VkSampler imageSampler = VK_NULL_HANDLE;
-			VkImageLayout layout;
+			MiniVkImageLayout currentLayout;
 			VkImageAspectFlags aspectFlags;
 
 			VkSemaphore imageAvailable;
@@ -110,15 +120,15 @@
 				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
 			}
 
-			MiniVkImage(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
-			: renderDevice(renderDevice), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), layout(layout), addressingMode(addressingMode), aspectFlags(aspectFlags) {
+			MiniVkImage(MiniVkRenderDevice& renderDevice, MiniVkDynamicPipeline& graphicsPipeline, MiniVkCommandPool& commandPool, MiniVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, MiniVkImageLayout layout = MINIVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
+			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), currentLayout(MINIVK_UNDEFINED), addressingMode(addressingMode), aspectFlags(aspectFlags) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				ReCreateImage(width, height, isDepthImage, format, layout, addressingMode, aspectFlags);
 				CreateImageSyncObjects();
 			}
 
-			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT) {
+			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, MiniVkImageLayout layout = MINIVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT) {
 				VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 				imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 				imgCreateInfo.extent.width = static_cast<uint32_t>(width);
@@ -147,6 +157,9 @@
 
 				CreateTextureSampler();
 				CreateImageView();
+				
+				if (layout != MINIVK_UNDEFINED)
+					TransitionLayoutCmd(layout);
 			}
 
 			void CreateImageSyncObjects() {
@@ -163,13 +176,13 @@
 					throw std::runtime_error("MiniVulkan: Failed to create synchronization objects for a image renderer!");
 			}
 
-			void TransitionLayoutCmd(VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout newLayout) {
-				VkCommandBuffer commandBuffer = BeginTransferCmd(graphicsQueue, commandPool);
+			void TransitionLayoutCmd(MiniVkImageLayout newLayout) {
+				VkCommandBuffer commandBuffer = BeginTransferCmd();
 
 				VkImageMemoryBarrier barrier{};
 				barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-				barrier.oldLayout = layout;
-				barrier.newLayout = newLayout;
+				barrier.oldLayout = (VkImageLayout) currentLayout;
+				barrier.newLayout = (VkImageLayout) newLayout;
 				barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				barrier.image = image;
@@ -181,53 +194,67 @@
 
 				VkPipelineStageFlags sourceStage;
 				VkPipelineStageFlags destinationStage;
-				if (layout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-					barrier.srcAccessMask = 0;
-					barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-					destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-				} else if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-					barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-					barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-					sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-					destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				} else if (layout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-					barrier.srcAccessMask = 0;
-					barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-					destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-				} else if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-					barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-					destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-					if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
-						barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-					}
-				} else if (layout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-					barrier.srcAccessMask = 0;
-					barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-					destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				} else {
-					barrier.subresourceRange.aspectMask = aspectFlags;
-					destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-					sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-					throw std::invalid_argument("MiniVkImage: Unsupported layout transition!");
+				switch ((VkImageLayout) currentLayout) {
+					case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+						barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+						sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+						barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+						sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+						barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+						sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+						barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+						sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_UNDEFINED:
+					default:
+						barrier.srcAccessMask = VK_ACCESS_NONE;
+						sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+					break;
 				}
 
-				layout = newLayout;
+				switch ((VkImageLayout) newLayout) {
+					case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+						barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+						destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+						barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+						destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+						barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+						destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+						barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+						barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+						destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+						if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT)
+							barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+					break;
+					case VK_IMAGE_LAYOUT_UNDEFINED:
+					default:
+						barrier.dstAccessMask = VK_ACCESS_NONE;
+						destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+					break;
+				}
+
+				currentLayout = newLayout;
 				vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-				EndTransferCmd(graphicsQueue, commandPool, commandBuffer);
+				EndTransferCmd(commandBuffer);
 			}
 
-			void TransferFromBufferCmd(VkQueue graphicsQueue, VkCommandPool commandPool, MiniVkBuffer& srcBuffer) {
-				VkCommandBuffer commandBuffer = BeginTransferCmd(graphicsQueue, commandPool);
+			void TransferFromBufferCmd(MiniVkBuffer& srcBuffer) {
+				VkCommandBuffer commandBuffer = BeginTransferCmd();
 
 				VkBufferImageCopy region{};
 				region.bufferOffset = 0;
@@ -241,25 +268,25 @@
 				region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 				vkCmdCopyBufferToImage(commandBuffer, srcBuffer.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-				EndTransferCmd(graphicsQueue, commandPool, commandBuffer);
+				EndTransferCmd(commandBuffer);
 			}
 
-			void StageImageData(VkQueue graphicsQueue, VkCommandPool commandPool, void* data, VkDeviceSize dataSize) {
+			void StageImageData(void* data, VkDeviceSize dataSize) {
 				MiniVkBuffer stagingBuffer = MiniVkBuffer(renderDevice, vmAlloc, dataSize, MiniVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
 				memcpy(stagingBuffer.description.pMappedData, data, (size_t)dataSize);
 
-				TransitionLayoutCmd(graphicsQueue, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-				TransferFromBufferCmd(graphicsQueue, commandPool, stagingBuffer);
-				TransitionLayoutCmd(graphicsQueue, commandPool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+				TransitionLayoutCmd(MINIVK_TRANSFER_DST_OPTIMAL);
+				TransferFromBufferCmd(stagingBuffer);
+				TransitionLayoutCmd(MINIVK_SHADER_READONLY_OPTIMAL);
 
 				stagingBuffer.Dispose();
 			}
 
-			VkCommandBuffer BeginTransferCmd(VkQueue graphicsQueue, VkCommandPool commandPool) {
+			VkCommandBuffer BeginTransferCmd() {
 				VkCommandBufferAllocateInfo allocInfo{};
 				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				allocInfo.commandPool = commandPool;
+				allocInfo.commandPool = commandPool.GetPool();
 				allocInfo.commandBufferCount = 1;
 
 				VkCommandBuffer commandBuffer;
@@ -273,7 +300,7 @@
 				return commandBuffer;
 			}
 
-			void EndTransferCmd(VkQueue graphicsQueue, VkCommandPool commandPool, VkCommandBuffer commandBuffer) {
+			void EndTransferCmd(VkCommandBuffer commandBuffer) {
 				vkEndCommandBuffer(commandBuffer);
 
 				VkSubmitInfo submitInfo{};
@@ -281,12 +308,12 @@
 				submitInfo.commandBufferCount = 1;
 				submitInfo.pCommandBuffers = &commandBuffer;
 
-				vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-				vkQueueWaitIdle(graphicsQueue);
-				vkFreeCommandBuffers(renderDevice.logicalDevice, commandPool, 1, &commandBuffer);
+				vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+				vkQueueWaitIdle(graphicsPipeline.graphicsQueue);
+				vkFreeCommandBuffers(renderDevice.logicalDevice, commandPool.GetPool(), 1, &commandBuffer);
 			}
 
-			VkDescriptorImageInfo GetImageDescriptor() { return { imageSampler, imageView, layout }; }
+			VkDescriptorImageInfo GetImageDescriptor() { return { imageSampler, imageView, (VkImageLayout) currentLayout }; }
 
 			glm::vec2 GetUVCoords(glm::vec2 xy, bool forceClamp = true) {
 				if (forceClamp)

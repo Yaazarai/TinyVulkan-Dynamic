@@ -4,6 +4,55 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
+		#pragma region DYNAMIC_RENDERING_FUNCTIONS
+
+		PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingEXTKHR = nullptr;
+		PFN_vkCmdEndRenderingKHR vkCmdEndRenderingEXTKHR = nullptr;
+		PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetEXTKHR = nullptr;
+
+		void vkCmdRenderingGetCallbacks(VkInstance instance) {
+			if (vkCmdBeginRenderingEXTKHR == nullptr)
+				vkCmdBeginRenderingEXTKHR = (PFN_vkCmdBeginRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
+
+			if (vkCmdEndRenderingEXTKHR == nullptr)
+				vkCmdEndRenderingEXTKHR = (PFN_vkCmdEndRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdEndRenderingKHR");
+
+			if (vkCmdPushDescriptorSetEXTKHR == nullptr)
+				vkCmdPushDescriptorSetEXTKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetInstanceProcAddr(instance, "vkCmdPushDescriptorSetKHR");
+		}
+
+		VkResult vkCmdBeginRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+			#if MVK_VALIDATION_LAYERS == VK_TRUE
+				if (vkCmdBeginRenderingEXTKHR == VK_NULL_HANDLE)
+					throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdBeginRenderingKHR");
+			#endif
+
+			vkCmdBeginRenderingEXTKHR(commandBuffer, pRenderingInfo);
+			return VK_SUCCESS;
+		}
+
+		VkResult vkCmdEndRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer) {
+			#if MVK_VALIDATION_LAYERS == VK_TRUE
+				if (vkCmdEndRenderingEXTKHR == VK_NULL_HANDLE)
+					throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdEndRenderingKHR");
+			#endif
+
+			vkCmdEndRenderingEXTKHR(commandBuffer);
+			return VK_SUCCESS;
+		}
+
+		VkResult vkCmdPushDescriptorSetEKHR(VkInstance instance, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t set, uint32_t writeCount, const VkWriteDescriptorSet* pWriteSets) {
+			#if MVK_VALIDATION_LAYERS == VK_TRUE
+				if (vkCmdPushDescriptorSetEXTKHR == VK_NULL_HANDLE)
+					throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdPushDescriptorSetKHR");
+			#endif
+
+			vkCmdPushDescriptorSetEXTKHR(commandBuffer, bindPoint, layout, set, writeCount, pWriteSets);
+			return VK_SUCCESS;
+		}
+
+		#pragma endregion
+
 		class MiniVkInstance : public disposable {
 		private:
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -27,6 +76,7 @@
 				
 				CreateVkInstance(title);
 				SetupDebugMessenger();
+				vkCmdRenderingGetCallbacks(instance);
 			}
 
 			MiniVkInstance operator=(const MiniVkInstance& inst) = delete;

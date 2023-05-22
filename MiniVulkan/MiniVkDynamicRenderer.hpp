@@ -4,31 +4,6 @@
 	#include "./MiniVK.hpp"
 
 	namespace MINIVULKAN_NAMESPACE {
-		#pragma region DYNAMIC_RENDERING_FUNCTIONS
-
-		VkResult vkCmdBeginRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
-			auto func = (PFN_vkCmdBeginRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
-			if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdBeginRenderingKHR");
-			func(commandBuffer, pRenderingInfo);
-			return VK_SUCCESS;
-		}
-
-		VkResult vkCmdEndRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer) {
-			auto func = (PFN_vkCmdEndRenderingKHR)vkGetInstanceProcAddr(instance, "vkCmdEndRenderingKHR");
-			if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdEndRenderingKHR");
-			func(commandBuffer);
-			return VK_SUCCESS;
-		}
-
-		VkResult vkCmdSetColorBlendEnableEKHR(VkInstance instance, VkCommandBuffer commandBuffer, uint32_t first, uint32_t attachmentCount, const std::vector<VkBool32> blendTesting) {
-			auto func = (PFN_vkCmdSetColorBlendEnableEXT) vkGetInstanceProcAddr(instance, "vkCmdSetColorBlendEnableEXT");
-			if (func == VK_NULL_HANDLE) throw std::runtime_error("MiniVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdSetColorBlendEnableEXT");
-			func(commandBuffer, first, attachmentCount, blendTesting.data());
-			return VK_SUCCESS;
-		}
-
-		#pragma endregion
-
 		/// 
 		/// RENDERING PARADIGM:
 		///		MiniVkImageRenderer is for rendering directly to a VkImage render target for offscreen rendering.
@@ -89,14 +64,13 @@
 				}
 			}
 
-			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkVMAllocator& vmAlloc, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkImage* renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
+			MiniVkImageRenderer(MiniVkRenderDevice& renderDevice, MiniVkCmdPoolQueue& cmdPoolQueue, MiniVkVMAllocator& vmAlloc, MiniVkImage* renderTarget, MiniVkDynamicPipeline& graphicsPipeline)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), cmdPoolQueue(cmdPoolQueue), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
-				//onDispose.hook(callback<bool>(this, &MiniVkImageRenderer::Disposable));
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				optionalDepthImage = nullptr;
 				if (graphicsPipeline.DepthTestingIsEnabled())
-					optionalDepthImage = new MiniVkImage(renderDevice, vmAlloc, renderTarget->width, renderTarget->height, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+					optionalDepthImage = new MiniVkImage(renderDevice, graphicsPipeline, cmdPoolQueue.GetPool(), vmAlloc, renderTarget->width, renderTarget->height, true, QueryDepthFormat(), MINIVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 			}
 
 			void SetRenderTarget(MiniVkImage* renderTarget, bool waitOldTarget = true) {
@@ -183,7 +157,7 @@
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = optionalDepthImage->layout;
+					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImage->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 				}
 
@@ -201,8 +175,6 @@
 				if (vkCmdBeginRenderingEKHR(renderDevice.instance.instance, commandBuffer, &dynamicRenderInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to rendering!");
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
-
-				//vkCmdSetColorBlendEnableEKHR(renderDevice.instance.instance, commandBuffer, 0U, 1U, { (VkBool32)enableColorBlending });
 			}
 
 			void EndRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
@@ -275,7 +247,7 @@
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = optionalDepthImage->layout;
+					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImage->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 				}
 
@@ -317,7 +289,7 @@
 					MiniVkImage* depthImage = optionalDepthImage;
 					if (depthImage->width < renderTarget->width || depthImage->height < renderTarget->height) {
 						depthImage->Disposable(false);
-						depthImage->ReCreateImage(renderTarget->width, renderTarget->height, depthImage->isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+						depthImage->ReCreateImage(renderTarget->width, renderTarget->height, depthImage->isDepthImage, QueryDepthFormat(), MINIVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					}
 				}
 				
@@ -409,7 +381,7 @@
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					for (int32_t i = 0; i < swapChain.images.size(); i++)
-						optionalDepthImages.push_back(new MiniVkImage(renderDevice, memAlloc, swapChain.imageExtent.width * 4, swapChain.imageExtent.height * 4, true, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT));
+						optionalDepthImages.push_back(new MiniVkImage(renderDevice, graphicsPipeline, commandPool, memAlloc, swapChain.imageExtent.width * 4, swapChain.imageExtent.height * 4, true, QueryDepthFormat(), MINIVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT));
 				}
 
 				CreateImageSyncObjects();
@@ -508,7 +480,7 @@
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = optionalDepthImages[currentSyncFrame]->layout;
+					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImages[currentSyncFrame]->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 
 					std::cout << "USE DEPTH TESTING" << std::endl;
@@ -528,8 +500,6 @@
 				if (vkCmdBeginRenderingEKHR(renderDevice.instance.instance, commandBuffer, &dynamicRenderInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to rendering!");
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
-
-				//vkCmdSetColorBlendEnableEKHR(renderDevice.instance.instance, commandBuffer, 0U, 1U, { (VkBool32)enableColorBlending });
 			}
 
 			void EndRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
@@ -599,7 +569,7 @@
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = optionalDepthImages[currentSyncFrame]->layout;
+					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImages[currentSyncFrame]->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 				}
 
@@ -657,7 +627,7 @@
 					MiniVkImage* depthImage = optionalDepthImages[currentSyncFrame];
 					if (depthImage->width < swapChain.imageExtent.width || depthImage->height < swapChain.imageExtent.height) {
 						depthImage->Disposable(false);
-						depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, QueryDepthFormat(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+						depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, QueryDepthFormat(), MINIVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					}
 				}
 

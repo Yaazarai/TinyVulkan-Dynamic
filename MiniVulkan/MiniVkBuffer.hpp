@@ -144,6 +144,8 @@
 				vkQueueWaitIdle(graphicsQueue);
 				vkFreeCommandBuffers(renderDevice.logicalDevice, commandPool, 1, &commandBuffer);
 			}
+
+			VkDescriptorBufferInfo GetBufferDescriptor(VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) { return { buffer, offset, range }; }
 		};
 	}
 #endif

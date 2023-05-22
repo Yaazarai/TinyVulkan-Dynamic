@@ -244,14 +244,14 @@
 				return writeDescriptorSets;
 			}
 
-			inline static VkWriteDescriptorSet SelectWriteImageDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorImageInfo& imageInfo) {
+			inline static VkWriteDescriptorSet SelectWriteImageDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorImageInfo* imageInfo) {
 				VkWriteDescriptorSet writeDescriptorSets{};
 				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				writeDescriptorSets.dstSet = 0;
 				writeDescriptorSets.dstBinding = binding;
 				writeDescriptorSets.descriptorCount = descriptorCount;
 				writeDescriptorSets.descriptorType = descriptorType;
-				writeDescriptorSets.pImageInfo = &imageInfo;
+				writeDescriptorSets.pImageInfo = imageInfo;
 				return writeDescriptorSets;
 			}
 

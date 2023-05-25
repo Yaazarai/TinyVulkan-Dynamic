@@ -44,6 +44,7 @@
         #define MINIVULKAN_WINDOWMAIN main(int argc, char* argv[])
         #define MVK_VALIDATION_LAYERS VK_TRUE
     #else
+        #define MVK_VALIDATION_LAYERS VK_FALSE
         #ifdef _WIN32
             #define MINIVULKAN_WINDOWMAIN __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
             
@@ -51,10 +52,10 @@
             // Then swap the line above with the line below (since we're accessing via console not Win32).
             // Lastly enable validation layers on line 57 for Release mode.
             //#define MINIVULKAN_WINDOWMAIN main(int argc, char* argv[])
+            //#define MVK_VALIDATION_LAYERS VK_TRUE
         #else
             #define MINIVULKAN_WINDOWMAIN main(int argc, char* argv[])
         #endif
-        #define MVK_VALIDATION_LAYERS VK_FALSE
     #endif
     #ifndef MINIVULKAN_NAMESPACE
         #define MINIVULKAN_NAMESPACE minivulkan

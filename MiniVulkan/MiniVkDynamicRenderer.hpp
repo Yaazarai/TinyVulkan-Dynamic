@@ -82,7 +82,7 @@
 				this->renderTarget = renderTarget;
 			}
 
-			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil, bool enableColorBlending = true) {
+			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
 				VkCommandBufferBeginInfo beginInfo{};
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -94,11 +94,13 @@
 				if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to command buffer!");
 
-				const VkImageMemoryBarrier swapchain_memory_barrier{
+				const VkImageMemoryBarrier memory_barrier{
 					.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 					.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 					.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+					.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 					.image = renderTarget->image,
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -109,13 +111,12 @@
 					},
 				};
 
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-					VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &swapchain_memory_barrier);
+				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &memory_barrier);
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 				colorAttachmentInfo.imageView = renderTarget->imageView;
-				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				colorAttachmentInfo.clearValue = clearColor;
@@ -131,12 +132,15 @@
 				dynamicRenderInfo.colorAttachmentCount = 1;
 				dynamicRenderInfo.pColorAttachments = &colorAttachmentInfo;
 
+				VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					const VkImageMemoryBarrier depth_memory_barrier{
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+						.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 						.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.image = optionalDepthImage->image,
 						.subresourceRange = {
 						  .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
@@ -147,17 +151,14 @@
 						},
 					};
 					
-					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
 
-					VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 					depthStencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 					depthStencilAttachmentInfo.imageView = optionalDepthImage->imageView;
-					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImage->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 				}
 
@@ -168,12 +169,12 @@
 				dynamicViewportKHR.height = static_cast<float>(renderArea.height);
 				dynamicViewportKHR.minDepth = 0.0f;
 				dynamicViewportKHR.maxDepth = 1.0f;
-
 				vkCmdSetViewport(commandBuffer, 0, 1, &dynamicViewportKHR);
 				vkCmdSetScissor(commandBuffer, 0, 1, &renderAreaKHR);
 
 				if (vkCmdBeginRenderingEKHR(renderDevice.instance.instance, commandBuffer, &dynamicRenderInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to rendering!");
+				
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
 			}
 
@@ -189,6 +190,8 @@
 					.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 					.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 					.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+					.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 					.image = renderTarget->image,
 					.subresourceRange = {
 					  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -199,13 +202,12 @@
 					}
 				};
 
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-					VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &image_memory_barrier);
+				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &image_memory_barrier);
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 				colorAttachmentInfo.imageView = renderTarget->imageView;
-				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				colorAttachmentInfo.clearValue = clearColor;
@@ -221,12 +223,15 @@
 				dynamicRenderInfo.colorAttachmentCount = 1;
 				dynamicRenderInfo.pColorAttachments = &colorAttachmentInfo;
 
+				VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					const VkImageMemoryBarrier depth_memory_barrier{
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+						.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 						.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 						.image = optionalDepthImage->image,
 						.subresourceRange = {
 						  .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
@@ -237,29 +242,16 @@
 						},
 					};
 
-					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
 
-					VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 					depthStencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 					depthStencilAttachmentInfo.imageView = optionalDepthImage->imageView;
-					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImage->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 				}
-
-				VkViewport dynamicViewportKHR{};
-				dynamicViewportKHR.x = 0;
-				dynamicViewportKHR.y = 0;
-				dynamicViewportKHR.width = static_cast<float>(renderArea.width);
-				dynamicViewportKHR.height = static_cast<float>(renderArea.height);
-				dynamicViewportKHR.minDepth = 0.0f;
-				dynamicViewportKHR.maxDepth = 1.0f;
-				vkCmdSetViewport(commandBuffer, 0, 1, &dynamicViewportKHR);
-				vkCmdSetScissor(commandBuffer, 0, 1, &renderAreaKHR);
 
 				if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [end] to command buffer!");
@@ -408,7 +400,7 @@
 				}
 			}
 
-			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil, bool enableColorBlending = true) {
+			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
 				VkCommandBufferBeginInfo beginInfo{};
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -432,13 +424,12 @@
 					},
 				};
 
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-					VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &swapchain_memory_barrier);
+				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &swapchain_memory_barrier);
 
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 				colorAttachmentInfo.imageView = swapChain.imageViews[currentSwapFrame];
-				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				colorAttachmentInfo.clearValue = clearColor;
@@ -454,11 +445,12 @@
 				dynamicRenderInfo.colorAttachmentCount = 1;
 				dynamicRenderInfo.pColorAttachments = &colorAttachmentInfo;
 				
+				VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					const VkImageMemoryBarrier depth_memory_barrier{
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+						.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 						.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 						.image = optionalDepthImages[currentSyncFrame]->image,
 						.subresourceRange = {
@@ -470,20 +462,15 @@
 						},
 					};
 
-					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
 
-					VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 					depthStencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 					depthStencilAttachmentInfo.imageView = optionalDepthImages[currentSyncFrame]->imageView;
-					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImages[currentSyncFrame]->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
-
-					std::cout << "USE DEPTH TESTING" << std::endl;
 				}
 
 				VkViewport dynamicViewportKHR{};
@@ -499,6 +486,7 @@
 
 				if (vkCmdBeginRenderingEKHR(renderDevice.instance.instance, commandBuffer, &dynamicRenderInfo) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [begin] to rendering!");
+				
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
 			}
 
@@ -527,7 +515,7 @@
 				VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 				colorAttachmentInfo.imageView = swapChain.imageViews[currentSwapFrame];
-				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 				colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				colorAttachmentInfo.clearValue = clearColor;
@@ -543,11 +531,12 @@
 				dynamicRenderInfo.colorAttachmentCount = 1;
 				dynamicRenderInfo.pColorAttachments = &colorAttachmentInfo;
 
+				VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					const VkImageMemoryBarrier depth_memory_barrier{
 						.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 						.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-						.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+						.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 						.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 						.image = optionalDepthImages[currentSyncFrame]->image,
 						.subresourceRange = {
@@ -559,30 +548,16 @@
 						},
 					};
 
-					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-						VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &depth_memory_barrier);
 
-					VkRenderingAttachmentInfoKHR depthStencilAttachmentInfo{};
 					depthStencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 					depthStencilAttachmentInfo.imageView = optionalDepthImages[currentSyncFrame]->imageView;
-					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+					depthStencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					depthStencilAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 					depthStencilAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					depthStencilAttachmentInfo.clearValue = depthStencil;
-					depthStencilAttachmentInfo.imageLayout = (VkImageLayout) optionalDepthImages[currentSyncFrame]->currentLayout;
 					dynamicRenderInfo.pDepthAttachment = &depthStencilAttachmentInfo;
 				}
-
-				VkViewport dynamicViewportKHR{};
-				dynamicViewportKHR.x = 0;
-				dynamicViewportKHR.y = 0;
-				dynamicViewportKHR.width = static_cast<float>(renderArea.width);
-				dynamicViewportKHR.height = static_cast<float>(renderArea.height);
-				dynamicViewportKHR.minDepth = 0.0f;
-				dynamicViewportKHR.maxDepth = 1.0f;
-
-				vkCmdSetViewport(commandBuffer, 0, 1, &dynamicViewportKHR);
-				vkCmdSetScissor(commandBuffer, 0, 1, &renderAreaKHR);
 
 				if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 					throw std::runtime_error("MiniVulkan: Failed to record [end] to command buffer!");

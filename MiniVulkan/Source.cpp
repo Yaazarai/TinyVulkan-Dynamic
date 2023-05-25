@@ -33,10 +33,10 @@ int MINIVULKAN_WINDOWMAIN {
         MiniVkCommandPool cmdSwapPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkShaderStages shaders(renderDevice, { vertexShader, fragmentShader });
 
-        MiniVkDynamicPipeline dySwapChainPipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, false, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+        MiniVkDynamicPipeline dySwapChainPipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
         MiniVkSwapChainRenderer dyRender(renderDevice, vmAlloc, cmdSwapPool, swapChain, dySwapChainPipe);
 
-        MiniVkDynamicPipeline dyImagePipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, false, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+        MiniVkDynamicPipeline dyImagePipe(renderDevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
         MiniVkCommandPool cmdRenderPool(renderDevice, static_cast<size_t>(bufferingMode));
         MiniVkCmdPoolQueue cmdRenderQueue(cmdRenderPool);
         MiniVkImage renderSurface(renderDevice, dySwapChainPipe, cmdRenderPool, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, MINIVK_SHADER_READONLY_OPTIMAL);
@@ -44,8 +44,8 @@ int MINIVULKAN_WINDOWMAIN {
         
         #pragma endregion
         #pragma region IMAGE_QUAD_LOADING_COPY_TO_GPU
-        std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.5}, {1.0,1.0,1.0,0.75});
-        std::vector<MiniVkVertex> quad2 = MiniVkQuad::CreateWithOffset({128.0,128.0}, {960.0,540.0,1.0}, {1.0,1.0,1.0,0.5});
+        std::vector<MiniVkVertex> quad1 = MiniVkQuad::CreateWithOffset({480.0,270.0}, {960.0,540.0,0.0}, {1.0,1.0,1.0,0.75});
+        std::vector<MiniVkVertex> quad2 = MiniVkQuad::CreateWithOffset({128.0,128.0}, {960.0,540.0,0.0}, {1.0,1.0,1.0,0.75});
 
         //constexpr glm::float32 angle = 45.0f * (glm::pi<glm::float32>() / 180.0f);
         //constexpr glm::float32 scale = 1.0;
@@ -78,8 +78,9 @@ int MINIVULKAN_WINDOWMAIN {
 
         int32_t rentBufferIndex;
         VkCommandBuffer renderTargetBuffer = cmdRenderQueue.RentBuffer(rentBufferIndex);
-        imageRenderer.BeginRecordCmdBuffer(renderTargetBuffer, VkExtent2D {.width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height}, clearColor, depthStencil, true);
-            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
+        imageRenderer.BeginRecordCmdBuffer(renderTargetBuffer, VkExtent2D {.width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height}, clearColor, depthStencil);
+            
+            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, -1.0, 1.0);
             imageRenderer.PushConstants(renderTargetBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
             
             auto image_descriptor = image.GetImageDescriptor();
@@ -90,6 +91,7 @@ int MINIVULKAN_WINDOWMAIN {
             vkCmdBindVertexBuffers(renderTargetBuffer, 0, 1, &vbuffer.buffer, offsets);
             vkCmdBindIndexBuffer(renderTargetBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(renderTargetBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
+            
         imageRenderer.EndRecordCmdBuffer(renderTargetBuffer, VkExtent2D{ .width = (uint32_t)renderSurface.width, .height = (uint32_t)renderSurface.height }, clearColor, depthStencil);
         imageRenderer.RenderExecute(renderTargetBuffer);
         
@@ -99,7 +101,7 @@ int MINIVULKAN_WINDOWMAIN {
         #pragma endregion
         #pragma region COPY_RENDERED_IMAGE_TO_GPU
 
-        std::vector<MiniVkVertex> sw_triangles = MiniVkQuad::Create(glm::vec3(1920.0, 1080.0,0.0));
+        std::vector<MiniVkVertex> sw_triangles = MiniVkQuad::Create(glm::vec3(1920.0, 1080.0, -0.5));
         std::vector<uint32_t> sw_indices = { 0, 1, 2, 2, 3, 0 };
         MiniVkBuffer sw_vbuffer(renderDevice, vmAlloc, sw_triangles.size() * sizeof(MiniVkVertex), MiniVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
         sw_vbuffer.StageBufferData(dyImagePipe.graphicsQueue, cmdSwapPool.GetPool(), sw_triangles.data(), sw_triangles.size() * sizeof(MiniVkVertex), 0, 0);
@@ -108,15 +110,16 @@ int MINIVULKAN_WINDOWMAIN {
 
         #pragma endregion
         #pragma region SWAPCHAIN_RENDERER_TESTING
+
         size_t frame = 0;
         bool swap = false;
         dyRender.onRenderEvents.hook(callback<VkCommandBuffer>([&swap, &frame, &instance, &window, &swapChain, &dyRender, &dySwapChainPipe, &renderSurface, &sw_ibuffer, &sw_vbuffer](VkCommandBuffer commandBuffer) {
             VkClearValue clearColor{ .color = { 0.25, 0.25, 0.25, 1.0 } };
             VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
         
-            dyRender.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil, true);
+            dyRender.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
             
-            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 120.0F * (double) swap, 0.0, 1.0, 0.0);
+            glm::mat4 projection = MiniVkMath::Project2D(window.GetWidth(), window.GetHeight(), 120.0F * (double) swap, 0.0, -1.0, 1.0);
             dyRender.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
             
             auto image_descriptor = renderSurface.GetImageDescriptor();
@@ -144,7 +147,7 @@ int MINIVULKAN_WINDOWMAIN {
         std::thread mythread([&window, &dyRender]() { while (!window.ShouldClose()) { dyRender.RenderExecute(); } });
         window.WhileMain();
         mythread.join();
-
+        
         disposable::DisposeOrdered({ &instance, &window, &renderDevice, &vmAlloc, &swapChain, &cmdSwapPool, &shaders, &dySwapChainPipe, &dyRender,
             &dyImagePipe, &cmdRenderPool, &cmdRenderQueue, &renderSurface, &imageRenderer, &vbuffer, &ibuffer, &image, &sw_vbuffer, &sw_ibuffer }, true);
         

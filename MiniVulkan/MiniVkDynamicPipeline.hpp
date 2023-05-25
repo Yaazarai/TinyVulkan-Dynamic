@@ -33,6 +33,7 @@
 			VkFormat imageFormat;
 			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL;
 			bool enableBlending;
 			bool enableDepthTesting;
 
@@ -47,8 +48,8 @@
 				vkDestroyPipelineLayout(renderDevice.logicalDevice, pipelineLayout, nullptr);
 			}
 
-			MiniVkDynamicPipeline(MiniVkRenderDevice& renderDevice, VkFormat imageFormat, MiniVkShaderStages& shaderStages, MiniVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology) {
+			MiniVkDynamicPipeline(MiniVkRenderDevice& renderDevice, VkFormat imageFormat, MiniVkShaderStages& shaderStages, MiniVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
+			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), enableDepthTesting(enableDepthTesting), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), polgyonTopology(polgyonTopology) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				MiniVkQueueFamily indices = MiniVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
@@ -118,7 +119,7 @@
 				rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 				rasterizer.depthClampEnable = VK_FALSE;
 				rasterizer.rasterizerDiscardEnable = VK_FALSE;
-				rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+				rasterizer.polygonMode = polgyonTopology;
 				rasterizer.lineWidth = 1.0f;
 				rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 				rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;

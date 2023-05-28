@@ -6,27 +6,45 @@ using namespace tinyvk;
 #define QOI_IMPLEMENTATION
 #include "./images_qoi.h"
 
+// Relative file path locations for the shader SPIR-V binaries:
 #define DEFAULT_VERTEX_SHADER "./sample_vert.spv"
 #define DEFAULT_FRAGMENT_SHADER "./sample_frag.spv"
+// Used below as the default extra VkCommandBuffer allocations (for render commands not emiotted by the SwapChainRenderer):
 #define DEFAULT_COMMAND_POOLSIZE 10
 
+// GPU device types to look for, Screen Buffering Mode (Single/Double/Triple/Quadruple), ShaderStageFlags/Path pairs for loading:
 const std::vector<VkPhysicalDeviceType> rdeviceTypes = { VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU };
 const TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE;
 const std::tuple<VkShaderStageFlagBits, std::string> vertexShader = { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, DEFAULT_VERTEX_SHADER };
 const std::tuple<VkShaderStageFlagBits, std::string> fragmentShader = { VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, DEFAULT_FRAGMENT_SHADER };
 
+// Vertex description (as required by the binding layout in the shaders), DescriptorLayout/Push Constant bindings for descriptors we'll use in the shaders:
 const TinyVkVertexDescription vertexDescription = TinyVkVertex::GetVertexDescription();
 const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings = { TinyVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) };
 const std::vector<VkPushConstantRange>& pushConstantRanges = { TinyVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
 
+// Get a QOI formatted image from disc:
 void* image_get(std::string fpath, qoi_desc& qoidesc) {
     FILE* test = fopen(fpath.c_str(), "rb");
     if (test == NULL) throw std::runtime_error("TinyVulkan: Cannot load QOI image! " + fpath);
     return qoi_read("./Screeny.qoi", &qoidesc, 4);
 }
+// Free a QOI fomratted image from memory:
 void image_free(void* imgPixels) { QOI_FREE(imgPixels); }
 
 int32_t TINYVULKAN_WINDOWMAIN {
+    /*  Section 0:
+        TL;DR:
+            S0: Setup the TinyVK pipeline with a Window/SwapChain SwapChainRenderer (presentation-model) and ImageRenderer (render-to-texture model).
+            S1: Create a quad of TinyVkVertex (vertex buffer), then triangulate it with Earcut and vertex indices (index buffer). Load a QOI image
+                into memory and then take that QOI image onto the GPU using TinyVkImage.
+            S2: Using the TinyVkImageRenderer render the previous QOI image onto a TinyVkImage on the GPU (rsurface).
+            S3: Create a quad for rsurface and a render event on the SwapChainRenderer to render rsurface to the screen.
+            S4: Execute the SwapChainRender.onRenderEvents on a separate thread to avoid hanging/polling/reisizing conflicts with GLFW main thread.
+            S5: Clean up resources in reverse order (by order of dependency).
+                NOTE: TinyVK objects have destructors to clean up their own memory, but you have to force cleanup by order of dependency to avoid
+                objects going out of scope and be disposed of prior to when we actually need them to be disposed.
+    */
 	TinyVkWindow window("TINYVK WINDOW", 1920, 1080, true);
 	TinyVkInstance instance({}, "TINYVK");
 	TinyVkRenderDevice rdevice(instance, window.CreateWindowSurface(instance.GetInstance()), rdeviceTypes);
@@ -45,7 +63,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /*
+    /*  Section 1:
         Create the render background properties: Clear Color and Clear Depth.
         Create an image quad (array/vector of vertices) of arbitrary size (whatever you want)
         and triangulate the quad vertices as an array of vertex mapped indices for rendering.
@@ -78,12 +96,12 @@ int32_t TINYVULKAN_WINDOWMAIN {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /*
+    /*  Section 2:
         Using the Render-To-Image renderer (VkImageRenderer), render a QOI image onto a VkImage with the
         VkImageRenderer's default built-in command buffer and onRenderEvent (callback<VkCommandBuffer>).
     */
 
-    imageRenderer.onRenderEvent.hook(callback<VkCommandBuffer>([&window, &imageRenderer, &rsurface, &clearColor, &depthStencil, &image, &vbuffer, &ibuffer](VkCommandBuffer renderBuffer){
+    imageRenderer.onRenderEvents.hook(callback<VkCommandBuffer>([&window, &imageRenderer, &rsurface, &clearColor, &depthStencil, &image, &vbuffer, &ibuffer](VkCommandBuffer renderBuffer){
         imageRenderer.BeginRecordCmdBuffer(VkExtent2D{ .width = (uint32_t)rsurface.width, .height = (uint32_t)rsurface.height }, clearColor, depthStencil, renderBuffer);
 
         glm::mat4 projection = TinyVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, -1.0, 1.0);
@@ -109,7 +127,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /*
+    /*  Section 3:
         Create an image quad from the previous rendered image for rendering to the swap chain (window).
         Render that image onto the swap chain (window) with a camera projection offset based on the current frame.
         Use the swap chain renderer's built-in onRender event and command buffers for rendering.
@@ -153,7 +171,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /*
+    /* Section 4:
         Finally execute the swap chain (per-frame) render events on a secondary thread to avoid
         being blocked by the GLFW main thread--allows resizing, avoids handing on window move, etc.
         Then clean up the render thread and TinyVk remaining allocated resources.

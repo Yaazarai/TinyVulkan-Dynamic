@@ -54,7 +54,7 @@
 		public:
 			TinyVkImage* renderTarget;
 
-			invokable<VkCommandBuffer> onRenderEvent;
+			invokable<VkCommandBuffer> onRenderEvents;
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -303,7 +303,7 @@
 					renderBuffer = defaultBuffer.first;
 
 				vkResetCommandBuffer(renderBuffer, 0);
-				onRenderEvent.invoke(renderBuffer);
+				onRenderEvents.invoke(renderBuffer);
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 				VkSubmitInfo submitInfo{};

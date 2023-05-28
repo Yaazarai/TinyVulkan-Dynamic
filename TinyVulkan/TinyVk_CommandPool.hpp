@@ -79,22 +79,23 @@
 				return hasSum;
 			}
 
-			VkCommandBuffer LeaseBuffer(int32_t& index) {
+			std::pair<VkCommandBuffer,int32_t> LeaseBuffer() {
 				for (int32_t i = 0; i < rentQueue.size(); i++)
 					if (rentQueue[i] == false) {
 						rentQueue[i] = true;
-						return commandBuffers[index = i];
+						vkResetCommandBuffer(commandBuffers[i], 0);
+						return std::pair(commandBuffers[i], i);
 					}
 
-				return nullptr;
+				throw std::runtime_error("TinyVulkan: VKCommandPool is full and cannot lease any more VkCommandBuffers! MaxSize: " + std::to_string(bufferCount));
+				return std::pair<VkCommandBuffer,int32_t>(nullptr,-1);
 			}
 
-			void ReturnBuffer(int32_t index) {
-				if (index < 0 || index >= rentQueue.size())
+			void ReturnBuffer(std::pair<VkCommandBuffer, int32_t> bufferIndexPair) {
+				if (bufferIndexPair.second < 0 || bufferIndexPair .second >= rentQueue.size())
 					throw std::runtime_error("TinyVulkan: Failed to return command buffer!");
 
-				rentQueue[index] = false;
-				vkResetCommandBuffer(commandBuffers[index], 0);
+				rentQueue[bufferIndexPair.second] = false;
 			}
 		};
 	}

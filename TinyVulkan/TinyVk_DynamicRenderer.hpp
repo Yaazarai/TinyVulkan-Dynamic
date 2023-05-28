@@ -59,7 +59,7 @@
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 
-				commandPool.ReturnBuffer(defaultBuffer.second);
+				commandPool.ReturnBuffer(defaultBuffer);
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					optionalDepthImage->Dispose();
@@ -71,9 +71,7 @@
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), commandPool(commandPool), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
-				int32_t index;
-				VkCommandBuffer cbuffer = commandPool.LeaseBuffer(index);
-				defaultBuffer = std::pair(cbuffer, index);
+				defaultBuffer = commandPool.LeaseBuffer();
 
 				optionalDepthImage = nullptr;
 				if (graphicsPipeline.DepthTestingIsEnabled())
@@ -371,7 +369,7 @@
 				}
 
 				for(auto vkpair : rentBuffers)
-					commandPool.ReturnBuffer(vkpair.second);
+					commandPool.ReturnBuffer(vkpair);
 
 				for (size_t i = 0; i < inFlightFences.size(); i++) {
 					vkDestroySemaphore(renderDevice.logicalDevice, imageAvailableSemaphores[i], nullptr);
@@ -390,9 +388,8 @@
 					throw std::runtime_error("TinyVulkan: CommandPool has no available buffers for SwapChain rendering!");
 				#endif
 
-				int32_t index;
-				for (int i = 0; i < static_cast<int32_t>(swapChain.bufferingMode); i++) {
-					std::pair<VkCommandBuffer, int32_t> vkpair(commandPool.LeaseBuffer(index), index);
+				for (int32_t i = 0; i < static_cast<int32_t>(swapChain.bufferingMode); i++) {
+					std::pair<VkCommandBuffer, int32_t> vkpair(commandPool.LeaseBuffer());
 					rentBuffers.push_back(vkpair);
 				}
 

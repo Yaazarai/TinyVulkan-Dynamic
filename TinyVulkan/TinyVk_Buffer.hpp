@@ -116,8 +116,7 @@
 			}
 
 			std::pair<VkCommandBuffer, int32_t> BeginTransferCmd() {
-				std::pair<VkCommandBuffer, int32_t> bufferIndexPair;
-				bufferIndexPair.first = commandPool.LeaseBuffer(bufferIndexPair.second);
+				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = commandPool.LeaseBuffer();
 				
 				VkCommandBufferBeginInfo beginInfo{};
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -136,7 +135,7 @@
 
 				vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 				vkQueueWaitIdle(graphicsPipeline.graphicsQueue);
-				commandPool.ReturnBuffer(bufferIndexPair.second);
+				commandPool.ReturnBuffer(bufferIndexPair);
 			}
 
 			VkDescriptorBufferInfo GetBufferDescriptor(VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) { return { buffer, offset, range }; }

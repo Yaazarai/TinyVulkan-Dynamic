@@ -178,7 +178,7 @@
 			}
 
 			void TransitionLayoutCmd(TinyVkImageLayout newLayout) {
-				VkCommandBuffer commandBuffer = BeginTransferCmd();
+				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = BeginTransferCmd();
 
 				VkImageMemoryBarrier barrier{};
 				barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -249,13 +249,13 @@
 				}
 
 				currentLayout = newLayout;
-				vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+				vkCmdPipelineBarrier(bufferIndexPair.first, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-				EndTransferCmd(commandBuffer);
+				EndTransferCmd(bufferIndexPair);
 			}
 
 			void TransferFromBufferCmd(TinyVkBuffer& srcBuffer) {
-				VkCommandBuffer commandBuffer = BeginTransferCmd();
+				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = BeginTransferCmd();
 
 				VkBufferImageCopy region{};
 				region.bufferOffset = 0;
@@ -267,13 +267,13 @@
 				region.imageSubresource.layerCount = 1;
 				region.imageOffset = { 0, 0, 0 };
 				region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
-				vkCmdCopyBufferToImage(commandBuffer, srcBuffer.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+				vkCmdCopyBufferToImage(bufferIndexPair.first, srcBuffer.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-				EndTransferCmd(commandBuffer);
+				EndTransferCmd(bufferIndexPair);
 			}
 
 			void StageImageData(void* data, VkDeviceSize dataSize) {
-				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
+				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, graphicsPipeline, commandPool, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
 				memcpy(stagingBuffer.description.pMappedData, data, (size_t)dataSize);
 
 				TransitionLayoutCmd(TINYVK_TRANSFER_DST_OPTIMAL);
@@ -283,35 +283,28 @@
 				stagingBuffer.Dispose();
 			}
 
-			VkCommandBuffer BeginTransferCmd() {
-				VkCommandBufferAllocateInfo allocInfo{};
-				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				allocInfo.commandPool = commandPool.GetPool();
-				allocInfo.commandBufferCount = 1;
-
-				VkCommandBuffer commandBuffer;
-				vkAllocateCommandBuffers(renderDevice.logicalDevice, &allocInfo, &commandBuffer);
+			std::pair<VkCommandBuffer, int32_t> BeginTransferCmd() {
+				std::pair<VkCommandBuffer, int32_t> bufferIndexPair;
+				bufferIndexPair.first = commandPool.LeaseBuffer(bufferIndexPair.second);
 
 				VkCommandBufferBeginInfo beginInfo{};
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-				vkBeginCommandBuffer(commandBuffer, &beginInfo);
-				return commandBuffer;
+				vkBeginCommandBuffer(bufferIndexPair.first, &beginInfo);
+				return bufferIndexPair;
 			}
 
-			void EndTransferCmd(VkCommandBuffer commandBuffer) {
-				vkEndCommandBuffer(commandBuffer);
+			void EndTransferCmd(std::pair<VkCommandBuffer, int32_t> bufferIndexPair) {
+				vkEndCommandBuffer(bufferIndexPair.first);
 
 				VkSubmitInfo submitInfo{};
 				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 				submitInfo.commandBufferCount = 1;
-				submitInfo.pCommandBuffers = &commandBuffer;
+				submitInfo.pCommandBuffers = &bufferIndexPair.first;
 
 				vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 				vkQueueWaitIdle(graphicsPipeline.graphicsQueue);
-				vkFreeCommandBuffers(renderDevice.logicalDevice, commandPool.GetPool(), 1, &commandBuffer);
+				commandPool.ReturnBuffer(bufferIndexPair.second);
 			}
 
 			VkDescriptorImageInfo GetImageDescriptor() { return { imageSampler, imageView, (VkImageLayout) currentLayout }; }

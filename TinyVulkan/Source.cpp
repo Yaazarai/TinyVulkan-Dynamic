@@ -10,7 +10,7 @@ using namespace tinyvk;
 #define DEFAULT_VERTEX_SHADER "./sample_vert.spv"
 #define DEFAULT_FRAGMENT_SHADER "./sample_frag.spv"
 // Used below as the default extra VkCommandBuffer allocations (for render commands not emiotted by the SwapChainRenderer):
-#define DEFAULT_COMMAND_POOLSIZE 10
+#define DEFAULT_COMMAND_POOLSIZE 20
 
 // GPU device types to look for, Screen Buffering Mode (Single/Double/Triple/Quadruple), ShaderStageFlags/Path pairs for loading:
 const std::vector<VkPhysicalDeviceType> rdeviceTypes = { VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU };
@@ -82,10 +82,10 @@ int32_t TINYVULKAN_WINDOWMAIN {
 	std::vector<TinyVkVertex> quad2 = TinyVkQuad::CreateWithOffset({ 128.0,128.0 }, { 960.0,540.0,0.0 }, { 1.0,1.0,1.0,0.75 });
     std::vector<uint32_t> indices = TinyVkPolygon::TriangulatePointList(quad2);
 
-    TinyVkBuffer vbuffer(rdevice, vmAlloc, quad2.size() * sizeof(TinyVkVertex), TinyVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
-    vbuffer.StageBufferData(renderPipe.graphicsQueue, commandPool.GetPool(), quad2.data(), quad2.size() * sizeof(TinyVkVertex), 0, 0);
-    TinyVkBuffer ibuffer(rdevice, vmAlloc, indices.size() * sizeof(indices[0]), TinyVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
-    ibuffer.StageBufferData(renderPipe.graphicsQueue, commandPool.GetPool(), indices.data(), indices.size() * sizeof(indices[0]), 0, 0);
+    TinyVkBuffer vbuffer(rdevice, renderPipe, commandPool, vmAlloc, quad2.size() * sizeof(TinyVkVertex), TinyVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
+    vbuffer.StageBufferData(quad2.data(), quad2.size() * sizeof(TinyVkVertex), 0, 0);
+    TinyVkBuffer ibuffer(rdevice, renderPipe, commandPool, vmAlloc, indices.size() * sizeof(indices[0]), TinyVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
+    ibuffer.StageBufferData(indices.data(), indices.size() * sizeof(indices[0]), 0, 0);
 
     qoi_desc qoidesc;
     void* qoiPixels = image_get("./Screeny.qoi", qoidesc);
@@ -135,10 +135,10 @@ int32_t TINYVULKAN_WINDOWMAIN {
 
     std::vector<TinyVkVertex> sw_triangles = TinyVkQuad::Create(glm::vec3(1920.0, 1080.0, -0.5));
     std::vector<uint32_t> sw_indices = { 0, 1, 2, 2, 3, 0 };
-    TinyVkBuffer sw_vbuffer(rdevice, vmAlloc, sw_triangles.size() * sizeof(TinyVkVertex), TinyVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
-    sw_vbuffer.StageBufferData(renderPipe.graphicsQueue, commandPool.GetPool(), sw_triangles.data(), sw_triangles.size() * sizeof(TinyVkVertex), 0, 0);
-    TinyVkBuffer sw_ibuffer(rdevice, vmAlloc, sw_indices.size() * sizeof(sw_indices[0]), TinyVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
-    sw_ibuffer.StageBufferData(renderPipe.graphicsQueue, commandPool.GetPool(), sw_indices.data(), sw_indices.size() * sizeof(sw_indices[0]), 0, 0);
+    TinyVkBuffer sw_vbuffer(rdevice, renderPipe, commandPool, vmAlloc, sw_triangles.size() * sizeof(TinyVkVertex), TinyVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
+    sw_vbuffer.StageBufferData(sw_triangles.data(), sw_triangles.size() * sizeof(TinyVkVertex), 0, 0);
+    TinyVkBuffer sw_ibuffer(rdevice, renderPipe, commandPool, vmAlloc, sw_indices.size() * sizeof(sw_indices[0]), TinyVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
+    sw_ibuffer.StageBufferData(sw_indices.data(), sw_indices.size() * sizeof(sw_indices[0]), 0, 0);
 
     size_t frame = 0;
     bool swap = false;

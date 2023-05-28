@@ -51,6 +51,8 @@
 		
 		public:
 			TinyVkRenderDevice& renderDevice;
+			TinyVkDynamicPipeline& graphicsPipeline;
+			TinyVkCommandPool& commandPool;
 			TinyVkVMAllocator& vmAlloc;
 
 			VkBuffer buffer = VK_NULL_HANDLE;
@@ -63,15 +65,15 @@
 				vmaDestroyBuffer(vmAlloc.GetAllocator(), buffer, memory);
 			}
 
-			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
-			: renderDevice(renderDevice), vmAlloc(vmAlloc), size(dataSize) {
+			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkDynamicPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
+			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				CreateBuffer(size, usage, flags);
 			}
 
-			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, TinyVkBufferType type)
-			: renderDevice(renderDevice), vmAlloc(vmAlloc), size(dataSize) {
+			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkDynamicPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, TinyVkBufferType type)
+			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				switch (type) {
@@ -94,54 +96,47 @@
 				}
 			}
 
-			void StageBufferData(VkQueue graphicsQueue, VkCommandPool commandPool, void* data, VkDeviceSize dataSize, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
-				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
+			void StageBufferData(void* data, VkDeviceSize dataSize, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
+				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, graphicsPipeline, commandPool, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
 				memcpy(stagingBuffer.description.pMappedData, data, (size_t)dataSize);
-				TransferBufferCmd(graphicsQueue, commandPool, stagingBuffer, size, srcOffset, dstOffset);
+				TransferBufferCmd(stagingBuffer, size, srcOffset, dstOffset);
 				stagingBuffer.Dispose();
 			}
 
-			void TransferBufferCmd(VkQueue graphicsQueue, VkCommandPool commandPool, TinyVkBuffer& srcBuffer, VkDeviceSize dataSize, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
-				VkCommandBuffer commandBuffer = BeginTransferCmd(graphicsQueue, commandPool);
+			void TransferBufferCmd(TinyVkBuffer& srcBuffer, VkDeviceSize dataSize, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
+				std::pair<VkCommandBuffer,int32_t> bufferIndexPair = BeginTransferCmd();
 
 				VkBufferCopy copyRegion{};
 				copyRegion.srcOffset = srceOffset;
 				copyRegion.dstOffset = destOffset;
 				copyRegion.size = dataSize;
-				vkCmdCopyBuffer(commandBuffer, srcBuffer.buffer, buffer, 1, &copyRegion);
+				vkCmdCopyBuffer(bufferIndexPair.first, srcBuffer.buffer, buffer, 1, &copyRegion);
 
-				EndTransferCmd(graphicsQueue, commandPool, commandBuffer);
+				EndTransferCmd(bufferIndexPair);
 			}
 
-			VkCommandBuffer BeginTransferCmd(VkQueue graphicsQueue, VkCommandPool commandPool) {
-				VkCommandBufferAllocateInfo allocInfo{};
-				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				allocInfo.commandPool = commandPool;
-				allocInfo.commandBufferCount = 1;
-
-				VkCommandBuffer commandBuffer;
-				vkAllocateCommandBuffers(renderDevice.logicalDevice, &allocInfo, &commandBuffer);
-
+			std::pair<VkCommandBuffer, int32_t> BeginTransferCmd() {
+				std::pair<VkCommandBuffer, int32_t> bufferIndexPair;
+				bufferIndexPair.first = commandPool.LeaseBuffer(bufferIndexPair.second);
+				
 				VkCommandBufferBeginInfo beginInfo{};
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-				vkBeginCommandBuffer(commandBuffer, &beginInfo);
-				return commandBuffer;
+				vkBeginCommandBuffer(bufferIndexPair.first, &beginInfo);
+				return bufferIndexPair;
 			}
 
-			void EndTransferCmd(VkQueue graphicsQueue, VkCommandPool commandPool, VkCommandBuffer commandBuffer) {
-				vkEndCommandBuffer(commandBuffer);
+			void EndTransferCmd(std::pair<VkCommandBuffer, int32_t> bufferIndexPair) {
+				vkEndCommandBuffer(bufferIndexPair.first);
 
 				VkSubmitInfo submitInfo{};
 				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 				submitInfo.commandBufferCount = 1;
-				submitInfo.pCommandBuffers = &commandBuffer;
+				submitInfo.pCommandBuffers = &bufferIndexPair.first;
 
-				vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-				vkQueueWaitIdle(graphicsQueue);
-				vkFreeCommandBuffers(renderDevice.logicalDevice, commandPool, 1, &commandBuffer);
+				vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+				vkQueueWaitIdle(graphicsPipeline.graphicsQueue);
+				commandPool.ReturnBuffer(bufferIndexPair.second);
 			}
 
 			VkDescriptorBufferInfo GetBufferDescriptor(VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) { return { buffer, offset, range }; }

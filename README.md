@@ -46,13 +46,11 @@ Finally TinyVulkan-Dynamic implements GLFW for its window back-end. All of the G
 
 `TinyVkSwapChain` creates a swapchain for rendering to your `TinyVkWindow`. The SwapChain exposes the buffering images of the window to the graphics renderer and is required if creating a GUI based application (optional, GUI apps only).
 
-`TinyVkCommandPool` creates a VkCommandPool which is required for GPU operations such as transfer or rendering commands which are written to VkCommandBuffers allocated by the VkCommandPool (required).
+`TinyVkCommandPool` creates a `VkCommandPool` which is required for GPU operations such as transfer or rendering commands which are written to VkCommandBuffers allocated by the VkCommandPool (required). The `TinyVkCommandPool` uses a lease/return model for `VkCommandBuffers`, where you lease(rent) out a `VkCommandBuffer` for whatever your use case is, then return the VkCommandBuffer by its index to the TinyVkCommandPool for reuse within the pool. Some classes such as `TinyVkImage and TinyVkBuffer` will take in the `TinyVkCommandPool` and allocate their own command buffers for use rather than renting--may be changed in the future.
 
 `TinyVkShaderStages` loads the specified compiled shaders into memory with their intended graphics pipeline usecases (VkShaderStageFlagBits).
 
 `TinyVkDynamicPipeline` creates a graphics pipeline that defines the properties required for your graphics renderer and shader handling (required).
-
-`TinyVkCmdPoolQueue` creates a command pool which has its VkCommandBuffers queue'd up for renting/returning in the event that you need only a single or specific number of command buffers for a short lifetime, such as for offscreen rendering.
 
 `TinyVkBuffer` is for creating and copying memory from the CPU to GPU for use with shaders. Such buffers include `vertex`, `index`, `uniform`, `staging`, etc.
 

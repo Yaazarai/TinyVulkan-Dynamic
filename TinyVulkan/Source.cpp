@@ -120,6 +120,9 @@ int32_t TINYVULKAN_WINDOWMAIN {
     }));
     imageRenderer.RenderExecute();
     
+    // Manually dispose so that the objects don't exist for the life of the program.
+    // TinyVK objects free themselves from memory out-of-scope to avoid memory leaks, but you
+    //      still have to free them manually if you don't need them after a certain point.
     vbuffer.Dispose();
     ibuffer.Dispose();
     image.Dispose();
@@ -181,6 +184,8 @@ int32_t TINYVULKAN_WINDOWMAIN {
     window.WhileMain();
     mythread.join();
 
-	disposable::DisposeOrdered({ &window, &instance, &rdevice, &vmAlloc, &commandPool, &swapChain, &shaders, &renderPipe, &swapRenderer, &rsurface, /*&imagePipe,*/ &imageRenderer, &sw_vbuffer, &sw_ibuffer}, true);
-	return VK_SUCCESS;
+    /// 
+    /// Each TinyVk object extends the disposable class and cleans up their own resources out of scope.
+    /// 
+    return VK_SUCCESS;
 };

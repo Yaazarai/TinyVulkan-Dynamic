@@ -23,6 +23,8 @@
 			VkDevice logicalDevice = nullptr;
 			VkSurfaceKHR presentationSurface = nullptr;
 
+			~TinyVkRenderDevice() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(logicalDevice);
 

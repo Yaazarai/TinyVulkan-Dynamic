@@ -56,6 +56,8 @@
 
 			invokable<VkCommandBuffer> onRenderEvents;
 
+			~TinyVkImageRenderer() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 
@@ -346,9 +348,9 @@
 			std::vector<VkSemaphore> renderFinishedSemaphores;
 			std::vector<VkFence> inFlightFences;
 
-			/// COMMAND POOL FOR RENDER COMMANDS ///
 			/// RENDERING DEPTH IMAGE ///
 			TinyVkCommandPool& commandPool;
+			/// COMMAND POOL FOR RENDER COMMANDS ///
 			std::vector<TinyVkImage*> optionalDepthImages;
 
 			/// SWAPCHAIN FRAME MANAGEMENT ///
@@ -357,6 +359,8 @@
 
 			/// INVOKABLE RENDER EVENTS: (executed in TinyVkDynamicRenderer::RenderFrame() ///
 			invokable<VkCommandBuffer> onRenderEvents;
+
+			~TinyVkSwapChainRenderer() { this->Dispose(); }
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -368,7 +372,7 @@
 					}
 				}
 
-				for(auto vkpair : rentBuffers)
+				for(std::pair<VkCommandBuffer, int32_t> vkpair : rentBuffers)
 					commandPool.ReturnBuffer(vkpair);
 
 				for (size_t i = 0; i < inFlightFences.size(); i++) {

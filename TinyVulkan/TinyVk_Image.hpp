@@ -108,6 +108,8 @@
 			VkFormat format;
 			bool isDepthImage = false;
 
+			~TinyVkImage() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 

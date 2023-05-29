@@ -12,9 +12,8 @@
 		std::atomic_bool disposed = false;
 
 	public:
-
 		invokable<bool> onDispose;
-			
+
 		void Dispose() {
 			if (disposed) return;
 			onDispose.invoke(DISPOSABLE_BOOL_DEFAULT);
@@ -22,14 +21,6 @@
 		}
 
 		bool IsDisposed() { return disposed; }
-
-		~disposable() { Dispose(); }
-
-		static void DisposeOrdered(std::vector<disposable*> objects, bool reverseOrder = false) {
-			if (reverseOrder) std::reverse(objects.begin(), objects.end());
-
-			for(disposable* obj : objects) obj->Dispose();
-		}
 	};
 
 #endif

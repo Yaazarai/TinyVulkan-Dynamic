@@ -13,6 +13,8 @@
 			std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders;
 			std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfo;
 
+			~TinyVkShaderStages() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 

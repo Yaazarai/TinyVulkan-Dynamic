@@ -60,8 +60,11 @@
 			VmaAllocationInfo description;
 			VkDeviceSize size;
 
+			~TinyVkBuffer() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
 				vmaDestroyBuffer(vmAlloc.GetAllocator(), buffer, memory);
 			}
 

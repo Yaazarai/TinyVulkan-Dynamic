@@ -146,6 +146,9 @@
 				onWindowPositionMoved.invoke(hwnd, xpos, ypos);
 			}
 		public:
+			/// <summary>Calls the disposable interface dispose event.</summary>
+			~TinyVkWindow() { this->Dispose(); }
+
 			/// <summary>Disposable function for disposable class interface and window resource cleanup.</summary>
 			void Disposable(bool waitIdle) {
 				glfwDestroyWindow(hwndWindow);

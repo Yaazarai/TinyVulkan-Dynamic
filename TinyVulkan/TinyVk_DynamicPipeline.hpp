@@ -40,6 +40,8 @@
 			VkQueue graphicsQueue;
 			VkQueue presentQueue;
 
+			~TinyVkDynamicPipeline() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 
@@ -65,8 +67,8 @@
 			void CreateGraphicsPipeline() {
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				/////////// This section specifies that MvkVertex provides the vertex layout description ///////////
-				auto bindingDescription = vertexDescription.binding;
-				auto attributeDescriptions = vertexDescription.attributes;
+				const VkVertexInputBindingDescription bindingDescription = vertexDescription.binding;
+				const std::vector<VkVertexInputAttributeDescription>& attributeDescriptions = vertexDescription.attributes;
 
 				VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 				vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

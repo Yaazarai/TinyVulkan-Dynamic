@@ -58,6 +58,8 @@
 			VkApplicationInfo appInfo{};
 			VkInstance instance;
 
+			~TinyVkInstance() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				#if TVK_VALIDATION_LAYERS
 					DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);

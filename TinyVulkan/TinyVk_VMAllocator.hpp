@@ -9,6 +9,8 @@
 			VmaAllocator memoryAllocator = VK_NULL_HANDLE;
 			TinyVkRenderDevice& renderDevice;
 
+			~TinyVkVMAllocator() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice); 
 				vmaDestroyAllocator(memoryAllocator);

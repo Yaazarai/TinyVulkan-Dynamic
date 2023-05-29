@@ -24,6 +24,8 @@
 			inline static invokable<int&, int&> onResizeFrameBuffer;
 			bool presentable;
 
+			~TinyVkSwapChain() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 

@@ -175,7 +175,7 @@
                 glm::vec2 sqrB = glm::pow(glm::vec2(b), { 2.0f, 2.0f });
                 glm::vec2 sqrC = glm::pow(glm::vec2(c), { 2.0f, 2.0f });
                 
-                glm::vec3 XYR; // X-coord, Y-coord, Radius.
+                glm::vec3 XYR = {}; // X-coord, Y-coord, Radius.
                 XYR.z = 1 / ((A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y)) * 2.0f);
                 XYR.x = ((sqrA.x + sqrA.y) * (B.y - C.y) + (sqrB.x + sqrB.y) * (C.y - A.y) + (sqrC.x + sqrC.y) * (A.y - B.y)) * XYR.z;
                 XYR.y = ((sqrA.x + sqrA.y) * (C.x - B.x) + (sqrB.x + sqrB.y) * (A.x - C.x) + (sqrC.x + sqrC.y) * (B.x - A.x)) * XYR.z;

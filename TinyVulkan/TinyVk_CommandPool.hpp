@@ -13,6 +13,8 @@
 			std::vector<VkCommandBuffer> commandBuffers;
 			std::vector<bool> rentQueue;
 		public:
+			~TinyVkCommandPool() { this->Dispose(); }
+
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
 

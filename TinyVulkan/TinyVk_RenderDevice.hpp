@@ -4,6 +4,7 @@
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
+		/// <summary>Initialized Vulkan GPU render device.</summary>
 		class TinyVkRenderDevice : public disposable {
 		private:
 			const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };

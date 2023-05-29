@@ -25,12 +25,14 @@
 
 		#pragma endregion
 
+		/// <summary>List of valid Buffering Mode sizes.</summary>
 		enum class TinyVkBufferingMode {
 			DOUBLE = 2,
 			TRIPLE = 3,
 			QUADRUPLE = 4
 		};
 
+		/// <summary>Description of the SwapChain Rendering format.</summary>
 		struct TinyVkSwapChainSupporter {
 		public:
 			VkSurfaceCapabilitiesKHR capabilities = {};
@@ -38,6 +40,7 @@
 			std::vector<VkPresentModeKHR> presentModes = {};
 		};
 
+		/// <summary>Description of the Rendering Surface format.</summary>
 		struct TinyVkSurfaceSupporter {
 		public:
 			VkFormat dataFormat = VK_FORMAT_B8G8R8A8_SRGB;

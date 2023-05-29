@@ -99,6 +99,7 @@
 				}
 			}
 
+			/// <summary>Copies data from CPU accessible memory to GPU accessible memory.</summary>
 			void StageBufferData(void* data, VkDeviceSize dataSize, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
 				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, graphicsPipeline, commandPool, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
 				memcpy(stagingBuffer.description.pMappedData, data, (size_t)dataSize);
@@ -106,6 +107,7 @@
 				stagingBuffer.Dispose();
 			}
 
+			/// <summary>Copies data from the source TinyVkBuffer into this TinyVkBuffer.</summary>
 			void TransferBufferCmd(TinyVkBuffer& srcBuffer, VkDeviceSize dataSize, VkDeviceSize srceOffset = 0, VkDeviceSize destOffset = 0) {
 				std::pair<VkCommandBuffer,int32_t> bufferIndexPair = BeginTransferCmd();
 
@@ -118,6 +120,7 @@
 				EndTransferCmd(bufferIndexPair);
 			}
 
+			/// <summary>Begins a transfer command and returns the command buffer index pair used for the command allocated from a TinyVkCommandPool.</summary>
 			std::pair<VkCommandBuffer, int32_t> BeginTransferCmd() {
 				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = commandPool.LeaseBuffer();
 				
@@ -128,6 +131,7 @@
 				return bufferIndexPair;
 			}
 
+			/// <summary>Ends a transfer command and gives the leased/rented command buffer pair back to the TinyVkCommandPool.</summary>
 			void EndTransferCmd(std::pair<VkCommandBuffer, int32_t> bufferIndexPair) {
 				vkEndCommandBuffer(bufferIndexPair.first);
 
@@ -141,6 +145,7 @@
 				commandPool.ReturnBuffer(bufferIndexPair);
 			}
 
+			/// <summary>Creates the data descriptor that represents this buffer when passing into graphicspipeline.SelectWrite*Descriptor().</summary>
 			VkDescriptorBufferInfo GetBufferDescriptor(VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) { return { buffer, offset, range }; }
 		};
 	}

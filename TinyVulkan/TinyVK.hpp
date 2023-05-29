@@ -111,16 +111,16 @@
     #include "TinyVk_Supporters.hpp"
     #include "TinyVk_QueueFamily.hpp"
     #pragma endregion
-    #pragma region INITIALIZATION
+    #pragma region VULKAN_INITIALIZATION
     #include "TinyVk_Instance.hpp"
     #include "./TinyVk_RenderDevice.hpp"
-    #include "./TinyVk_VMAllocator.hpp"
     #include "./TinyVk_CommandPool.hpp"
     #include "./TinyVk_SwapChain.hpp"
     #include "./TinyVk_ShaderStages.hpp"
     #include "./TinyVk_DynamicPipeline.hpp"
     #pragma endregion
     #pragma region TINYVULKAN_RENDERING
+    #include "./TinyVk_VMAllocator.hpp"
     #include "./TinyVk_Buffer.hpp"
     #include "./TinyVk_Image.hpp"
     #include "./TinyVk_DynamicRenderer.hpp"

@@ -7,6 +7,7 @@
 		#define VKCOMP_RGBA VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		#define VKCOMP_BGRA VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT
 
+		/// <summary>Represents the Vertex shader layout data passing through the graphics pipeline.</summary>
 		struct TinyVkVertexDescription {
 			const VkVertexInputBindingDescription binding;
 			const std::vector<VkVertexInputAttributeDescription> attributes;
@@ -14,56 +15,9 @@
 			TinyVkVertexDescription(VkVertexInputBindingDescription binding, const std::vector<VkVertexInputAttributeDescription> attributes) : binding(binding), attributes(attributes) {}
 		};
 
+		/// <summary>Vulkan Graphics Pipeline using Dynamic Viewports/Scissors, Push Descriptors/Constants.</summary>
 		class TinyVkDynamicPipeline : public disposable {
 		private:
-			TinyVkRenderDevice& renderDevice;
-
-		public:
-			TinyVkVertexDescription vertexDescription;
-
-			VkDescriptorSetLayout descriptorLayout;
-			std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
-			std::vector<VkPushConstantRange> pushConstantRanges;
-
-			TinyVkShaderStages& shaderStages;
-			VkPipelineDynamicStateCreateInfo dynamicState;
-			VkPipelineLayout pipelineLayout;
-			VkPipeline graphicsPipeline;
-			
-			VkFormat imageFormat;
-			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-			VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL;
-			bool enableBlending;
-			bool enableDepthTesting;
-
-			VkQueue graphicsQueue;
-			VkQueue presentQueue;
-
-			~TinyVkDynamicPipeline() { this->Dispose(); }
-
-			void Disposable(bool waitIdle) {
-				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
-
-				vkDestroyDescriptorSetLayout(renderDevice.logicalDevice, descriptorLayout, nullptr);
-				vkDestroyPipeline(renderDevice.logicalDevice, graphicsPipeline, nullptr);
-				vkDestroyPipelineLayout(renderDevice.logicalDevice, pipelineLayout, nullptr);
-			}
-
-			TinyVkDynamicPipeline(TinyVkRenderDevice& renderDevice, VkFormat imageFormat, TinyVkShaderStages& shaderStages, TinyVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
-			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), enableDepthTesting(enableDepthTesting), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), polgyonTopology(polgyonTopology) {
-				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
-
-				TinyVkQueueFamily indices = TinyVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
-				vkGetDeviceQueue(renderDevice.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
-				vkGetDeviceQueue(renderDevice.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
-
-				CreateGraphicsPipeline();
-			}
-
-			TinyVkDynamicPipeline operator=(const TinyVkDynamicPipeline& pipeline) = delete;
-
-			/// <summary>Creates the graphics rendering pipeline: Automatically called on constructor call.</summary>
 			void CreateGraphicsPipeline() {
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				/////////// This section specifies that MvkVertex provides the vertex layout description ///////////
@@ -80,7 +34,7 @@
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 				pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
+				
 				pipelineLayoutInfo.pushConstantRangeCount = 0;
 				uint32_t pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
 				if (pushConstantRangeCount > 0) {
@@ -89,12 +43,12 @@
 				}
 
 				if (descriptorBindings.size() > 0) {
-					VkDescriptorSetLayoutCreateInfo descriptorCreateInfo {};
+					VkDescriptorSetLayoutCreateInfo descriptorCreateInfo{};
 					descriptorCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 					descriptorCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 					descriptorCreateInfo.bindingCount = static_cast<uint32_t>(descriptorBindings.size());
 					descriptorCreateInfo.pBindings = descriptorBindings.data();
-					
+
 					if (vkCreateDescriptorSetLayout(renderDevice.logicalDevice, &descriptorCreateInfo, nullptr, &descriptorLayout) != VK_SUCCESS)
 						throw std::runtime_error("TinyVulkan: Failed to create push descriptor bindings! ");
 
@@ -137,7 +91,7 @@
 				colorBlending.logicOpEnable = VK_FALSE;
 				colorBlending.logicOp = VK_LOGIC_OP_COPY;
 				colorBlending.attachmentCount = 1;
-				
+
 				VkPipelineColorBlendAttachmentState blendDescription = GetBlendDescription(enableBlending);
 				colorBlending.pAttachments = &blendDescription;
 				colorBlending.blendConstants[0] = 0.0f;
@@ -151,7 +105,7 @@
 				dynamicState.pDynamicStates = dynamicStateEnables.data();
 				dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 				dynamicState.pNext = nullptr;
-				
+
 				VkPipelineRenderingCreateInfoKHR renderingCreateInfo{};
 				renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 				renderingCreateInfo.colorAttachmentCount = 1;
@@ -169,7 +123,7 @@
 				depthStencilInfo.stencilTestEnable = VK_FALSE;
 				depthStencilInfo.front = {}; // Optional
 				depthStencilInfo.back = {}; // Optional
-				
+
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
 				VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -197,78 +151,6 @@
 					throw std::runtime_error("TinyVulkan: Failed to create graphics pipeline!");
 			}
 
-			bool BlendingIsEnabled() { return enableBlending; }
-
-			bool DepthTestingIsEnabled() { return enableDepthTesting; }
-
-			VkFormat QueryDepthFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-				const std::vector<VkFormat>& candidates = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
-				for (VkFormat format : candidates) {
-					VkFormatProperties props;
-					vkGetPhysicalDeviceFormatProperties(renderDevice.physicalDevice, format, &props);
-
-					if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-						return format;
-					} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-						return format;
-					}
-				}
-
-				throw std::runtime_error("TinyVulkan: Failed to find supported format!");
-			}
-
-			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
-				VkPushConstantRange pushConstantRange{};
-				pushConstantRange.stageFlags = shaderStages;
-				pushConstantRange.offset = 0;
-				pushConstantRange.size = pushConstantRangeSize;
-				return pushConstantRange;
-			}
-
-			inline static VkDescriptorSetLayoutBinding SelectPushDescriptorLayoutBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t descriptorCount = 1) {
-				VkDescriptorSetLayoutBinding descriptorLayoutBinding {};
-				descriptorLayoutBinding.binding = binding;
-				descriptorLayoutBinding.descriptorCount = descriptorCount;
-				descriptorLayoutBinding.descriptorType = descriptorType;
-				descriptorLayoutBinding.pImmutableSamplers = nullptr;
-				descriptorLayoutBinding.stageFlags = stageFlags;
-				return descriptorLayoutBinding;
-			}
-
-			inline static VkWriteDescriptorSet SelectWriteDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorImageInfo* imageInfo, const VkDescriptorBufferInfo* bufferInfo) {
-				VkWriteDescriptorSet writeDescriptorSets{};
-				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets.dstSet = 0;
-				writeDescriptorSets.dstBinding = binding;
-				writeDescriptorSets.descriptorCount = descriptorCount;
-				writeDescriptorSets.descriptorType = descriptorType;
-				writeDescriptorSets.pImageInfo = imageInfo;
-				writeDescriptorSets.pBufferInfo = bufferInfo;
-				return writeDescriptorSets;
-			}
-
-			inline static VkWriteDescriptorSet SelectWriteImageDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorImageInfo* imageInfo) {
-				VkWriteDescriptorSet writeDescriptorSets{};
-				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets.dstSet = 0;
-				writeDescriptorSets.dstBinding = binding;
-				writeDescriptorSets.descriptorCount = descriptorCount;
-				writeDescriptorSets.descriptorType = descriptorType;
-				writeDescriptorSets.pImageInfo = imageInfo;
-				return writeDescriptorSets;
-			}
-
-			inline static VkWriteDescriptorSet SelectWriteBufferDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorBufferInfo* bufferInfo) {
-				VkWriteDescriptorSet writeDescriptorSets{};
-				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets.dstSet = 0;
-				writeDescriptorSets.dstBinding = binding;
-				writeDescriptorSets.descriptorCount = descriptorCount;
-				writeDescriptorSets.descriptorType = descriptorType;
-				writeDescriptorSets.pBufferInfo = bufferInfo;
-				return writeDescriptorSets;
-			}
-
 			inline static VkPipelineColorBlendAttachmentState GetBlendDescription(bool isBlendingEnabled) {
 				VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -282,6 +164,134 @@
 				colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 				colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 				return colorBlendAttachment;
+			}
+			
+		public:
+			TinyVkRenderDevice& renderDevice;
+			TinyVkShaderStages& shaderStages;
+
+			VkDescriptorSetLayout descriptorLayout;
+			std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
+			std::vector<VkPushConstantRange> pushConstantRanges;
+
+			VkPipelineDynamicStateCreateInfo dynamicState;
+			VkPipelineLayout pipelineLayout;
+			VkPipeline graphicsPipeline;
+			
+			VkFormat imageFormat;
+			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			
+			TinyVkVertexDescription vertexDescription;
+			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL;
+			
+			bool enableBlending;
+			bool enableDepthTesting;
+			VkQueue graphicsQueue;
+			VkQueue presentQueue;
+
+			~TinyVkDynamicPipeline() { this->Dispose(); }
+
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
+				vkDestroyDescriptorSetLayout(renderDevice.logicalDevice, descriptorLayout, nullptr);
+				vkDestroyPipeline(renderDevice.logicalDevice, graphicsPipeline, nullptr);
+				vkDestroyPipelineLayout(renderDevice.logicalDevice, pipelineLayout, nullptr);
+			}
+
+			TinyVkDynamicPipeline(TinyVkRenderDevice& renderDevice, VkFormat imageFormat, TinyVkShaderStages& shaderStages, TinyVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
+			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), enableDepthTesting(enableDepthTesting), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), polgyonTopology(polgyonTopology) {
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+
+				TinyVkQueueFamily indices = TinyVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
+				vkGetDeviceQueue(renderDevice.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
+				vkGetDeviceQueue(renderDevice.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
+
+				CreateGraphicsPipeline();
+			}
+
+			TinyVkDynamicPipeline operator=(const TinyVkDynamicPipeline& pipeline) = delete;
+
+			/// <summary>Returns the optimal VkFormat for the desired depth image format.</summary>
+			VkFormat QueryDepthFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL) {
+				const std::vector<VkFormat>& candidates = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
+				for (VkFormat format : candidates) {
+					VkFormatProperties props;
+					vkGetPhysicalDeviceFormatProperties(renderDevice.physicalDevice, format, &props);
+
+					VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+					if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+						return format;
+					} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+						return format;
+					}
+				}
+
+				throw std::runtime_error("TinyVulkan: Failed to find supported format!");
+			}
+
+			/// <summary>Returns true/false whether alpha blending is enabled on the graphics pipeline.</summary>
+			bool BlendingIsEnabled() { return enableBlending; }
+
+			/// <summary>Returns true/false whether depthj fragment testing is enabled on the graphics pipeline.</summary>
+			bool DepthTestingIsEnabled() { return enableDepthTesting; }
+
+			/// <summary>Returns the push constant range info of a given size applied to the given shader stages.</summary>
+			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {
+				VkPushConstantRange pushConstantRange{};
+				pushConstantRange.stageFlags = shaderStages;
+				pushConstantRange.offset = 0;
+				pushConstantRange.size = pushConstantRangeSize;
+				return pushConstantRange;
+			}
+
+			/// <summary>Creates a layout description for how a descriptor should be bound to the graphics pipeline at hwta binding and shader stages./summary>
+			inline static VkDescriptorSetLayoutBinding SelectPushDescriptorLayoutBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t descriptorCount = 1) {
+				VkDescriptorSetLayoutBinding descriptorLayoutBinding {};
+				descriptorLayoutBinding.binding = binding;
+				descriptorLayoutBinding.descriptorCount = descriptorCount;
+				descriptorLayoutBinding.descriptorType = descriptorType;
+				descriptorLayoutBinding.pImmutableSamplers = nullptr;
+				descriptorLayoutBinding.stageFlags = stageFlags;
+				return descriptorLayoutBinding;
+			}
+
+			/// <summary>Creates a generic write descriptor to represent data passed to the GPU when rendering (on myrenderer.PushDescriptorSet).</summary>
+			inline static VkWriteDescriptorSet SelectWriteDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorImageInfo* imageInfo, const VkDescriptorBufferInfo* bufferInfo) {
+				VkWriteDescriptorSet writeDescriptorSets{};
+				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets.dstSet = 0;
+				writeDescriptorSets.dstBinding = binding;
+				writeDescriptorSets.descriptorCount = descriptorCount;
+				writeDescriptorSets.descriptorType = descriptorType;
+				writeDescriptorSets.pImageInfo = imageInfo;
+				writeDescriptorSets.pBufferInfo = bufferInfo;
+				return writeDescriptorSets;
+			}
+
+			/// <summary>Creates a write image descriptor (Combined Image Sampler) for passing images to the GPU (on myrenderer.PushDescriptorSet).</summary>
+			inline static VkWriteDescriptorSet SelectWriteImageDescriptor(uint32_t binding, uint32_t descriptorCount, const VkDescriptorImageInfo* imageInfo) {
+				VkWriteDescriptorSet writeDescriptorSets{};
+				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets.dstSet = 0;
+				writeDescriptorSets.dstBinding = binding;
+				writeDescriptorSets.descriptorCount = descriptorCount;
+				writeDescriptorSets.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeDescriptorSets.pImageInfo = imageInfo;
+				return writeDescriptorSets;
+			}
+
+			/// <summary>Creates a write buffer descriptor (any of VK_DESCRIPTOR_TYPE_*_BUFFER) for passing buffers to the GPU (on myrenderer.PushDescriptorSet).</summary>
+			inline static VkWriteDescriptorSet SelectWriteBufferDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorBufferInfo* bufferInfo) {
+				VkWriteDescriptorSet writeDescriptorSets{};
+				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets.dstSet = 0;
+				writeDescriptorSets.dstBinding = binding;
+				writeDescriptorSets.descriptorCount = descriptorCount;
+				writeDescriptorSets.descriptorType = descriptorType;
+				writeDescriptorSets.pBufferInfo = bufferInfo;
+				return writeDescriptorSets;
 			}
 		};
 	}

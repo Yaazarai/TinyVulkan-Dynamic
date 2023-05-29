@@ -1,13 +1,13 @@
 #define TINYVK_ALLOWS_POLLING_GAMEPADS
-#define TINYVK_AUTO_PRESENT_EXTENSIONS
 #include "./TinyVK.hpp"
 using namespace tinyvk;
 
 #define QOI_IMPLEMENTATION
 #include "./images_qoi.h"
 
-// Relative file path locations for the shader SPIR-V binaries:
+// Relative file path locations for the vertex shader SPIR-V binaries:
 #define DEFAULT_VERTEX_SHADER "./sample_vert.spv"
+// Relative file path locations for the fragment shader SPIR-V binaries:
 #define DEFAULT_FRAGMENT_SHADER "./sample_frag.spv"
 // Used below as the default extra VkCommandBuffer allocations (for render commands not emiotted by the SwapChainRenderer):
 #define DEFAULT_COMMAND_POOLSIZE 20
@@ -46,14 +46,14 @@ int32_t TINYVULKAN_WINDOWMAIN {
                 objects going out of scope and be disposed of prior to when we actually need them to be disposed.
     */
 	TinyVkWindow window("TINYVK WINDOW", 1920, 1080, true);
-	TinyVkInstance instance({}, "TINYVK");
+	TinyVkInstance instance(TinyVkWindow::QueryRequiredExtensions(TVK_VALIDATION_LAYERS), "TINYVK");
 	TinyVkRenderDevice rdevice(instance, window.CreateWindowSurface(instance.GetInstance()), rdeviceTypes);
-	TinyVkVMAllocator vmAlloc(instance, rdevice);
 	TinyVkCommandPool commandPool(rdevice, static_cast<size_t>(bufferingMode) + DEFAULT_COMMAND_POOLSIZE);
 	TinyVkSwapChain swapChain(rdevice, window, bufferingMode /* 3 default optional args used*/);
 	TinyVkShaderStages shaders(rdevice, { vertexShader, fragmentShader });
 	TinyVkDynamicPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
-	TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, commandPool, swapChain, renderPipe);
+    TinyVkVMAllocator vmAlloc(instance, rdevice);
+    TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, commandPool, swapChain, renderPipe);
 	
     // You can have multiple graphics pipelines if your pipelines are different:
     //TinyVkDynamicPipeline imagePipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
@@ -108,7 +108,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
         imageRenderer.PushConstants(renderBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
 
         auto image_descriptor = image.GetImageDescriptor();
-        VkWriteDescriptorSet writeDescriptorSets = TinyVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &image_descriptor);
+        VkWriteDescriptorSet writeDescriptorSets = TinyVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, &image_descriptor);
         imageRenderer.PushDescriptorSet(renderBuffer, { writeDescriptorSets });
 
         VkDeviceSize offsets[] = { 0 };
@@ -155,7 +155,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
         swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
 
         auto image_descriptor = rsurface.GetImageDescriptor();
-        VkWriteDescriptorSet writeDescriptorSets = TinyVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &image_descriptor);
+        VkWriteDescriptorSet writeDescriptorSets = TinyVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, &image_descriptor);
         swapRenderer.PushDescriptorSet(commandBuffer, { writeDescriptorSets });
 
         VkDeviceSize offsets[] = { 0 };
@@ -165,7 +165,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
 
         swapRenderer.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
 
-        if (frame++ > 120) {
+        if (frame++ > 60) {
             frame = 0;
             swap = (swap == true) ? false : true;
         }

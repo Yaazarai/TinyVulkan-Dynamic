@@ -4,37 +4,9 @@
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
+		/// <summary>Describes and creates a list of SPIR-V shaders and their stages for a graphics pipeline.</summary>
 		class TinyVkShaderStages : public disposable {
 		private:
-			TinyVkRenderDevice& renderDevice;
-
-		public:
-			std::vector<VkShaderModule> shaderModules;
-			std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders;
-			std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfo;
-
-			~TinyVkShaderStages() { this->Dispose(); }
-
-			void Disposable(bool waitIdle) {
-				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
-
-				for(auto shaderModule : shaderModules)
-					vkDestroyShaderModule(renderDevice.logicalDevice, shaderModule, nullptr);
-			}
-
-			TinyVkShaderStages(TinyVkRenderDevice& renderDevice, const std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders) : renderDevice(renderDevice), shaders(shaders) {
-				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
-
-				for (size_t i = 0; i < shaders.size(); i++) {
-					auto shaderCode = ReadFile(std::get<1>(shaders[i]));
-					auto shaderModule = CreateShaderModule(shaderCode);
-					shaderModules.push_back(shaderModule);
-					shaderCreateInfo.push_back(CreateShaderInfo(std::get<1>(shaders[i]), shaderModule, std::get<0>(shaders[i])));
-				}
-			}
-
-			TinyVkShaderStages operator=(const TinyVkShaderStages& shader) = delete;
-
 			VkShaderModule CreateShaderModule(std::vector<char> shaderCode) {
 				VkShaderModuleCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -77,6 +49,34 @@
 				file.close();
 				return buffer;
 			}
+			
+		public:
+			TinyVkRenderDevice& renderDevice;
+			std::vector<VkShaderModule> shaderModules;
+			std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders;
+			std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfo;
+
+			~TinyVkShaderStages() { this->Dispose(); }
+
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
+				for(auto shaderModule : shaderModules)
+					vkDestroyShaderModule(renderDevice.logicalDevice, shaderModule, nullptr);
+			}
+
+			TinyVkShaderStages(TinyVkRenderDevice& renderDevice, const std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders) : renderDevice(renderDevice), shaders(shaders) {
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+
+				for (size_t i = 0; i < shaders.size(); i++) {
+					auto shaderCode = ReadFile(std::get<1>(shaders[i]));
+					auto shaderModule = CreateShaderModule(shaderCode);
+					shaderModules.push_back(shaderModule);
+					shaderCreateInfo.push_back(CreateShaderInfo(std::get<1>(shaders[i]), shaderModule, std::get<0>(shaders[i])));
+				}
+			}
+
+			TinyVkShaderStages operator=(const TinyVkShaderStages& shader) = delete;
 		};
 	}
 #endif

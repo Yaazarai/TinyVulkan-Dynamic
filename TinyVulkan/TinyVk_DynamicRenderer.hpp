@@ -26,34 +26,20 @@
 		/// be optionally created and utilized if their underlying graphics pipeline supports depth testing.
 		/// 
 
-		/// <summary>Offscreen Rendering: Render to VkImage.</summary>
+		/// <summary>Offscreen Rendering (Render-To-Texture Model): Render to VkImage.</summary>
 		class TinyVkImageRenderer : public disposable {
 		private:
+			TinyVkImage* optionalDepthImage;
+			TinyVkImage* renderTarget;
+			std::pair<VkCommandBuffer,int32_t> defaultBuffer;
+
+		public:
 			TinyVkRenderDevice& renderDevice;
 			TinyVkVMAllocator& vmAlloc;
 			TinyVkDynamicPipeline& graphicsPipeline;
 			TinyVkCommandPool& commandPool;
-			TinyVkImage* optionalDepthImage;
-			std::pair<VkCommandBuffer,int32_t> defaultBuffer;
 
-			VkFormat QueryDepthFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-				const std::vector<VkFormat>& candidates = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
-				for (VkFormat format : candidates) {
-					VkFormatProperties props;
-					vkGetPhysicalDeviceFormatProperties(renderDevice.physicalDevice, format, &props);
-
-					if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-						return format;
-					} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-						return format;
-					}
-				}
-
-				throw std::runtime_error("TinyVulkan: Failed to find supported format!");
-			}
-		public:
-			TinyVkImage* renderTarget;
-
+			/// Invokable Render Events: (executed in TinyVkDynamicRenderer::RenderFrame()
 			invokable<VkCommandBuffer> onRenderEvents;
 
 			~TinyVkImageRenderer() { this->Dispose(); }
@@ -77,9 +63,10 @@
 
 				optionalDepthImage = nullptr;
 				if (graphicsPipeline.DepthTestingIsEnabled())
-					optionalDepthImage = new TinyVkImage(renderDevice, graphicsPipeline, commandPool, vmAlloc, renderTarget->width, renderTarget->height, true, QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+					optionalDepthImage = new TinyVkImage(renderDevice, graphicsPipeline, commandPool, vmAlloc, renderTarget->width, renderTarget->height, true, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 			}
 
+			/// <summary>Sets the target image/texture for the TinyVkImageRenderer.</summary>
 			void SetRenderTarget(TinyVkImage* renderTarget, bool waitOldTarget = true) {
 				if (this->renderTarget != nullptr && waitOldTarget) {
 					vkWaitForFences(renderDevice.logicalDevice, 1, &renderTarget->imageWaitable, VK_TRUE, UINT64_MAX);
@@ -89,6 +76,7 @@
 				this->renderTarget = renderTarget;
 			}
 
+			/// <summary>Begins recording render commands to the provided command buffer.</summary>
 			void BeginRecordCmdBuffer(VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil, VkCommandBuffer commandBuffer = nullptr) {
 				if (commandBuffer == nullptr)
 					commandBuffer = defaultBuffer.first;
@@ -188,6 +176,7 @@
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
 			}
 
+			/// <summary>Ends recording render commands to the provided command buffer.</summary>
 			void EndRecordCmdBuffer(VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil, VkCommandBuffer commandBuffer = nullptr) {
 				if (commandBuffer == nullptr)
 					commandBuffer = defaultBuffer.first;
@@ -270,15 +259,18 @@
 					throw std::runtime_error("TinyVulkan: Failed to record [end] to command buffer!");
 			}
 
+			/// <summary>Records Push Descriptors to the command buffer.</summary>
 			VkResult PushDescriptorSet(VkCommandBuffer cmdBuffer, std::vector<VkWriteDescriptorSet> writeDescriptorSets) {
 				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout,
 					0, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data());
 			}
 
+			/// <summary>Records Push Constants to the command buffer.</summary>
 			void PushConstants(VkCommandBuffer cmdBuffer, VkShaderStageFlagBits shaderFlags, uint32_t byteSize, const void* pValues) {
 				vkCmdPushConstants(cmdBuffer, graphicsPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteSize, pValues);
 			}
 			
+			/// <summary>Executes the registered onRenderEvents and renders them to the target image/texture.</summary>
 			void RenderExecute(VkCommandBuffer preRecordedCmdBuffer = nullptr) {
 				atomic_lock swapChainLock(renderTarget->image_lock);
 				if (!swapChainLock.AcquiredLock()) return;
@@ -294,7 +286,7 @@
 					TinyVkImage* depthImage = optionalDepthImage;
 					if (depthImage->width < renderTarget->width || depthImage->height < renderTarget->height) {
 						depthImage->Disposable(false);
-						depthImage->ReCreateImage(renderTarget->width, renderTarget->height, depthImage->isDepthImage, QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+						depthImage->ReCreateImage(renderTarget->width, renderTarget->height, depthImage->isDepthImage, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					}
 				}
 				
@@ -316,48 +308,46 @@
 			}
 		};
 
-		/// <summary>Onscreen Rendering: Render to SwapChain.</summary>
+		/// <summary>Onscreen Rendering (Render/Present-To-Screen Model): Render to SwapChain.</summary>
 		class TinyVkSwapChainRenderer : public disposable {
 		private:
-			TinyVkRenderDevice& renderDevice;
-			TinyVkVMAllocator& memAlloc;
 			std::vector<std::pair<VkCommandBuffer,int32_t>> rentBuffers;
-
-			VkFormat QueryDepthFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-				const std::vector<VkFormat>& candidates = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
-				for (VkFormat format : candidates) {
-					VkFormatProperties props;
-					vkGetPhysicalDeviceFormatProperties(renderDevice.physicalDevice, format, &props);
-
-					if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-						return format;
-					} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-						return format;
-					}
-				}
-
-				throw std::runtime_error("TinyVulkan: Failed to find supported format!");
-			}
-		
-		public:
-			TinyVkSwapChain& swapChain;
-			TinyVkDynamicPipeline& graphicsPipeline;
-
-			/// SWAPCHAIN SYNCHRONIZATION_OBJECTS ///
 			std::vector<VkSemaphore> imageAvailableSemaphores;
 			std::vector<VkSemaphore> renderFinishedSemaphores;
 			std::vector<VkFence> inFlightFences;
-
-			/// RENDERING DEPTH IMAGE ///
-			TinyVkCommandPool& commandPool;
-			/// COMMAND POOL FOR RENDER COMMANDS ///
 			std::vector<TinyVkImage*> optionalDepthImages;
+			size_t currentSyncFrame = 0; // Current Synchronized Frame (Ordered).
+			size_t currentSwapFrame = 0; // Current SwapChain Image Frame (Out of Order).
 
-			/// SWAPCHAIN FRAME MANAGEMENT ///
-			size_t currentSyncFrame = 0;
-			size_t currentSwapFrame = 0;
+			void CreateImageSyncObjects() {
+				size_t count = static_cast<size_t>(swapChain.bufferingMode);
+				imageAvailableSemaphores.resize(count);
+				renderFinishedSemaphores.resize(count);
+				inFlightFences.resize(count);
 
-			/// INVOKABLE RENDER EVENTS: (executed in TinyVkDynamicRenderer::RenderFrame() ///
+				VkSemaphoreCreateInfo semaphoreInfo{};
+				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+				VkFenceCreateInfo fenceInfo{};
+				fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+				fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+				for (size_t i = 0; i < swapChain.images.size(); i++) {
+					if (vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+						vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+						vkCreateFence(renderDevice.logicalDevice, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+						throw std::runtime_error("TinyVulkan: Failed to create synchronization objects for a frame!");
+				}
+			}
+
+		public:
+			TinyVkRenderDevice& renderDevice;
+			TinyVkVMAllocator& memAlloc;
+			TinyVkSwapChain& swapChain;
+			TinyVkDynamicPipeline& graphicsPipeline;
+			TinyVkCommandPool& commandPool;
+
+			/// Invokable Render Events: (executed in TinyVkDynamicRenderer::RenderFrame()
 			invokable<VkCommandBuffer> onRenderEvents;
 
 			~TinyVkSwapChainRenderer() { this->Dispose(); }
@@ -399,33 +389,13 @@
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
 					for (int32_t i = 0; i < swapChain.images.size(); i++)
-						optionalDepthImages.push_back(new TinyVkImage(renderDevice, graphicsPipeline, commandPool, memAlloc, swapChain.imageExtent.width * 4, swapChain.imageExtent.height * 4, true, QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT));
+						optionalDepthImages.push_back(new TinyVkImage(renderDevice, graphicsPipeline, commandPool, memAlloc, swapChain.imageExtent.width * 4, swapChain.imageExtent.height * 4, true, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT));
 				}
 
 				CreateImageSyncObjects();
 			}
 
-			void CreateImageSyncObjects() {
-				size_t count = static_cast<size_t>(swapChain.bufferingMode);
-				imageAvailableSemaphores.resize(count);
-				renderFinishedSemaphores.resize(count);
-				inFlightFences.resize(count);
-
-				VkSemaphoreCreateInfo semaphoreInfo{};
-				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-				VkFenceCreateInfo fenceInfo{};
-				fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-				fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-				for (size_t i = 0; i < swapChain.images.size(); i++) {
-					if (vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-						vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-						vkCreateFence(renderDevice.logicalDevice, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
-						throw std::runtime_error("TinyVulkan: Failed to create synchronization objects for a frame!");
-				}
-			}
-
+			/// <summary>Begins recording render commands to the provided command buffer.</summary>
 			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
 				VkCommandBufferBeginInfo beginInfo{};
 				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -516,6 +486,7 @@
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.graphicsPipeline);
 			}
 
+			/// <summary>Ends recording render commands to the provided command buffer.</summary>
 			void EndRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {
 				if (vkCmdEndRenderingEKHR(renderDevice.instance.instance, commandBuffer) != VK_SUCCESS)
 					throw std::runtime_error("TinyVulkan: Failed to record [end] to rendering!");
@@ -589,17 +560,20 @@
 					throw std::runtime_error("TinyVulkan: Failed to record [end] to command buffer!");
 			}
 
+			/// <summary>Records Push Descriptors to the command buffer.</summary>
 			VkResult PushDescriptorSet(VkCommandBuffer cmdBuffer, std::vector<VkWriteDescriptorSet> writeDescriptorSets) {
 				return vkCmdPushDescriptorSetEKHR(renderDevice.instance.instance, cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipelineLayout,
 					0, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data());
 			}
 
+			/// <summary>Records Push Constants to the command buffer.</summary>
 			void PushConstants(VkCommandBuffer cmdBuffer, VkShaderStageFlagBits shaderFlags, uint32_t byteSize, const void* pValues) {
 				vkCmdPushConstants(cmdBuffer, graphicsPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteSize, pValues);
 			}
 
+			/// <summary>Executes the registered onRenderEvents and presents them to the SwapChain(Window).</summary>
 			void RenderExecute() {
-				atomic_lock swapChainLock(swapChain.swapChain_lock);
+				atomic_lock swapChainLock(swapChain.swapChainMutex);
 				if (!swapChainLock.AcquiredLock()) return;
 
 				if (!swapChain.presentable) return;
@@ -607,7 +581,7 @@
 				vkWaitForFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame], VK_TRUE, UINT64_MAX);
 
 				uint32_t imageIndex;
-				VkResult result = vkAcquireNextImageKHR(renderDevice.logicalDevice, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphores[currentSyncFrame], VK_NULL_HANDLE, &imageIndex);
+				VkResult result = swapChain.AcquireNextImage(imageAvailableSemaphores[currentSyncFrame], VK_NULL_HANDLE, imageIndex);
 				currentSwapFrame = imageIndex;
 
 				vkResetFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame]);
@@ -629,7 +603,7 @@
 					TinyVkImage* depthImage = optionalDepthImages[currentSyncFrame];
 					if (depthImage->width < swapChain.imageExtent.width || depthImage->height < swapChain.imageExtent.height) {
 						depthImage->Disposable(false);
-						depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+						depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 					}
 				}
 

@@ -4,54 +4,9 @@
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
+		/// <summary>SwapChain (screen buffering) description and layout for rendering to the window via TinyVkSwapChainRenderer.</summary>
 		class TinyVkSwapChain : public disposable {
 		private:
-			TinyVkRenderDevice& renderDevice;
-			TinyVkWindow& renderWindow;
-
-		public:
-			atomic_mutex swapChain_lock;
-
-			TinyVkSurfaceSupporter presentDetails;
-			VkSwapchainKHR swapChain = nullptr;
-			VkFormat imageFormat;
-			VkExtent2D imageExtent;
-			VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-			const TinyVkBufferingMode bufferingMode;
-			std::vector<VkImage> images;
-			std::vector<VkImageView> imageViews;
-
-			inline static invokable<int&, int&> onResizeFrameBuffer;
-			bool presentable;
-
-			~TinyVkSwapChain() { this->Dispose(); }
-
-			void Disposable(bool waitIdle) {
-				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
-
-				for (auto imageView : imageViews)
-					vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
-
-				vkDestroySwapchainKHR(renderDevice.logicalDevice, swapChain, nullptr);
-			}
-
-			TinyVkSwapChain(TinyVkRenderDevice& renderDevice, TinyVkWindow& renderWindow, TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE, TinyVkSurfaceSupporter presentDetails = TinyVkSurfaceSupporter(), VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
-				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
-				renderWindow.onResizeFrameBuffer.hook(callback<GLFWwindow*, int, int>([this](GLFWwindow* w, int x, int y) { this->OnFrameBufferResizeCallback(w, x, y); }));
-
-				CreateSwapChain();
-				presentable = true;
-			}
-
-			TinyVkSwapChain operator=(const TinyVkSwapChain& swapChain) = delete;
-
-			/// <summary>Create the Vulkan surface swapchain.</summary>
-			void CreateSwapChain(uint32_t width = 0, uint32_t height = 0) {
-				CreateSwapChainImages(width, height);
-				CreateSwapChainImageViews();
-			}
-
 			/// <summary>Create the Vulkan surface swap-chain images and imageviews.</summary>
 			void CreateSwapChainImages(uint32_t width = 0, uint32_t height = 0) {
 				TinyVkSwapChainSupporter swapChainSupport = QuerySwapChainSupport(renderDevice.physicalDevice);
@@ -59,7 +14,7 @@
 				VkPresentModeKHR presentMode = QuerySwapPresentMode(swapChainSupport.presentModes);
 				VkExtent2D extent = QuerySwapExtent(swapChainSupport.capabilities);
 				uint32_t imageCount = std::min(swapChainSupport.capabilities.maxImageCount, std::max(swapChainSupport.capabilities.minImageCount, static_cast<uint32_t>(bufferingMode)));
-				
+
 				if (width != 0 && height != 0) {
 					extent = {
 						std::min(std::max((uint32_t)width, swapChainSupport.capabilities.minImageExtent.width), swapChainSupport.capabilities.maxImageExtent.width),
@@ -142,6 +97,12 @@
 				}
 			}
 
+			/// <summary>Create the Vulkan surface swapchain.</summary>
+			void CreateSwapChain(uint32_t width = 0, uint32_t height = 0) {
+				CreateSwapChainImages(width, height);
+				CreateSwapChainImageViews();
+			}
+
 			/// <summary>Checks the VkPhysicalDevice for swap-chain availability.</summary>
 			TinyVkSwapChainSupporter QuerySwapChainSupport(VkPhysicalDevice device) {
 				TinyVkSwapChainSupporter details;
@@ -199,6 +160,45 @@
 				extent.height = std::max(1u, extent.height);
 				return extent;
 			}
+			
+		public:
+			TinyVkRenderDevice& renderDevice;
+			TinyVkWindow& renderWindow;
+
+			atomic_mutex swapChainMutex;
+			TinyVkSurfaceSupporter presentDetails;
+			VkSwapchainKHR swapChain = nullptr;
+			VkFormat imageFormat;
+			VkExtent2D imageExtent;
+			VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+			const TinyVkBufferingMode bufferingMode;
+			std::vector<VkImage> images;
+			std::vector<VkImageView> imageViews;
+
+			inline static invokable<int&, int&> onResizeFrameBuffer;
+			bool presentable;
+
+			~TinyVkSwapChain() { this->Dispose(); }
+
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
+				for (auto imageView : imageViews)
+					vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
+
+				vkDestroySwapchainKHR(renderDevice.logicalDevice, swapChain, nullptr);
+			}
+
+			TinyVkSwapChain(TinyVkRenderDevice& renderDevice, TinyVkWindow& renderWindow, TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE, TinyVkSurfaceSupporter presentDetails = TinyVkSurfaceSupporter(), VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+				renderWindow.onResizeFrameBuffer.hook(callback<GLFWwindow*, int, int>([this](GLFWwindow* w, int x, int y) { this->OnFrameBufferResizeCallback(w, x, y); }));
+
+				CreateSwapChain();
+				presentable = true;
+			}
+
+			TinyVkSwapChain operator=(const TinyVkSwapChain& swapChain) = delete;
 
 			/// <summary>Acquires the next image from the swap chain and returns out that image index.</summary>
 			VkResult AcquireNextImage(VkSemaphore semaphore, VkFence fence, uint32_t& imageIndex) {
@@ -207,7 +207,7 @@
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
 			void OnFrameBufferResizeCallback(GLFWwindow* hwndWindow, int width, int height) {
-				atomic_lock swapChainLock(swapChain_lock, true);
+				atomic_lock swapChainLock(swapChainMutex, true);
 				if (!swapChainLock.AcquiredLock()) return;
 				if (hwndWindow != renderWindow.GetHandle()) return;
 

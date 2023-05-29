@@ -4,6 +4,7 @@
 	#include "./TinyVK.hpp"
 	
 	namespace TINYVULKAN_NAMESPACE {
+		/// <summary>Represents a valid QueueFamily graphics/present pair on the VkDevice.</summary>
 		class TinyVkQueueFamily {
 		public:
 			std::optional<uint32_t> graphicsFamily;
@@ -18,6 +19,7 @@
 				presentFamily = qf.presentFamily;
 			}
 
+			/// <summary>Returns true/false if this is a complete graphics and present queue family pair.</summary>
 			bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 
 			/// <summary>Returns info about the VkPhysicalDevice graphics/present queue families. If no surface provided, auto checks for Win32 surface support.</summary>
@@ -30,8 +32,8 @@
 				std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 				vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-				int i = 0;
-				for (const auto& queueFamily : queueFamilies) {
+				for (int i = 0; i < queueFamilies.size(); i++) {
+					const auto& queueFamily = queueFamilies[i];
 					if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 						indices.graphicsFamily = i;
 
@@ -42,7 +44,6 @@
 						indices.presentFamily = i;
 
 					if (indices.IsComplete()) break;
-					i++;
 				}
 
 				return indices;

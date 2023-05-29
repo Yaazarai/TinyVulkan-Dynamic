@@ -4,6 +4,7 @@
     #include "./TinyVK.hpp"
 
     namespace TINYVULKAN_NAMESPACE {
+        /// <summary>Default TinyVk shader vertex layout provided (optional).</summary>
         struct TinyVkVertex {
             glm::vec2 texcoord;
             glm::vec3 position;
@@ -43,6 +44,7 @@
             }
         };
 
+        /// <summary>Default math coordinate and 2D camera projection functionality.</summary>
         class TinyVkMath {
 	    public:
             const static glm::mat4 Project2D(double width, double height, double camerax, double cameray, double znear = 1.0, double zfar = 0.0) {
@@ -71,8 +73,38 @@
 
                 return glm::vec2(uv.x * wh.x, uv.y * wh.y);
             }
+
+            const static glm::float32 AngleClamp(glm::float32 a) {
+                #ifndef GLM_FORCE_RADIANS
+                return std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
+                #else
+                constexpr glm::float32 pi2 = glm::pi<glm::float32>() * 2.0f;
+                a = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
+                #endif
+            }
+
+            const static glm::float32 AngleDelta(glm::float32 a, glm::float32 b) {
+                //// https://gamedev.stackexchange.com/a/4472
+                glm::float32 absa, absb;
+                #ifndef GLM_FORCE_RADIANS
+                absa = std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
+                absb = std::fmod((360.0f + std::fmod(b, 360.0f)), 360.0f);
+                glm::float32 delta = glm::abs(absa - absb);
+                glm::float32 sign = absa > absb || delta >= 180.0f ? -1.0f : 1.0f;
+                return (180.0f - glm::abs(delta - 180.0f) * sign;
+                #else
+                constexpr glm::float32 pi = glm::pi<glm::float32>();
+                constexpr glm::float32 pi2 = pi * 2.0f;
+                absa = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
+                absb = std::fmod((pi2 + std::fmod(b, pi2)), pi2);
+                glm::float32 delta = glm::abs(absa - absb);
+                glm::float32 sign = (absa > absb || delta >= pi) ? -1.0f : 1.0f;
+                return (pi - glm::abs(delta - pi)) * sign;
+                #endif
+            }
 	    };
 
+        /// <summary>Creates non-indexed quads in the format of std::vector of TinyVkVertex.</summary>
         class TinyVkQuad {
         public:
             static const std::vector<glm::vec4> defvcolors;
@@ -136,39 +168,12 @@
             }
         };
 
+        /// <summary>Default (white) color layout for generating quads.</summary>
         const std::vector<glm::vec4> TinyVkQuad::defvcolors = { {1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0},{1.0,1.0,1.0,1.0} };
 
+        /// <summary>Polygon generation using Earcut.hpp & triangulation math functions.</summary>
         class TinyVkPolygon {
         public:
-            static glm::float32 AngleClamp(glm::float32 a) {
-                #ifndef GLM_FORCE_RADIANS
-                    return std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
-                #else
-                    constexpr glm::float32 pi2 = glm::pi<glm::float32>() * 2.0f;
-                    a = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
-                #endif
-            }
-
-            static glm::float32 AngleDelta(glm::float32 a, glm::float32 b) {
-                //// https://gamedev.stackexchange.com/a/4472
-                glm::float32 absa, absb;
-                #ifndef GLM_FORCE_RADIANS
-                    absa = std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
-                    absb = std::fmod((360.0f + std::fmod(b, 360.0f)), 360.0f);
-                    glm::float32 delta = glm::abs(absa - absb);
-                    glm::float32 sign = absa > absb || delta >= 180.0f? -1.0f : 1.0f;
-                    return (180.0f - glm::abs(delta - 180.0f) * sign;
-                #else
-                    constexpr glm::float32 pi = glm::pi<glm::float32>();
-                    constexpr glm::float32 pi2 = pi * 2.0f;
-                    absa = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
-                    absb = std::fmod((pi2 + std::fmod(b, pi2)), pi2);
-                    glm::float32 delta = glm::abs(absa - absb);
-                    glm::float32 sign = (absa > absb || delta >= pi) ? -1.0f : 1.0f;
-                    return (pi - glm::abs(delta - pi)) * sign;
-                #endif
-            }
-
             static glm::vec3 TriangleCircumcircle(glm::vec2 a, glm::vec2 b, glm::vec2 c) {
                 glm::vec2 A(a), B(b), C(c);
                 glm::vec2 sqrA = glm::pow(glm::vec2(a), { 2.0f, 2.0f });

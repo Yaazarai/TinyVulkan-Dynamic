@@ -90,6 +90,21 @@
 				if (vkCreateSampler(renderDevice.logicalDevice, &samplerInfo, nullptr, &imageSampler) != VK_SUCCESS)
 					throw std::runtime_error("TinyVulkan: Failed to create image texture sampler!");
 			}
+
+			void CreateImageSyncObjects() {
+				VkSemaphoreCreateInfo semaphoreInfo{};
+				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+				VkFenceCreateInfo fenceInfo{};
+				fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+				fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+				if (vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageAvailable) != VK_SUCCESS ||
+					vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageFinished) != VK_SUCCESS ||
+					vkCreateFence(renderDevice.logicalDevice, &fenceInfo, nullptr, &imageWaitable) != VK_SUCCESS)
+					throw std::runtime_error("TinyVulkan: Failed to create synchronization objects for a image renderer!");
+			}
+			
 		public:
 			atomic_mutex image_lock;
 
@@ -127,9 +142,9 @@
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				ReCreateImage(width, height, isDepthImage, format, layout, addressingMode, aspectFlags);
-				CreateImageSyncObjects();
 			}
 
+			/// <summary>Recreates this TinyVkImage using a new layout/format (don't forget to call image.Disposable(bool waitIdle) to dispose of the previous image first.</summary>
 			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, TinyVkImageLayout layout = TINYVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT) {
 				VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 				imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -158,6 +173,7 @@
 				if (vmaCreateImage(vmAlloc.GetAllocator(), &imgCreateInfo, &allocCreateInfo, &image, &memory, nullptr) != VK_SUCCESS)
 					throw std::runtime_error("TinyVulkan: Could not allocate GPU image data for TinyVkImage!");
 
+				CreateImageSyncObjects();
 				CreateTextureSampler();
 				CreateImageView();
 				
@@ -165,20 +181,7 @@
 					TransitionLayoutCmd(layout);
 			}
 
-			void CreateImageSyncObjects() {
-				VkSemaphoreCreateInfo semaphoreInfo{};
-				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-				VkFenceCreateInfo fenceInfo{};
-				fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-				fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-				if (vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageAvailable) != VK_SUCCESS ||
-					vkCreateSemaphore(renderDevice.logicalDevice, &semaphoreInfo, nullptr, &imageFinished) != VK_SUCCESS ||
-					vkCreateFence(renderDevice.logicalDevice, &fenceInfo, nullptr, &imageWaitable) != VK_SUCCESS)
-					throw std::runtime_error("TinyVulkan: Failed to create synchronization objects for a image renderer!");
-			}
-
+			/// <summary>Transitions the GPU bound VkImage from its current layout into a new layout.</summary>
 			void TransitionLayoutCmd(TinyVkImageLayout newLayout) {
 				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = BeginTransferCmd();
 
@@ -256,6 +259,19 @@
 				EndTransferCmd(bufferIndexPair);
 			}
 
+			/// <summary>Copies data from CPU accessible memory to GPU accessible memory.</summary>
+			void StageImageData(void* data, VkDeviceSize dataSize) {
+				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, graphicsPipeline, commandPool, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
+				memcpy(stagingBuffer.description.pMappedData, data, (size_t)dataSize);
+
+				TransitionLayoutCmd(TINYVK_TRANSFER_DST_OPTIMAL);
+				TransferFromBufferCmd(stagingBuffer);
+				TransitionLayoutCmd(TINYVK_SHADER_READONLY_OPTIMAL);
+
+				stagingBuffer.Dispose();
+			}
+
+			/// <summary>Copies data from the source TinyVkBuffer into this TinyVkImage.</summary>
 			void TransferFromBufferCmd(TinyVkBuffer& srcBuffer) {
 				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = BeginTransferCmd();
 
@@ -274,17 +290,7 @@
 				EndTransferCmd(bufferIndexPair);
 			}
 
-			void StageImageData(void* data, VkDeviceSize dataSize) {
-				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, graphicsPipeline, commandPool, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);
-				memcpy(stagingBuffer.description.pMappedData, data, (size_t)dataSize);
-
-				TransitionLayoutCmd(TINYVK_TRANSFER_DST_OPTIMAL);
-				TransferFromBufferCmd(stagingBuffer);
-				TransitionLayoutCmd(TINYVK_SHADER_READONLY_OPTIMAL);
-
-				stagingBuffer.Dispose();
-			}
-
+			/// <summary>Begins a transfer command and returns the command buffer index pair used for the command allocated from a TinyVkCommandPool.</summary>
 			std::pair<VkCommandBuffer, int32_t> BeginTransferCmd() {
 				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = commandPool.LeaseBuffer();
 
@@ -295,6 +301,7 @@
 				return bufferIndexPair;
 			}
 
+			/// <summary>Ends a transfer command and gives the leased/rented command buffer pair back to the TinyVkCommandPool.</summary>
 			void EndTransferCmd(std::pair<VkCommandBuffer, int32_t> bufferIndexPair) {
 				vkEndCommandBuffer(bufferIndexPair.first);
 
@@ -308,8 +315,10 @@
 				commandPool.ReturnBuffer(bufferIndexPair);
 			}
 
+			/// <summary>Creates the data descriptor that represents this image when passing into graphicspipeline.SelectWrite*Descriptor().</summary>
 			VkDescriptorImageInfo GetImageDescriptor() { return { imageSampler, imageView, (VkImageLayout) currentLayout }; }
 
+			/// <summary>Returns a vec2 UV coordinate converted from this image Width/Height and passed vec2 XY coordinate.</summary>
 			glm::vec2 GetUVCoords(glm::vec2 xy, bool forceClamp = true) {
 				if (forceClamp)
 					xy = glm::clamp(xy, glm::vec2(0.0,0.0), glm::vec2(static_cast<float>(width), static_cast<float>(height)));
@@ -317,6 +326,7 @@
 				return glm::vec2(xy.x * (1.0 / static_cast<float>(width)), xy.y * (1.0 / static_cast<float>(height)));
 			}
 
+			/// <summary>Returns a vec2 XY coordinate converted from this image Width/Height and passed vec2 UV coordinate.</summary>
 			glm::vec2 GetXYCoords(glm::vec2 uv, bool forceClamp = true) {
 				if (forceClamp)
 					uv = glm::clamp(uv, glm::vec2(0.0, 0.0), glm::vec2(1.0, 1.0));

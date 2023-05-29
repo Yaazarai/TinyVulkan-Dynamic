@@ -65,7 +65,7 @@
 	namespace TINYVULKAN_NAMESPACE {
 		/*
 			tinyvulkan::Window is the GLFW window handler for TinyVulkan that will link to
-			and initialize GLFW and Vulkan to create you game / application window.
+			and initialize GLFW and Vulkan to create your game/application window.
 				* Window::onRefresh is an event callback that is called when the window needs to be refreshed.
 					This gets called when GLFW calls the GLFWwindowrefreshfun callback.
 					This callback type is in Invokable.hpp and can be initialized like so:
@@ -108,6 +108,8 @@
 				///		#define the above if you do NOT want the window to poll gamepad states/events.
 				///
 		*/
+		
+		/// <summary>GLFW window handler for TinyVulkan that will link to and initialize GLFW and Vulkan to create your game/application window</summary>
 		class TinyVkWindow : public disposable {
 		private:
 			bool hwndResizable;
@@ -142,9 +144,11 @@
 				onWindowResized.invoke(hwnd, width, height);
 			}
 
+			/// <summary>Generates an event for window position moved.</summary>
 			inline static void OnWindowPositionCallback(GLFWwindow* hwnd, int xpos, int ypos) {
 				onWindowPositionMoved.invoke(hwnd, xpos, ypos);
 			}
+			
 		public:
 			/// <summary>Calls the disposable interface dispose event.</summary>
 			~TinyVkWindow() { this->Dispose(); }
@@ -365,21 +369,6 @@
 				onGamepadTriggerChanged.invoke(gpad, axisID, axis);
 			}
 
-		public:
-			/// <summary>Keyboard Button Changed Event: Key, Modifiers, Action, PreviousAction.</summary>
-			invokable<TinyVkKeyboardButtons, TinyVkModKeyBits, TinyVkInputEvents, TinyVkInputEvents> onKeyboardButtonChanged;
-			/// <summary>Mouse Button Changed Event: Button, Modifiers, Action, PreviousAction.</summary>
-			invokable<TinyVkMouseButtons, TinyVkModKeyBits, TinyVkInputEvents, TinyVkInputEvents> onMouseButtonChanged;
-			invokable<double_t, double_t> onMouseMoved;
-			invokable<double_t, double_t> onMouseScrolled;
-			invokable<bool> onMouseEntered;
-			/// <summary>Gamepad Button Changed Event: GamepadID, Button, Action, PreviousAction.</summary>
-			invokable<TinyVkGamepads, TinyVkGamepadButtons, TinyVkInputEvents, TinyVkInputEvents> onGamepadButtonChanged;
-			invokable<TinyVkGamepads, TinyVkGamepadAxis, float_t, float_t> onGamepadAxisChanged;
-			invokable<TinyVkGamepads, TinyVkGamepadAxis, float_t> onGamepadTriggerChanged;
-			inline static invokable<TinyVkGamepads> onGamepadInitializeConnection;
-			invokable<TinyVkGamepads, bool> onGamepadConnectionChanged;
-
 			void InitGLFWInput() {
 				glfwSetInputMode(hwndWindow, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
 				glfwSetKeyCallback(hwndWindow, KeyboardButtonCallback);
@@ -407,7 +396,29 @@
 						onGamepadInitializeConnection.invoke(static_cast<TinyVkGamepads>(i));
 				}
 			}
+		public:
+			/// <summary>Keyboard Event Button Changed Event: Key, Modifiers, Action, PreviousAction.</summary>
+			invokable<TinyVkKeyboardButtons, TinyVkModKeyBits, TinyVkInputEvents, TinyVkInputEvents> onKeyboardButtonChanged;
+			/// <summary>Mouse Event Button Changed Event: Button, Modifiers, Action, PreviousAction.</summary>
+			invokable<TinyVkMouseButtons, TinyVkModKeyBits, TinyVkInputEvents, TinyVkInputEvents> onMouseButtonChanged;
+			/// <summary>Mouse Event Moved: X-Axis, Y-Axis.</summary>
+			invokable<double_t, double_t> onMouseMoved;
+			/// <summary>Mosue Event Scrolled: Y-Axis.</summary>
+			invokable<double_t, double_t> onMouseScrolled;
+			/// <summary>Mouse Event Entered Window: True/False.</summary>
+			invokable<bool> onMouseEntered;
+			/// <summary>Gamepad Event Button Changed Event: GamepadID, Button, Action, PreviousAction.</summary>
+			invokable<TinyVkGamepads, TinyVkGamepadButtons, TinyVkInputEvents, TinyVkInputEvents> onGamepadButtonChanged;
+			/// <summary>Gamepad Event Axis CHanged: Gamepad ID, Axis ID, X-Axis, Y-Axis.</summary>
+			invokable<TinyVkGamepads, TinyVkGamepadAxis, float_t, float_t> onGamepadAxisChanged;
+			/// <summary>Gamepad Event Trigger Axis Changed: Gamepad ID, Axis ID, Y-Axis.</summary>
+			invokable<TinyVkGamepads, TinyVkGamepadAxis, float_t> onGamepadTriggerChanged;
+			/// <summary>Gamepad Event Initialized (Window Startup) Connected: True/False.</summary>
+			inline static invokable<TinyVkGamepads> onGamepadInitializeConnection;
+			/// <summary>Gamepad Event Connected: True/False.</summary>
+			invokable<TinyVkGamepads, bool> onGamepadConnectionChanged;
 
+			/// <summary>Gets the name of a GLFW gamepad.</summary>
 			std::string GamepadGlfwGetName(TinyVkGamepads gpad) {
 				const char* name = glfwGetJoystickName(static_cast<int32_t>(gpad));
 				return (name != NULL) ? std::string(name) : std::string();

@@ -4,35 +4,14 @@
 	#include "./TinyVk.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
+		/// <summary>Pool of managed rentable VkCommandBuffers for performing rendering/transfer operations.</summary>
 		class TinyVkCommandPool : public disposable {
 		private:
-			TinyVkRenderDevice& renderDevice;
 			VkCommandPool commandPool;
 			size_t bufferCount;
 			
 			std::vector<VkCommandBuffer> commandBuffers;
 			std::vector<bool> rentQueue;
-		public:
-			~TinyVkCommandPool() { this->Dispose(); }
-
-			void Disposable(bool waitIdle) {
-				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
-
-				vkDestroyCommandPool(renderDevice.logicalDevice, commandPool, nullptr);
-			}
-			
-			TinyVkCommandPool(TinyVkRenderDevice& renderDevice, size_t bufferCount = static_cast<size_t>(TinyVkBufferingMode::QUADRUPLE)) : renderDevice(renderDevice), bufferCount(bufferCount) {
-				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
-
-				CreateCommandPool();
-				CreateCommandBuffers(bufferCount+1);
-			}
-
-			TinyVkCommandPool operator=(const TinyVkCommandPool& cmdPool) = delete;
-
-			VkCommandPool& GetPool() { return commandPool; }
-			std::vector<VkCommandBuffer>& GetBuffers() { return commandBuffers; }
-			size_t GetBufferCount() { return commandBuffers.size(); }
 
 			void CreateCommandPool() {
 				VkCommandPoolCreateInfo poolInfo{};
@@ -65,6 +44,36 @@
 					throw std::runtime_error("TinyVulkan: Failed to allocate command buffers!");
 			}
 
+		public:
+			TinyVkRenderDevice& renderDevice;
+
+			~TinyVkCommandPool() { this->Dispose(); }
+
+			void Disposable(bool waitIdle) {
+				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
+
+				vkDestroyCommandPool(renderDevice.logicalDevice, commandPool, nullptr);
+			}
+			
+			TinyVkCommandPool(TinyVkRenderDevice& renderDevice, size_t bufferCount = static_cast<size_t>(TinyVkBufferingMode::QUADRUPLE)) : renderDevice(renderDevice), bufferCount(bufferCount) {
+				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+
+				CreateCommandPool();
+				CreateCommandBuffers(bufferCount+1);
+			}
+
+			TinyVkCommandPool operator=(const TinyVkCommandPool& cmdPool) = delete;
+
+			/// <summary>Returns the underlying VkCommandPool.</summary>
+			VkCommandPool& GetPool() { return commandPool; }
+			
+			/// <summary>Returns the underling list of VkCommandBuffers.</summary>
+			std::vector<VkCommandBuffer>& GetBuffers() { return commandBuffers; }
+			
+			/// <summary>Returns the total number of allocated VkCommandBuffers.</summary>
+			size_t GetBufferCount() { return commandBuffers.size(); }
+
+			/// <summary>Returns true/false if ANY VkCommandBuffers are available to be Lealsed.</summary>
 			bool HasBuffers() {
 				for (int32_t i = 0; i < rentQueue.size(); i++)
 					if (rentQueue[i] == false) return true;
@@ -72,6 +81,7 @@
 				return false;
 			}
 
+			/// <summary>Returns the number of available VkCommandBuffers that can be Leased.</summary>
 			int32_t HasBuffersCount() {
 				int32_t hasSum = 0;
 
@@ -81,6 +91,7 @@
 				return hasSum;
 			}
 
+			/// <summary>Reserves a VkCommandBuffer for use and returns the VkCommandBuffer and it's ID (used for returning to the pool).</summary>
 			std::pair<VkCommandBuffer,int32_t> LeaseBuffer() {
 				for (int32_t i = 0; i < rentQueue.size(); i++)
 					if (rentQueue[i] == false) {
@@ -93,6 +104,7 @@
 				return std::pair<VkCommandBuffer,int32_t>(nullptr,-1);
 			}
 
+			/// <summary>Free's up the VkCommandBuffer that was previously rented for re-use.</summary>
 			void ReturnBuffer(std::pair<VkCommandBuffer, int32_t> bufferIndexPair) {
 				if (bufferIndexPair.second < 0 || bufferIndexPair .second >= rentQueue.size())
 					throw std::runtime_error("TinyVulkan: Failed to return command buffer!");

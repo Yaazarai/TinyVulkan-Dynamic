@@ -4,10 +4,11 @@
 	#include "./TinyVK.hpp"
 	
 	namespace TINYVULKAN_NAMESPACE {
+		/// <summary>AMD Vulkan GPU Memory Allocator: Required TinyVkImage, TinyVkBuffer, TinyVkImageRenderer & TinyVkSwapChainRenderer.</summary>
 		class TinyVkVMAllocator : public disposable {
 		public:
-			VmaAllocator memoryAllocator = VK_NULL_HANDLE;
 			TinyVkRenderDevice& renderDevice;
+			VmaAllocator memoryAllocator = VK_NULL_HANDLE;
 
 			~TinyVkVMAllocator() { this->Dispose(); }
 

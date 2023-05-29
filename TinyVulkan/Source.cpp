@@ -20,8 +20,8 @@ const std::tuple<VkShaderStageFlagBits, std::string> fragmentShader = { VkShader
 
 // Vertex description (as required by the binding layout in the shaders), DescriptorLayout/Push Constant bindings for descriptors we'll use in the shaders:
 const TinyVkVertexDescription vertexDescription = TinyVkVertex::GetVertexDescription();
-const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings = { TinyVkDynamicPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) };
-const std::vector<VkPushConstantRange>& pushConstantRanges = { TinyVkDynamicPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
+const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings = { TinyVkGraphicsPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) };
+const std::vector<VkPushConstantRange>& pushConstantRanges = { TinyVkGraphicsPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
 
 // Get a QOI formatted image from disc:
 void* image_get(std::string fpath, qoi_desc& qoidesc) {
@@ -51,12 +51,12 @@ int32_t TINYVULKAN_WINDOWMAIN {
 	TinyVkCommandPool commandPool(rdevice, static_cast<size_t>(bufferingMode) + DEFAULT_COMMAND_POOLSIZE);
 	TinyVkSwapChain swapChain(rdevice, window, bufferingMode /* 3 default optional args used*/);
 	TinyVkShaderStages shaders(rdevice, { vertexShader, fragmentShader });
-	TinyVkDynamicPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
+	TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
     TinyVkVMAllocator vmAlloc(instance, rdevice);
     TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, commandPool, swapChain, renderPipe);
 	
     // You can have multiple graphics pipelines if your pipelines are different:
-    //TinyVkDynamicPipeline imagePipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
+    //TinyVkGraphicsPipeline imagePipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, descriptorBindings, pushConstantRanges, true, true, VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
     TinyVkImage rsurface(rdevice, renderPipe, commandPool, vmAlloc, window.GetWidth(), window.GetHeight(), false, VK_FORMAT_B8G8R8A8_SRGB, TINYVK_SHADER_READONLY_OPTIMAL);
 	TinyVkImageRenderer imageRenderer(rdevice, commandPool, vmAlloc, &rsurface, renderPipe);
 
@@ -108,7 +108,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
         imageRenderer.PushConstants(renderBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
 
         auto image_descriptor = image.GetImageDescriptor();
-        VkWriteDescriptorSet writeDescriptorSets = TinyVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, &image_descriptor);
+        VkWriteDescriptorSet writeDescriptorSets = TinyVkGraphicsPipeline::SelectWriteImageDescriptor(0, 1, &image_descriptor);
         imageRenderer.PushDescriptorSet(renderBuffer, { writeDescriptorSets });
 
         VkDeviceSize offsets[] = { 0 };
@@ -155,7 +155,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
         swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
 
         auto image_descriptor = rsurface.GetImageDescriptor();
-        VkWriteDescriptorSet writeDescriptorSets = TinyVkDynamicPipeline::SelectWriteImageDescriptor(0, 1, &image_descriptor);
+        VkWriteDescriptorSet writeDescriptorSets = TinyVkGraphicsPipeline::SelectWriteImageDescriptor(0, 1, &image_descriptor);
         swapRenderer.PushDescriptorSet(commandBuffer, { writeDescriptorSets });
 
         VkDeviceSize offsets[] = { 0 };

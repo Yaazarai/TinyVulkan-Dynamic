@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TINYVK_TINYVKDYNAMICPIPELINE
-#define TINYVK_TINYVKDYNAMICPIPELINE
+#ifndef TINYVK_TINYVGRAPHICSPIPELINE
+#define TINYVK_TINYVGRAPHICSPIPELINE
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
@@ -16,7 +16,7 @@
 		};
 
 		/// <summary>Vulkan Graphics Pipeline using Dynamic Viewports/Scissors, Push Descriptors/Constants.</summary>
-		class TinyVkDynamicPipeline : public disposable {
+		class TinyVkGraphicsPipeline : public disposable {
 		private:
 			void CreateGraphicsPipeline() {
 				///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,7 +190,7 @@
 			VkQueue graphicsQueue;
 			VkQueue presentQueue;
 
-			~TinyVkDynamicPipeline() { this->Dispose(); }
+			~TinyVkGraphicsPipeline() { this->Dispose(); }
 
 			void Disposable(bool waitIdle) {
 				if (waitIdle) vkDeviceWaitIdle(renderDevice.logicalDevice);
@@ -200,7 +200,7 @@
 				vkDestroyPipelineLayout(renderDevice.logicalDevice, pipelineLayout, nullptr);
 			}
 
-			TinyVkDynamicPipeline(TinyVkRenderDevice& renderDevice, VkFormat imageFormat, TinyVkShaderStages& shaderStages, TinyVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
+			TinyVkGraphicsPipeline(TinyVkRenderDevice& renderDevice, VkFormat imageFormat, TinyVkShaderStages& shaderStages, TinyVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
 			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), enableDepthTesting(enableDepthTesting), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), polgyonTopology(polgyonTopology) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
@@ -211,7 +211,7 @@
 				CreateGraphicsPipeline();
 			}
 
-			TinyVkDynamicPipeline operator=(const TinyVkDynamicPipeline& pipeline) = delete;
+			TinyVkGraphicsPipeline operator=(const TinyVkGraphicsPipeline& pipeline) = delete;
 
 			/// <summary>Returns the optimal VkFormat for the desired depth image format.</summary>
 			VkFormat QueryDepthFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL) {

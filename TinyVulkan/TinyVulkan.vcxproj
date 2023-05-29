@@ -165,8 +165,8 @@
     <ClInclude Include="TinyVK.hpp" />
     <ClInclude Include="TinyVk_Buffer.hpp" />
     <ClInclude Include="TinyVk_CommandPool.hpp" />
-    <ClInclude Include="TinyVk_DynamicPipeline.hpp" />
-    <ClInclude Include="TinyVk_DynamicRenderer.hpp" />
+    <ClInclude Include="TinyVk_GraphicsPipeline.hpp" />
+    <ClInclude Include="TinyVk_GraphicsRenderers.hpp" />
     <ClInclude Include="TinyVk_Image.hpp" />
     <ClInclude Include="TinyVk_InputEnums.hpp" />
     <ClInclude Include="TinyVk_Instance.hpp" />

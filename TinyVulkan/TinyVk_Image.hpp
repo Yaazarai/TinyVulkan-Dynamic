@@ -36,7 +36,7 @@
 		class TinyVkImage : public disposable {
 		private:
 			TinyVkRenderDevice& renderDevice;
-			TinyVkDynamicPipeline& graphicsPipeline;
+			TinyVkGraphicsPipeline& graphicsPipeline;
 			TinyVkCommandPool& commandPool;
 			TinyVkVMAllocator& vmAlloc;
 			
@@ -137,7 +137,7 @@
 				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
 			}
 
-			TinyVkImage(TinyVkRenderDevice& renderDevice, TinyVkDynamicPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, TinyVkImageLayout layout = TINYVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
+			TinyVkImage(TinyVkRenderDevice& renderDevice, TinyVkGraphicsPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, TinyVkImageLayout layout = TINYVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
 			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), currentLayout(TINYVK_UNDEFINED), addressingMode(addressingMode), aspectFlags(aspectFlags) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 

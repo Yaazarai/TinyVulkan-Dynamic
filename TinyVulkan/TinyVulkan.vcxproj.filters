@@ -86,10 +86,10 @@
     <ClInclude Include="TinyVk_ShaderStages.hpp">
       <Filter>Header Files\TinyVulkan-Lib\Initialization</Filter>
     </ClInclude>
-    <ClInclude Include="TinyVk_DynamicPipeline.hpp">
+    <ClInclude Include="TinyVk_GraphicsPipeline.hpp">
       <Filter>Header Files\TinyVulkan-Lib\Initialization</Filter>
     </ClInclude>
-    <ClInclude Include="TinyVk_DynamicRenderer.hpp">
+    <ClInclude Include="TinyVk_GraphicsRenderers.hpp">
       <Filter>Header Files\TinyVulkan-Lib\TinyVulkan Rendering</Filter>
     </ClInclude>
     <ClInclude Include="TinyVk_Buffer.hpp">

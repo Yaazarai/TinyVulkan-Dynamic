@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TINYVK_TINYVKDYNAMICRENDERER
-#define TINYVK_TINYVKDYNAMICRENDERER
+#ifndef TINYVK_TINYVKGRAPHICSRENDERER
+#define TINYVK_TINYVKGRAPHICSRENDERER
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
@@ -36,10 +36,10 @@
 		public:
 			TinyVkRenderDevice& renderDevice;
 			TinyVkVMAllocator& vmAlloc;
-			TinyVkDynamicPipeline& graphicsPipeline;
+			TinyVkGraphicsPipeline& graphicsPipeline;
 			TinyVkCommandPool& commandPool;
 
-			/// Invokable Render Events: (executed in TinyVkDynamicRenderer::RenderFrame()
+			/// Invokable Render Events: (executed in TinyVkImageRenderer::RenderExecute()
 			invokable<VkCommandBuffer> onRenderEvents;
 
 			~TinyVkImageRenderer() { this->Dispose(); }
@@ -55,7 +55,7 @@
 				}
 			}
 
-			TinyVkImageRenderer(TinyVkRenderDevice& renderDevice, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, TinyVkImage* renderTarget, TinyVkDynamicPipeline& graphicsPipeline)
+			TinyVkImageRenderer(TinyVkRenderDevice& renderDevice, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, TinyVkImage* renderTarget, TinyVkGraphicsPipeline& graphicsPipeline)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), commandPool(commandPool), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
@@ -344,10 +344,10 @@
 			TinyVkRenderDevice& renderDevice;
 			TinyVkVMAllocator& memAlloc;
 			TinyVkSwapChain& swapChain;
-			TinyVkDynamicPipeline& graphicsPipeline;
+			TinyVkGraphicsPipeline& graphicsPipeline;
 			TinyVkCommandPool& commandPool;
 
-			/// Invokable Render Events: (executed in TinyVkDynamicRenderer::RenderFrame()
+			/// Invokable Render Events: (executed in TinyVkSwapChainRenderer::RenderExecute()
 			invokable<VkCommandBuffer> onRenderEvents;
 
 			~TinyVkSwapChainRenderer() { this->Dispose(); }
@@ -372,7 +372,7 @@
 				}
 			}
 
-			TinyVkSwapChainRenderer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& memAlloc, TinyVkCommandPool& commandPool, TinyVkSwapChain& swapChain, TinyVkDynamicPipeline& graphicsPipeline)
+			TinyVkSwapChainRenderer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& memAlloc, TinyVkCommandPool& commandPool, TinyVkSwapChain& swapChain, TinyVkGraphicsPipeline& graphicsPipeline)
 				: renderDevice(renderDevice), memAlloc(memAlloc), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 				

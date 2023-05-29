@@ -51,7 +51,7 @@
 		
 		public:
 			TinyVkRenderDevice& renderDevice;
-			TinyVkDynamicPipeline& graphicsPipeline;
+			TinyVkGraphicsPipeline& graphicsPipeline;
 			TinyVkCommandPool& commandPool;
 			TinyVkVMAllocator& vmAlloc;
 
@@ -68,14 +68,14 @@
 				vmaDestroyBuffer(vmAlloc.GetAllocator(), buffer, memory);
 			}
 
-			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkDynamicPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
+			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkGraphicsPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
 			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				CreateBuffer(size, usage, flags);
 			}
 
-			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkDynamicPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, TinyVkBufferType type)
+			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkGraphicsPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, TinyVkBufferType type)
 			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 

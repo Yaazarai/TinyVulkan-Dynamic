@@ -117,13 +117,13 @@
     #include "./TinyVk_CommandPool.hpp"
     #include "./TinyVk_SwapChain.hpp"
     #include "./TinyVk_ShaderStages.hpp"
-    #include "./TinyVk_DynamicPipeline.hpp"
+    #include "./TinyVk_GraphicsPipeline.hpp"
     #pragma endregion
     #pragma region TINYVULKAN_RENDERING
     #include "./TinyVk_VMAllocator.hpp"
     #include "./TinyVk_Buffer.hpp"
     #include "./TinyVk_Image.hpp"
-    #include "./TinyVk_DynamicRenderer.hpp"
+    #include "./TinyVk_GraphicsRenderers.hpp"
     #include "./TinyVk_VertexMath.hpp"
     #pragma endregion
 

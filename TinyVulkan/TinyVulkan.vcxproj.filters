@@ -102,4 +102,12 @@
       <Filter>Header Files\TinyVulkan-Lib\TinyVulkan Rendering</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\sample_shader.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sample_shader.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

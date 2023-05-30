@@ -180,6 +180,10 @@
     <ClInclude Include="TinyVk_Window.hpp" />
     <ClInclude Include="triangulation_earcut.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\sample_shader.frag" />
+    <None Include="..\sample_shader.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

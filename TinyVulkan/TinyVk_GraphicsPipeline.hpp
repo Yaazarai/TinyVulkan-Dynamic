@@ -92,7 +92,7 @@
 				colorBlending.logicOp = VK_LOGIC_OP_COPY;
 				colorBlending.attachmentCount = 1;
 
-				VkPipelineColorBlendAttachmentState blendDescription = GetBlendDescription(enableBlending);
+				VkPipelineColorBlendAttachmentState blendDescription = colorBlendState;
 				colorBlending.pAttachments = &blendDescription;
 				colorBlending.blendConstants[0] = 0.0f;
 				colorBlending.blendConstants[1] = 0.0f;
@@ -150,21 +150,6 @@
 				if (vkCreateGraphicsPipelines(renderDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 					throw std::runtime_error("TinyVulkan: Failed to create graphics pipeline!");
 			}
-
-			inline static VkPipelineColorBlendAttachmentState GetBlendDescription(bool isBlendingEnabled) {
-				VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-				colorBlendAttachment.blendEnable = isBlendingEnabled;
-
-				colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-				colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-				colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-
-				colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-				colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-				colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-				return colorBlendAttachment;
-			}
 			
 		public:
 			TinyVkRenderDevice& renderDevice;
@@ -180,7 +165,8 @@
 			
 			VkFormat imageFormat;
 			VkColorComponentFlags colorComponentFlags = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-			
+			VkPipelineColorBlendAttachmentState colorBlendState;
+
 			TinyVkVertexDescription vertexDescription;
 			VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 			VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL;
@@ -200,9 +186,12 @@
 				vkDestroyPipelineLayout(renderDevice.logicalDevice, pipelineLayout, nullptr);
 			}
 
-			TinyVkGraphicsPipeline(TinyVkRenderDevice& renderDevice, VkFormat imageFormat, TinyVkShaderStages& shaderStages, TinyVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableBlending = true, bool enableDepthTesting = true, VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
-			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), enableBlending(enableBlending), enableDepthTesting(enableDepthTesting), colorComponentFlags(colorComponentFlags), vertexTopology(vertexTopology), polgyonTopology(polgyonTopology) {
+			TinyVkGraphicsPipeline(TinyVkRenderDevice& renderDevice, VkFormat imageFormat, TinyVkShaderStages& shaderStages, TinyVkVertexDescription vertexDescription, const std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, const std::vector<VkPushConstantRange>& pushConstantRanges, bool enableDepthTesting, VkPipelineColorBlendAttachmentState colorBlendState = GetBlendDescription(true), VkColorComponentFlags colorComponentFlags = VKCOMP_RGBA, VkPrimitiveTopology vertexTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkPolygonMode polgyonTopology = VK_POLYGON_MODE_FILL)
+			: renderDevice(renderDevice), imageFormat(imageFormat), shaderStages(shaderStages), vertexDescription(vertexDescription), descriptorBindings(descriptorBindings), pushConstantRanges(pushConstantRanges), colorComponentFlags(colorComponentFlags), colorBlendState(colorBlendState), vertexTopology(vertexTopology), polgyonTopology(polgyonTopology) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
+
+				this->enableBlending = colorBlendState.blendEnable;
+				this->enableDepthTesting = enableDepthTesting;
 
 				TinyVkQueueFamily indices = TinyVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
 				vkGetDeviceQueue(renderDevice.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
@@ -236,6 +225,22 @@
 
 			/// <summary>Returns true/false whether depthj fragment testing is enabled on the graphics pipeline.</summary>
 			bool DepthTestingIsEnabled() { return enableDepthTesting; }
+
+			/// <summary>Gets a generic Normal Blending Mode for creating a GraphicsPipeline with.</summary>
+			inline static const VkPipelineColorBlendAttachmentState GetBlendDescription(bool isBlendingEnabled = true) {
+				VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				colorBlendAttachment.blendEnable = isBlendingEnabled;
+
+				colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+				colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+				colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+
+				colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+				colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+				colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+				return colorBlendAttachment;
+			}
 
 			/// <summary>Returns the push constant range info of a given size applied to the given shader stages.</summary>
 			inline static VkPushConstantRange SelectPushConstantRange(uint32_t pushConstantRangeSize = 0, VkShaderStageFlags shaderStages = VK_SHADER_STAGE_ALL_GRAPHICS) {

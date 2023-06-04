@@ -207,7 +207,7 @@
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
 			void OnFrameBufferResizeCallback(GLFWwindow* hwndWindow, int width, int height) {
-				atomic_lock swapChainLock(swapChainMutex, true);
+				atomic_lock swapChainLock(swapChainMutex);
 				if (!swapChainLock.AcquiredLock()) return;
 				if (hwndWindow != renderWindow.GetHandle()) return;
 

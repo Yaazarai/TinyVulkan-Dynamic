@@ -32,9 +32,11 @@ int32_t TINYVULKAN_WINDOWMAIN {
 	TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, {}, pushConstantRanges, true, TinyVkGraphicsPipeline::GetBlendDescription(), VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
     TinyVkVMAllocator vmAlloc(instance, rdevice);
     TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, commandPool, swapChain, renderPipe);
-    VkClearValue clearColor{ .color = { 0.25, 0.0, 0.25, 0.25f } };
+
+    VkClearValue clearColor{ .color = { 0.0, 0.0, 0.0, 0.5f } };
     VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
-    
+    VkDeviceSize offsets[] = { 0 };
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,14 +68,26 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// End recording rendering commands using the Swapchain supplied command buffer.
     /// 
 
-    swapRenderer.onRenderEvents.hook(callback<VkCommandBuffer>([&instance, &window, &swapChain, &swapRenderer, &renderPipe, &ibuffer, &vbuffer, &clearColor, &depthStencil](VkCommandBuffer commandBuffer) {
+    struct SwapFrame {
+        TinyVkBuffer& ibuffer, &vbuffer;
+        SwapFrame(TinyVkBuffer& ibuffer, TinyVkBuffer& vbuffer) : ibuffer(ibuffer), vbuffer(vbuffer) {}
+    };
+    TinyVkResourceQueue<SwapFrame,static_cast<size_t>(bufferingMode)> queue(
+        { SwapFrame(ibuffer,vbuffer), SwapFrame(ibuffer,vbuffer), SwapFrame(ibuffer,vbuffer) },
+        callback<size_t&>([&swapRenderer](size_t& frameIndex){ frameIndex = swapRenderer.GetSyncronizedFrameIndex(); }),
+        callback<SwapFrame&>([](SwapFrame& resource){})
+    );
+
+    swapRenderer.onRenderEvents.hook(callback<VkCommandBuffer>([&instance, &window, &swapChain, &swapRenderer, &renderPipe, &queue, &clearColor, &depthStencil, &offsets](VkCommandBuffer commandBuffer) {
+        auto frame = queue.GetFrameResource();
+        TinyVkBuffer& ibuffer = frame.ibuffer;
+        TinyVkBuffer& vbuffer = frame.vbuffer;
+
         swapRenderer.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
-            glm::mat4 projection = TinyVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
-            swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
-            VkDeviceSize offsets[] = { 0 };
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vbuffer.buffer, offsets);
-            vkCmdBindIndexBuffer(commandBuffer, ibuffer.buffer, offsets[0], VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 1, 0, 0, 0);
+        glm::mat4 projection = TinyVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
+        swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
+        swapRenderer.CmdBindGeometry(commandBuffer, &vbuffer.buffer, ibuffer.buffer, offsets, offsets[0]);
+        swapRenderer.CmdDrawGeometry(commandBuffer, true, 1, 0, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 0, 0);
         swapRenderer.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
     }));
 

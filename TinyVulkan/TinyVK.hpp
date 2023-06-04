@@ -3,7 +3,7 @@
 #define TINYVULKAN_LIBRARY
 
     /*
-       TINYVULKAN LIBRARY DEPENDENCIES: VULKAN and GLFW compiled lbirary binaries.
+       TINYVULKAN LIBRARY DEPENDENCIES: VULKAN and GLFW compiled library binaries.
 
         C/C++ | Code Configuration | Runtime Libraries:
             RELEASE: /MD
@@ -29,6 +29,12 @@
                 VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
                 VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
                 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
+
+        Allows the window to poll gamepad inputs:
+            #define TINYVK_ALLOWS_POLLING_GAMEPADS
+        
+        Auto inserts window instance extensions:
+            #define TINYVK_AUTO_PRESENT_EXTENSIONS
     */
 
     #define GLFW_INCLUDE_VULKAN
@@ -93,15 +99,10 @@
     #include <algorithm>
     #include <chrono>
 
-    /// You can define this macro to throw a new std::runtime error when a duplicate hook is made.
-    #define INVOKABLE_ERRORON_DUPLICATEHOOKS
     #include "invoke_callback.hpp"
     #include "atomic_lock.hpp"
     #include "disposable_object.hpp"
     #include "triangulation_earcut.hpp"
-
-    // #define TINYVK_ALLOWS_POLLING_GAMEPADS (allows the window to poll gamepad inputs)
-    // #define TINYVK_AUTO_PRESENT_EXTENSIONS (auto inserts window instance extensions)
 
     #pragma region WINDOW_INPUT_HANDLING
     #include "TinyVk_InputEnums.hpp"
@@ -124,6 +125,7 @@
     #include "./TinyVk_Buffer.hpp"
     #include "./TinyVk_Image.hpp"
     #include "./TinyVk_GraphicsRenderers.hpp"
+    #include "./TinyVk_ResourceQueue.hpp"
     #include "./TinyVk_VertexMath.hpp"
     #pragma endregion
 

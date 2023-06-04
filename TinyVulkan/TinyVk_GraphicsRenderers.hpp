@@ -26,8 +26,47 @@
 		/// be optionally created and utilized if their underlying graphics pipeline supports depth testing.
 		/// 
 
+		class TinyVkRendererInterface {
+		public:
+			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, const VkBuffer* vertexBuffers, const VkBuffer indexBuffer, const VkDeviceSize* offsets, const VkDeviceSize indexOffset = 0, uint32_t binding = 0, uint32_t bindingCount = 1) {
+				vkCmdBindVertexBuffers(cmdBuffer, binding, bindingCount, vertexBuffers, offsets);
+				vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, indexOffset, VK_INDEX_TYPE_UINT32);
+			}
+
+			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, const VkBuffer* vertexBuffers, const VkDeviceSize* offsets, uint32_t binding = 0, uint32_t bindingCount = 1) {
+				vkCmdBindVertexBuffers(cmdBuffer, binding, bindingCount, vertexBuffers, offsets);
+			}
+
+			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, const VkBuffer indexBuffer, const VkDeviceSize indexOffset = 0, uint32_t binding = 0, uint32_t bindingCount = 1) {
+				vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, indexOffset, VK_INDEX_TYPE_UINT32);
+			}
+
+			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* vertexBuffers, const VkDeviceSize* vbufferOffsets, const VkDeviceSize* vbufferSizes, const VkDeviceSize* vbufferStrides = nullptr) {
+					vkCmdBindVertexBuffers2(cmdBuffer, firstBinding, bindingCount, vertexBuffers, vbufferOffsets, vbufferSizes, vbufferStrides);
+			}
+
+			inline static void CmdDrawGeometry(VkCommandBuffer cmdBuffer, bool isIndexed = false, uint32_t instanceCount = 1, uint32_t firstInstance = 0, uint32_t vertexCount = 0, uint32_t vertexOffset = 0, uint32_t firstIndex = 0) {
+				switch (isIndexed) {
+					case true:
+					vkCmdDrawIndexed(cmdBuffer, vertexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+					break;
+					case false:
+					vkCmdDraw(cmdBuffer, vertexCount, instanceCount, vertexOffset, firstInstance);
+					break;
+				}
+			}
+
+			inline static void CmdDrawGeometryIndirect(VkCommandBuffer cmdBuffer, const VkBuffer drawParamBuffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
+				vkCmdDrawIndexedIndirect(cmdBuffer, drawParamBuffer, offset, drawCount, stride);
+			}
+
+			inline static void CmdDrawGeometryIndirect(VkCommandBuffer cmdBuffer, const VkBuffer drawParamBuffer, VkDeviceSize offset, const VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t drawCount, uint32_t maxDrawCount, uint32_t stride) {
+				vkCmdDrawIndexedIndirectCount(cmdBuffer, drawParamBuffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+			}
+		};
+
 		/// <summary>Offscreen Rendering (Render-To-Texture Model): Render to VkImage.</summary>
-		class TinyVkImageRenderer : public disposable {
+		class TinyVkImageRenderer : public TinyVkRendererInterface, disposable {
 		private:
 			TinyVkImage* optionalDepthImage;
 			TinyVkImage* renderTarget;
@@ -309,7 +348,7 @@
 		};
 
 		/// <summary>Onscreen Rendering (Render/Present-To-Screen Model): Render to SwapChain.</summary>
-		class TinyVkSwapChainRenderer : public disposable {
+		class TinyVkSwapChainRenderer : public TinyVkRendererInterface, disposable {
 		private:
 			std::vector<std::pair<VkCommandBuffer,int32_t>> rentBuffers;
 			std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -394,6 +433,9 @@
 
 				CreateImageSyncObjects();
 			}
+
+			/// <summary>Returns the current resource synchronized frame index.</summary>
+			size_t GetSyncronizedFrameIndex() { return currentSyncFrame; }
 
 			/// <summary>Begins recording render commands to the provided command buffer.</summary>
 			void BeginRecordCmdBuffer(VkCommandBuffer commandBuffer, VkExtent2D renderArea, const VkClearValue clearColor, const VkClearValue depthStencil) {

@@ -189,7 +189,7 @@
 				vkDestroySwapchainKHR(renderDevice.logicalDevice, swapChain, nullptr);
 			}
 
-			TinyVkSwapChain(TinyVkRenderDevice& renderDevice, TinyVkWindow& renderWindow, TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE, TinyVkSurfaceSupporter presentDetails = TinyVkSurfaceSupporter(), VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			TinyVkSwapChain(TinyVkRenderDevice& renderDevice, TinyVkWindow& renderWindow, const TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE, TinyVkSurfaceSupporter presentDetails = TinyVkSurfaceSupporter(), VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 				renderWindow.onResizeFrameBuffer.hook(callback<GLFWwindow*, int, int>([this](GLFWwindow* w, int x, int y) { this->OnFrameBufferResizeCallback(w, x, y); }));

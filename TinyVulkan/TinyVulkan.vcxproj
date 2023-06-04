@@ -172,6 +172,7 @@
     <ClInclude Include="TinyVk_Instance.hpp" />
     <ClInclude Include="TinyVk_QueueFamily.hpp" />
     <ClInclude Include="TinyVk_RenderDevice.hpp" />
+    <ClInclude Include="TinyVk_ResourceQueue.hpp" />
     <ClInclude Include="TinyVk_ShaderStages.hpp" />
     <ClInclude Include="TinyVk_Supporters.hpp" />
     <ClInclude Include="TinyVk_SwapChain.hpp" />

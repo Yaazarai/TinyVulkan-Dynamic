@@ -267,12 +267,12 @@
 			invokable<std::atomic_bool&> onWhileMain;
 
 			/// <summary>[overridable] Executes the main window loop.</summary>
-			virtual void WhileMain() {
+			virtual void WhileMain(const bool waitOrPollEvents = true) {
 				std::atomic_bool shouldRun = true;
 
 				while (shouldRun) {
 					onWhileMain.invoke(shouldRun);
-					shouldRun = !ShouldClosePollEvents();
+					shouldRun = (waitOrPollEvents)? !ShouldCloseWaitEvents() : !ShouldClosePollEvents();
 				}
 			}
 

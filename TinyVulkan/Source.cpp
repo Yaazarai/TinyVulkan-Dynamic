@@ -23,7 +23,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// You can also have as many of each as you'd like if for example you needed a Window/Swapchain and two separate rendering pipelines each with their own set of shaders, you can do that too.
     /// 
     
-    TinyVkWindow window("TINYVK WINDOW", 1920, 1080, true, true);
+    TinyVkWindow window("TINYVK WINDOW", 1440, 810, true, true);
 	TinyVkInstance instance(TinyVkWindow::QueryRequiredExtensions(TVK_VALIDATION_LAYERS), "TINYVK");
 	TinyVkRenderDevice rdevice(instance, window.CreateWindowSurface(instance.GetInstance()), rdeviceTypes);
 	TinyVkCommandPool commandPool(rdevice, static_cast<size_t>(bufferingMode) + DEFAULT_COMMAND_POOLSIZE);
@@ -47,9 +47,9 @@ int32_t TINYVULKAN_WINDOWMAIN {
 
     std::vector<TinyVkVertex> triangles = {
         TinyVkVertex({0.0f,0.0f}, {240.0f,135.0f,               1.0f}, {1.0f,0.0f,0.0f,1.0f}),
-        TinyVkVertex({0.0f,0.0f}, {240.0f+1440.0f,135.0f,       1.0f}, {0.0f,1.0f,0.0f,1.0f}),
-        TinyVkVertex({0.0f,0.0f}, {240.0f+1440.0f,135.0f+810.0f,1.0f}, {1.0f,0.0f,1.0f,1.0f}),
-        TinyVkVertex({0.0f,0.0f}, {240.0f,135.0f + 810.0f,      1.0f}, {0.0f,0.0f,1.0f,1.0f})
+        TinyVkVertex({0.0f,0.0f}, {240.0f+960.0f,135.0f,        1.0f}, {0.0f,1.0f,0.0f,1.0f}),
+        TinyVkVertex({0.0f,0.0f}, {240.0f+960.0f,135.0f+540.0f, 1.0f}, {1.0f,0.0f,1.0f,1.0f}),
+        TinyVkVertex({0.0f,0.0f}, {240.0f,135.0f + 540.0f,      1.0f}, {0.0f,0.0f,1.0f,1.0f})
     }; std::vector<uint32_t> indices = {0,1,2,2,3,0};
 
     TinyVkBuffer vbuffer(rdevice, renderPipe, commandPool, vmAlloc, triangles.size() * sizeof(TinyVkVertex), TinyVkBufferType::VKVMA_BUFFER_TYPE_VERTEX);
@@ -103,7 +103,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// 
 
     std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
-    window.WhileMain();
+    window.WhileMain(true);
     mythread.join();
     return VK_SUCCESS;
 };

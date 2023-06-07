@@ -100,7 +100,7 @@
     #include <chrono>
 
     #include "invoke_callback.hpp"
-    #include "atomic_lock.hpp"
+    #include "timed_guard.hpp"
     #include "disposable_object.hpp"
     #include "triangulation_earcut.hpp"
 

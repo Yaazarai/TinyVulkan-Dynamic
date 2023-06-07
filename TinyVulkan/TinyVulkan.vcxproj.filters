@@ -41,7 +41,7 @@
     <ClInclude Include="TinyVK.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="atomic_lock.hpp">
+    <ClInclude Include="timed_guard.hpp">
       <Filter>Header Files\Internal Dependencies</Filter>
     </ClInclude>
     <ClInclude Include="invoke_callback.hpp">

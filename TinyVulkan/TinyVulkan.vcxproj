@@ -158,7 +158,7 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="atomic_lock.hpp" />
+    <ClInclude Include="timed_guard.hpp" />
     <ClInclude Include="disposable_object.hpp" />
     <ClInclude Include="invoke_callback.hpp" />
     <ClInclude Include="images_qoi.h" />

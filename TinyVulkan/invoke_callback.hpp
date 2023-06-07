@@ -8,7 +8,7 @@
     #include <mutex>
     #include <utility>
     #include <type_traits>
-    #include "./atomic_lock.hpp"
+    #include "./timed_guard.hpp"
 
     template<typename... A>
     class callback {
@@ -42,28 +42,28 @@
     class invokable {
     protected:
         /// Resource lock for thread-safe accessibility.
-        atomic_mutex safety_lock;
+        std::timed_mutex safety_lock;
         /// Record of stored callbacks to invoke.
         std::vector<callback<A...>> callbacks;
 
     public:
         /// Adds a callback to this event, operator +=
         invokable<A...>& hook(const callback<A...> cb) {
-            atomic_lock g(safety_lock);
+            timed_guard g(safety_lock);
             callbacks.push_back(cb);
             return (*this);
         }
 
         /// Removes a callback from this event, operator -=
         invokable<A...>& unhook(const callback<A...> cb) {
-            atomic_lock g(safety_lock);
+            timed_guard g(safety_lock);
             std::erase_if(callbacks, [cb](callback<A...> c){ return cb.hash_code() == c.hash_code(); });
             return (*this);
         }
 
         /// Removes all registered callbacks and adds a new callback, operator =
         invokable<A...>& rehook(const callback<A...> cb) {
-            atomic_lock g(safety_lock);
+            timed_guard g(safety_lock);
             callbacks.clear();
             callbacks.push_back(cb);
             return (*this);
@@ -71,23 +71,23 @@
 
         /// Removes all registered callbacks.
         invokable<A...>& empty() {
-            atomic_lock g(safety_lock);
+            timed_guard g(safety_lock);
             callbacks.clear();
             return (*this);
         }
 
         /// Execute all registered callbacks, operator ()
         invokable<A...>& invoke(A... args) {
-            atomic_lock g(safety_lock);
+            timed_guard g(safety_lock);
             std::vector<callback<A...>> clonecb(callbacks);
-            g.ForceUnlock();
+            g.Unlock();
             for (callback<A...> cb : clonecb) cb.invoke(static_cast<A&&>(args)...);
             return (*this);
         }
 
         /// Execute all registered callbacks, operator ()
         invokable<A...>& invoke_blocking(A... args) {
-            atomic_lock g(safety_lock);
+            timed_guard g(safety_lock);
             for (callback<A...> cb : callbacks) cb.invoke(static_cast<A&&>(args)...);
             return (*this);
         }

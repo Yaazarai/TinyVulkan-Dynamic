@@ -106,7 +106,7 @@
 			}
 			
 		public:
-			atomic_mutex image_lock;
+			std::timed_mutex image_lock;
 
 			VmaAllocation memory = VK_NULL_HANDLE;
 			VkImage image = VK_NULL_HANDLE;

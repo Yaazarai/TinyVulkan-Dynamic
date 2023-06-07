@@ -50,6 +50,8 @@
 			}
 		
 		public:
+			std::timed_mutex buffer_lock;
+
 			TinyVkRenderDevice& renderDevice;
 			TinyVkGraphicsPipeline& graphicsPipeline;
 			TinyVkCommandPool& commandPool;

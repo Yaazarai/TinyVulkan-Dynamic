@@ -165,7 +165,7 @@
 			TinyVkRenderDevice& renderDevice;
 			TinyVkWindow& renderWindow;
 
-			atomic_mutex swapChainMutex;
+			std::timed_mutex swapChainMutex;
 			TinyVkSurfaceSupporter presentDetails;
 			VkSwapchainKHR swapChain = nullptr;
 			VkFormat imageFormat;
@@ -207,8 +207,8 @@
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
 			void OnFrameBufferResizeCallback(GLFWwindow* hwndWindow, int width, int height) {
-				atomic_lock swapChainLock(swapChainMutex);
-				if (!swapChainLock.AcquiredLock()) return;
+				timed_guard swapChainLock(swapChainMutex);
+				if (!swapChainLock.Acquired()) return;
 				if (hwndWindow != renderWindow.GetHandle()) return;
 
 				presentable = (width > 0 && height > 0);

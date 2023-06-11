@@ -4,6 +4,14 @@
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
+		struct TinyVkSwapChainDeletionFrame {
+			const std::vector<VkImageView> swapViews;
+			const VkSwapchainKHR swapChain;
+
+			TinyVkSwapChainDeletionFrame(VkSwapchainKHR swapChain, const std::vector<VkImageView> swapViews)
+			: swapChain(swapChain), swapViews(swapViews) {}
+		};
+		
 		/// <summary>SwapChain (screen buffering) description and layout for rendering to the window via TinyVkSwapChainRenderer.</summary>
 		class TinyVkSwapChain : public disposable {
 		private:
@@ -175,8 +183,8 @@
 			std::vector<VkImage> images;
 			std::vector<VkImageView> imageViews;
 
-			inline static invokable<int&, int&> onResizeFrameBuffer;
-			bool presentable;
+			inline static invokable<int, int> onResizeFrameBuffer;
+			std::atomic<bool> presentable;
 
 			~TinyVkSwapChain() { this->Dispose(); }
 
@@ -190,12 +198,11 @@
 			}
 
 			TinyVkSwapChain(TinyVkRenderDevice& renderDevice, TinyVkWindow& renderWindow, const TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE, TinyVkSurfaceSupporter presentDetails = TinyVkSurfaceSupporter(), VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage) {
+			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage), presentable(true) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 				renderWindow.onResizeFrameBuffer.hook(callback<GLFWwindow*, int, int>([this](GLFWwindow* w, int x, int y) { this->OnFrameBufferResizeCallback(w, x, y); }));
 
 				CreateSwapChain();
-				presentable = true;
 			}
 
 			TinyVkSwapChain operator=(const TinyVkSwapChain& swapChain) = delete;
@@ -207,19 +214,23 @@
 
 			/// <summary>[overridable] Notify the render engine that the window's frame buffer has been resized.</summary>
 			void OnFrameBufferResizeCallback(GLFWwindow* hwndWindow, int width, int height) {
-				timed_guard swapChainLock(swapChainMutex);
-				if (!swapChainLock.Acquired()) return;
 				if (hwndWindow != renderWindow.GetHandle()) return;
 
-				presentable = (width > 0 && height > 0);
-				if (presentable) {
-					VkSwapchainKHR oldSwapChain = swapChain;
+				if (width > 0 && height > 0) {
+					timed_guard<false> swapChainLock(swapChainMutex);
+					if (!swapChainLock.Acquired()) return;
+
+					vkDeviceWaitIdle(renderDevice.logicalDevice);
 
 					for (auto imageView : imageViews)
 						vkDestroyImageView(renderDevice.logicalDevice, imageView, nullptr);
-
+					
+					VkSwapchainKHR oldSwapChain = swapChain;
 					CreateSwapChain(width, height);
 					vkDestroySwapchainKHR(renderDevice.logicalDevice, oldSwapChain, nullptr);
+
+					presentable = true;
+					onResizeFrameBuffer.invoke(width, height);
 				}
 			}
 		};

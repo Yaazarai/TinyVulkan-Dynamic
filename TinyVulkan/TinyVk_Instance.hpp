@@ -17,7 +17,7 @@
 		}
 
 		VkResult vkCmdBeginRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
-			#if TVK_VALIDATION_LAYERS == VK_TRUE
+			#if TVK_VALIDATION_LAYERS
 				if (vkCmdBeginRenderingEXTKHR == VK_NULL_HANDLE)
 					throw std::runtime_error("TinyVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdBeginRenderingKHR");
 			#endif
@@ -27,7 +27,7 @@
 		}
 
 		VkResult vkCmdEndRenderingEKHR(VkInstance instance, VkCommandBuffer commandBuffer) {
-			#if TVK_VALIDATION_LAYERS == VK_TRUE
+			#if TVK_VALIDATION_LAYERS
 				if (vkCmdEndRenderingEXTKHR == VK_NULL_HANDLE)
 					throw std::runtime_error("TinyVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdEndRenderingKHR");
 			#endif
@@ -37,7 +37,7 @@
 		}
 
 		VkResult vkCmdPushDescriptorSetEKHR(VkInstance instance, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t set, uint32_t writeCount, const VkWriteDescriptorSet* pWriteSets) {
-			#if TVK_VALIDATION_LAYERS == VK_TRUE
+			#if TVK_VALIDATION_LAYERS
 				if (vkCmdPushDescriptorSetEXTKHR == VK_NULL_HANDLE)
 					throw std::runtime_error("TinyVulkan: Failed to load VK_KHR_dynamic_rendering EXT function: PFN_vkCmdPushDescriptorSetKHR");
 			#endif
@@ -102,19 +102,19 @@
 				createInfo.pApplicationInfo = &appInfo;
 
 				#if TVK_VALIDATION_LAYERS
-				if (!QueryValidationLayerSupport())
-					throw std::runtime_error("TinyVulkan: Failed to initialize validation layers!");
+					if (!QueryValidationLayerSupport())
+						throw std::runtime_error("TinyVulkan: Failed to initialize validation layers!");
 
-				VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-				debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-				debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-				debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-				debugCreateInfo.pfnUserCallback = DebugCallback;
-				debugCreateInfo.pUserData = nullptr;
+					VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+					debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+					debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+					debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+					debugCreateInfo.pfnUserCallback = DebugCallback;
+					debugCreateInfo.pUserData = nullptr;
 
-				createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-				createInfo.ppEnabledLayerNames = validationLayers.data();
-				createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+					createInfo.ppEnabledLayerNames = validationLayers.data();
+					createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 				#endif
 
 				std::vector<const char*> extensions(presentationExtensions);
@@ -129,14 +129,14 @@
 
 				#if TVK_VALIDATION_LAYERS
 					// CreateDebugUtilsMessenger requires the VkInstance, so it goes at the end.
-				if (CreateDebugUtilsMessengerEXT(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS)
-					throw std::runtime_error("TinyVulkan: Failed to set up debug messenger!");
+					if (CreateDebugUtilsMessengerEXT(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+						throw std::runtime_error("TinyVulkan: Failed to set up debug messenger!");
 
-				// Gimme all the extensions used by TinyVK.
-				for (const auto& extension : extensions)
-					std::cout << '\t' << extension << '\n';
+					// Gimme all the extensions used by TinyVK.
+					for (const auto& extension : extensions)
+						std::cout << '\t' << extension << '\n';
 
-				std::cout << "TinyVulkan: " << extensions.size() << " extensions supported\n";
+					std::cout << "TinyVulkan: " << extensions.size() << " extensions supported\n";
 				#endif
 			}
 
@@ -160,8 +160,8 @@
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 				
 				#ifdef TINYVK_AUTO_PRESENT_EXTENSIONS
-				for (auto str : TinyVkWindow::QueryRequiredExtensions(TVK_VALIDATION_LAYERS))
-					this->presentationExtensions.push_back(str);
+					for (auto str : TinyVkWindow::QueryRequiredExtensions(TVK_VALIDATION_LAYERS))
+						this->presentationExtensions.push_back(str);
 				#endif
 
 				CreateVkInstance(title);

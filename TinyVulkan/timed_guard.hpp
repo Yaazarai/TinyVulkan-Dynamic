@@ -16,7 +16,11 @@
 
 		~timed_guard() noexcept { Unlock(); }
 
-		explicit timed_guard(std::timed_mutex& lock) : lock(lock) { signal = (wait)? lock.try_lock_for(std::chrono::milliseconds(timeout)) : lock.try_lock(); }
+		explicit timed_guard(std::timed_mutex& lock) : lock(lock) {
+			if (wait) {
+				signal = lock.try_lock_for(std::chrono::milliseconds(timeout));
+			} else { lock.lock(); signal = true; }
+		}
 
 		timed_guard(const timed_guard&) = delete;
 

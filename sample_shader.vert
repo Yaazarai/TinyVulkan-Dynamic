@@ -11,6 +11,12 @@ layout( push_constant ) uniform constants {
   layout(offset = 0) mat4 transform;
 } world;
 
+// 
+// layout(binding = 0) uniform UniformBufferObject {
+//     mat4 transform;
+// } world;
+// 
+
 void main() {
     gl_Position = world.transform * vec4(position, 1.0);
     fragCoord = texcoord;

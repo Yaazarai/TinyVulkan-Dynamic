@@ -112,11 +112,5 @@
     <None Include="..\sample_shader.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\sample_shader_imageRenderer.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\sample_shader_imageRenderer.vert">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

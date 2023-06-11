@@ -355,8 +355,8 @@
 			std::vector<VkSemaphore> renderFinishedSemaphores;
 			std::vector<VkFence> inFlightFences;
 			std::vector<TinyVkImage*> optionalDepthImages;
-			size_t currentSyncFrame = 0; // Current Synchronized Frame (Ordered).
-			size_t currentSwapFrame = 0; // Current SwapChain Image Frame (Out of Order).
+			uint32_t currentSyncFrame = 0; // Current Synchronized Frame (Ordered).
+			uint32_t currentSwapFrame = 0; // Current SwapChain Image Frame (Out of Order).
 
 			void CreateImageSyncObjects() {
 				size_t count = static_cast<size_t>(swapChain.bufferingMode);
@@ -379,6 +379,79 @@
 				}
 			}
 
+			VkResult RendererAcquireImage() {
+				vkWaitForFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame], VK_TRUE, UINT64_MAX);
+				VkResult result = swapChain.AcquireNextImage(imageAvailableSemaphores[currentSyncFrame], VK_NULL_HANDLE, currentSwapFrame);
+				vkResetFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame]);
+				return result;
+			}
+
+			VkResult RendererExecuteEvents(VkCommandBuffer& cmdBuffer) {
+				cmdBuffer = rentBuffers[currentSyncFrame].first;
+				vkResetCommandBuffer(cmdBuffer, 0);
+
+				if (graphicsPipeline.DepthTestingIsEnabled()) {
+					TinyVkImage* depthImage = optionalDepthImages[currentSyncFrame];
+					if (depthImage->width < swapChain.imageExtent.width || depthImage->height < swapChain.imageExtent.height) {
+						depthImage->Disposable(false);
+						depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+					}
+				}
+
+				onRenderEvents.invoke(cmdBuffer);
+				return VK_SUCCESS;
+			}
+
+			VkResult RendererSubmitPresent(VkCommandBuffer cmdBuffer) {
+				VkSubmitInfo submitInfo{};
+				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+				VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentSyncFrame] };
+				VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+				submitInfo.waitSemaphoreCount = 1;
+				submitInfo.pWaitSemaphores = waitSemaphores;
+				submitInfo.pWaitDstStageMask = waitStages;
+				submitInfo.commandBufferCount = 1;
+				submitInfo.pCommandBuffers = &cmdBuffer;
+
+				VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentSyncFrame] };
+				submitInfo.signalSemaphoreCount = 1;
+				submitInfo.pSignalSemaphores = signalSemaphores;
+
+				if (vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, inFlightFences[currentSyncFrame]) != VK_SUCCESS)
+					throw std::runtime_error("TinyVulkan: Failed to submit draw command buffer!");
+
+				VkPresentInfoKHR presentInfo{};
+				presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+				presentInfo.waitSemaphoreCount = 1;
+				presentInfo.pWaitSemaphores = signalSemaphores;
+
+				VkSwapchainKHR swapChainList[]{ swapChain.swapChain };
+				presentInfo.swapchainCount = 1;
+				presentInfo.pSwapchains = swapChainList;
+				presentInfo.pImageIndices = &currentSwapFrame;
+
+				currentSyncFrame = (currentSyncFrame + 1) % static_cast<size_t>(swapChain.images.size());
+				return vkQueuePresentKHR(graphicsPipeline.presentQueue, &presentInfo);
+			}
+			
+			void RenderSwapChain() {
+				if (!swapChain.presentable) return;
+
+				VkResult result = VK_SUCCESS;
+				VkCommandBuffer cmdBuffer = nullptr;
+
+				if ((result = RendererAcquireImage()) == VK_SUCCESS)
+					if ((result = RendererExecuteEvents(cmdBuffer)) == VK_SUCCESS)
+						result = RendererSubmitPresent(cmdBuffer);
+
+				if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+					swapChain.presentable = false;
+					currentSyncFrame = 0;
+				} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+					throw std::runtime_error("TinyVulkan: Failed to acquire swap chain image or submit to draw queue!");
+			}
+		
 		public:
 			TinyVkRenderDevice& renderDevice;
 			TinyVkVMAllocator& memAlloc;
@@ -414,11 +487,12 @@
 			TinyVkSwapChainRenderer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& memAlloc, TinyVkCommandPool& commandPool, TinyVkSwapChain& swapChain, TinyVkGraphicsPipeline& graphicsPipeline)
 				: renderDevice(renderDevice), memAlloc(memAlloc), commandPool(commandPool), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
-				
-				#ifdef TVK_VALIDATION_LAYERS
-				int32_t bcount = commandPool.HasBuffersCount();
-				if (bcount < static_cast<int32_t>(swapChain.bufferingMode))
-					throw std::runtime_error("TinyVulkan: CommandPool has no available buffers for SwapChain rendering!");
+				swapChain.onResizeFrameBuffer.hook(callback<int, int>([this](int, int){ this->RenderSwapChain(); }));
+
+				#if TVK_VALIDATION_LAYERS
+					int32_t bcount = commandPool.HasBuffersCount();
+					if (bcount < static_cast<int32_t>(swapChain.bufferingMode))
+						throw std::runtime_error("TinyVulkan: CommandPool has no available buffers for SwapChain rendering!");
 				#endif
 
 				for (int32_t i = 0; i < static_cast<int32_t>(swapChain.bufferingMode); i++) {
@@ -615,79 +689,9 @@
 
 			/// <summary>Executes the registered onRenderEvents and presents them to the SwapChain(Window).</summary>
 			void RenderExecute() {
-				timed_guard swapChainLock(swapChain.swapChainMutex);
+				timed_guard<false> swapChainLock(swapChain.swapChainMutex);
 				if (!swapChainLock.Acquired()) return;
-
-				if (!swapChain.presentable) return;
-
-				vkWaitForFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame], VK_TRUE, UINT64_MAX);
-
-				uint32_t imageIndex;
-				VkResult result = swapChain.AcquireNextImage(imageAvailableSemaphores[currentSyncFrame], VK_NULL_HANDLE, imageIndex);
-				currentSwapFrame = imageIndex;
-
-				vkResetFences(renderDevice.logicalDevice, 1, &inFlightFences[currentSyncFrame]);
-
-				if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-					swapChain.presentable = false;
-					currentSyncFrame = 0;
-				} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-					throw std::runtime_error("TinyVulkan: Failed to acquire swap chain image!");
-
-				if (!swapChain.presentable) return;
-
-				int32_t rentIndex = -1;
-				VkCommandBuffer cmdBuffer = rentBuffers[currentSyncFrame].first;
-				vkResetCommandBuffer(cmdBuffer, 0);
-
-				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				if (graphicsPipeline.DepthTestingIsEnabled()) {
-					TinyVkImage* depthImage = optionalDepthImages[currentSyncFrame];
-					if (depthImage->width < swapChain.imageExtent.width || depthImage->height < swapChain.imageExtent.height) {
-						depthImage->Disposable(false);
-						depthImage->ReCreateImage(swapChain.imageExtent.width, swapChain.imageExtent.height, depthImage->isDepthImage, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT);
-					}
-				}
-
-				onRenderEvents.invoke(cmdBuffer);
-				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-				VkSubmitInfo submitInfo{};
-				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-				VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentSyncFrame] };
-				VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-				submitInfo.waitSemaphoreCount = 1;
-				submitInfo.pWaitSemaphores = waitSemaphores;
-				submitInfo.pWaitDstStageMask = waitStages;
-				submitInfo.commandBufferCount = 1;
-				submitInfo.pCommandBuffers = &cmdBuffer;
-
-				VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentSyncFrame] };
-				submitInfo.signalSemaphoreCount = 1;
-				submitInfo.pSignalSemaphores = signalSemaphores;
-
-				if (vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, inFlightFences[currentSyncFrame]) != VK_SUCCESS)
-					throw std::runtime_error("TinyVulkan: Failed to submit draw command buffer!");
-
-				VkPresentInfoKHR presentInfo{};
-				presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-				presentInfo.waitSemaphoreCount = 1;
-				presentInfo.pWaitSemaphores = signalSemaphores;
-
-				VkSwapchainKHR swapChainList[]{ swapChain.swapChain };
-				presentInfo.swapchainCount = 1;
-				presentInfo.pSwapchains = swapChainList;
-				presentInfo.pImageIndices = &imageIndex;
-
-				result = vkQueuePresentKHR(graphicsPipeline.presentQueue, &presentInfo);
-				currentSyncFrame = (currentSyncFrame + 1) % static_cast<size_t>(swapChain.images.size());
-
-				if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-					swapChain.presentable = false;
-					currentSyncFrame = 0;
-				} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-					throw std::runtime_error("TinyVulkan: Failed to acquire swap chain image!");
+				RenderSwapChain();
 			}
 		};
 	}

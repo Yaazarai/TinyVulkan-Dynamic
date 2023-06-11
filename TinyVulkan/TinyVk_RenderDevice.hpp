@@ -74,7 +74,7 @@
 				createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 				createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-				#ifdef TVK_VALIDATION_LAYERS
+				#if TVK_VALIDATION_LAYERS
 					createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 					createInfo.ppEnabledLayerNames = validationLayers.data();
 				#else
@@ -105,6 +105,21 @@
 
 				if (physicalDevice == nullptr)
 					throw std::runtime_error("TinyVulkan: Failed to find a suitable GPU!");
+				
+				#if TVK_VALIDATION_LAYERS
+					VkPhysicalDevicePushDescriptorPropertiesKHR pushDescriptorProps{};
+					pushDescriptorProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR;
+
+					VkPhysicalDeviceProperties2 deviceProperties{};
+					deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+					deviceProperties.pNext = &pushDescriptorProps;
+
+					vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
+
+					std::cout << "GPU Device Name: " << deviceProperties.properties.deviceName << std::endl;
+					std::cout << "Push Constant Memory Space: " << deviceProperties.properties.limits.maxPushConstantsSize << std::endl;
+					std::cout << "Push Descriptor Memory Space: " << pushDescriptorProps.maxPushDescriptors << std::endl;
+				#endif
 			}
 
 			/// <summary>Returns a Vector of suitable VkPhysicalDevices (GPU/iGPU).</summary>
@@ -187,9 +202,9 @@
 				for (const auto& extension : availableExtensions)
 					requiredExtensions.erase(extension.extensionName);
 
-				#ifdef TVK_VALIDATION_LAYERS
-				for (const auto& extension : requiredExtensions)
-					std::cout << "UNAVAILABLE EXTENSIONS: " << extension << std::endl;
+				#if TVK_VALIDATION_LAYERS
+					for (const auto& extension : requiredExtensions)
+						std::cout << "UNAVAILABLE EXTENSIONS: " << extension << std::endl;
 				#endif
 
 				return requiredExtensions.empty();

@@ -31,7 +31,6 @@
 			VKVMA_BUFFER_TYPE_UNIFORM,	/// For passing uniform/shader variable data to shaders.
 			VKVMA_BUFFER_TYPE_STAGING,	/// For tranfering CPU bound buffer data to the GPU.
 			VKVMA_BUFFER_TYPE_INDIRECT,	/// For writing VkIndirectCommand's to a buffer for Indirect drawing.
-			VKVMA_BUFFER_TYPE_BINDLESS  /// For passing per-indexed draw their instanced data (bindless uniform buffer).
 		};
 
 		class TinyVkBuffer : public disposable {

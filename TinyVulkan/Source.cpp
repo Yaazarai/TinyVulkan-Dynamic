@@ -1,8 +1,8 @@
 #include "./TinyVK.hpp"
 using namespace tinyvk;
 
-#define DEFAULT_VERTEX_SHADER "./sample_vert_imageRenderer.spv"
-#define DEFAULT_FRAGMENT_SHADER "./sample_frag_imageRenderer.spv"
+#define DEFAULT_VERTEX_SHADER "./sample_vert.spv"
+#define DEFAULT_FRAGMENT_SHADER "./sample_frag.spv"
 #define DEFAULT_COMMAND_POOLSIZE 20
 
 const std::vector<VkPhysicalDeviceType> rdeviceTypes = { VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU };
@@ -10,7 +10,8 @@ const TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE;
 const std::tuple<VkShaderStageFlagBits, std::string> vertexShader = { VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, DEFAULT_VERTEX_SHADER };
 const std::tuple<VkShaderStageFlagBits, std::string> fragmentShader = { VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, DEFAULT_FRAGMENT_SHADER };
 const TinyVkVertexDescription vertexDescription = TinyVkVertex::GetVertexDescription();
-const std::vector<VkPushConstantRange>& pushConstantRanges = { TinyVkGraphicsPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
+const std::vector<VkPushConstantRange> pushConstantRanges = { TinyVkGraphicsPipeline::SelectPushConstantRange(sizeof(glm::mat4), VK_SHADER_STAGE_VERTEX_BIT) };
+const std::vector<VkDescriptorSetLayoutBinding> pushDescriptorLayouts = { TinyVkGraphicsPipeline::SelectPushDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1) };
 
 int32_t TINYVULKAN_WINDOWMAIN {
     /// 
@@ -23,13 +24,14 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// You can also have as many of each as you'd like if for example you needed a Window/Swapchain and two separate rendering pipelines each with their own set of shaders, you can do that too.
     /// 
     
-    TinyVkWindow window("TINYVK WINDOW", 1440, 810, true, true);
+    TinyVkWindow window("TINYVK WINDOW", 1440, 810, true, false);
 	TinyVkInstance instance(TinyVkWindow::QueryRequiredExtensions(TVK_VALIDATION_LAYERS), "TINYVK");
 	TinyVkRenderDevice rdevice(instance, window.CreateWindowSurface(instance.GetInstance()), rdeviceTypes);
 	TinyVkCommandPool commandPool(rdevice, static_cast<size_t>(bufferingMode) + DEFAULT_COMMAND_POOLSIZE);
 	TinyVkSwapChain swapChain(rdevice, window, bufferingMode);
 	TinyVkShaderStages shaders(rdevice, { vertexShader, fragmentShader });
-	TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, {}, pushConstantRanges, true, TinyVkGraphicsPipeline::GetBlendDescription(), VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
+    TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, {}, pushConstantRanges, true, TinyVkGraphicsPipeline::GetBlendDescription(), VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
+    //TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, pushDescriptorLayouts, {}, true, TinyVkGraphicsPipeline::GetBlendDescription(), VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
     TinyVkVMAllocator vmAlloc(instance, rdevice);
     TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, commandPool, swapChain, renderPipe);
 
@@ -56,7 +58,9 @@ int32_t TINYVULKAN_WINDOWMAIN {
     vbuffer.StageBufferData(triangles.data(), triangles.size() * sizeof(TinyVkVertex), 0, 0);
     TinyVkBuffer ibuffer(rdevice, renderPipe, commandPool, vmAlloc, indices.size() * sizeof(indices[0]), TinyVkBufferType::VKVMA_BUFFER_TYPE_INDEX);
     ibuffer.StageBufferData(indices.data(), indices.size() * sizeof(indices[0]), 0, 0);
-
+    TinyVkBuffer projection1(rdevice, renderPipe, commandPool, vmAlloc, sizeof(glm::mat4), TinyVkBufferType::VKVMA_BUFFER_TYPE_UNIFORM);
+    TinyVkBuffer projection2(rdevice, renderPipe, commandPool, vmAlloc, sizeof(glm::mat4), TinyVkBufferType::VKVMA_BUFFER_TYPE_UNIFORM);
+    TinyVkBuffer projection3(rdevice, renderPipe, commandPool, vmAlloc, sizeof(glm::mat4), TinyVkBufferType::VKVMA_BUFFER_TYPE_UNIFORM);
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,25 +73,32 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// 
 
     struct SwapFrame {
-        TinyVkBuffer& ibuffer, &vbuffer;
-        SwapFrame(TinyVkBuffer& ibuffer, TinyVkBuffer& vbuffer) : ibuffer(ibuffer), vbuffer(vbuffer) {}
+        TinyVkBuffer &projection, &ibuffer, &vbuffer;
+        SwapFrame(TinyVkBuffer& projection, TinyVkBuffer& ibuffer, TinyVkBuffer& vbuffer) : projection(projection), ibuffer(ibuffer), vbuffer(vbuffer) {}
     };
+
     TinyVkResourceQueue<SwapFrame,static_cast<size_t>(bufferingMode)> queue(
-        { SwapFrame(ibuffer,vbuffer), SwapFrame(ibuffer,vbuffer), SwapFrame(ibuffer,vbuffer) },
-        callback<size_t&>([&swapRenderer](size_t& frameIndex){ frameIndex = swapRenderer.GetSyncronizedFrameIndex(); }),
+        {
+            SwapFrame(projection1,ibuffer,vbuffer),
+            SwapFrame(projection2,ibuffer,vbuffer),
+            SwapFrame(projection3,ibuffer,vbuffer)
+        }, callback<size_t&>([&swapRenderer](size_t& frameIndex){ frameIndex = swapRenderer.GetSyncronizedFrameIndex(); }),
         callback<SwapFrame&>([](SwapFrame& resource){})
     );
 
     swapRenderer.onRenderEvents.hook(callback<VkCommandBuffer>([&instance, &window, &swapChain, &swapRenderer, &renderPipe, &queue, &clearColor, &depthStencil, &offsets](VkCommandBuffer commandBuffer) {
         auto frame = queue.GetFrameResource();
-        TinyVkBuffer& ibuffer = frame.ibuffer;
-        TinyVkBuffer& vbuffer = frame.vbuffer;
-
         swapRenderer.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
-        glm::mat4 projection = TinyVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
-        swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &projection);
-        swapRenderer.CmdBindGeometry(commandBuffer, &vbuffer.buffer, ibuffer.buffer, offsets, offsets[0]);
-        swapRenderer.CmdDrawGeometry(commandBuffer, true, 1, 0, static_cast<uint32_t>(ibuffer.size) / sizeof(uint32_t), 0, 0);
+        
+        glm::mat4 camera = TinyVkMath::Project2D(window.GetWidth(), window.GetHeight(), 0.0, 0.0, 1.0, 0.0);
+        //frame.projection.StageBufferData(&camera, sizeof(glm::mat4), 0, 0);
+        //VkDescriptorBufferInfo cameraDescriptorInfo = frame.projection.GetBufferDescriptor();
+        //VkWriteDescriptorSet cameraDescriptor = renderPipe.SelectWriteBufferDescriptor(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { &cameraDescriptorInfo });
+        //swapRenderer.PushDescriptorSet(commandBuffer, { cameraDescriptor });
+        swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &camera);
+
+        swapRenderer.CmdBindGeometry(commandBuffer, &frame.vbuffer.buffer, frame.ibuffer.buffer, offsets, offsets[0]);
+        swapRenderer.CmdDrawGeometry(commandBuffer, true, 1, 0, static_cast<uint32_t>(frame.ibuffer.size) / sizeof(uint32_t), 0, 0);
         swapRenderer.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
     }));
 

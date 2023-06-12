@@ -79,7 +79,7 @@
                 return std::fmod((360.0f + std::fmod(a, 360.0f)), 360.0f);
                 #else
                 constexpr glm::float32 pi2 = glm::pi<glm::float32>() * 2.0f;
-                a = std::fmod((pi2 + std::fmod(a, pi2)), pi2);
+                return std::fmod((pi2 + std::fmod(a, pi2)), pi2);
                 #endif
             }
 

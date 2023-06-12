@@ -112,5 +112,8 @@
     <None Include="..\sample_shader.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\compile.bat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

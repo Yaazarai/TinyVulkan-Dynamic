@@ -49,21 +49,21 @@
     public:
         /// Adds a callback to this event, operator +=
         invokable<A...>& hook(const callback<A...> cb) {
-            timed_guard g(safety_lock);
+            timed_guard<false> g(safety_lock);
             callbacks.push_back(cb);
             return (*this);
         }
 
         /// Removes a callback from this event, operator -=
         invokable<A...>& unhook(const callback<A...> cb) {
-            timed_guard g(safety_lock);
+            timed_guard<false> g(safety_lock);
             std::erase_if(callbacks, [cb](callback<A...> c){ return cb.hash_code() == c.hash_code(); });
             return (*this);
         }
 
         /// Removes all registered callbacks and adds a new callback, operator =
         invokable<A...>& rehook(const callback<A...> cb) {
-            timed_guard g(safety_lock);
+            timed_guard<false> g(safety_lock);
             callbacks.clear();
             callbacks.push_back(cb);
             return (*this);
@@ -71,14 +71,14 @@
 
         /// Removes all registered callbacks.
         invokable<A...>& empty() {
-            timed_guard g(safety_lock);
+            timed_guard<false> g(safety_lock);
             callbacks.clear();
             return (*this);
         }
 
         /// Execute all registered callbacks, operator ()
         invokable<A...>& invoke(A... args) {
-            timed_guard g(safety_lock);
+            timed_guard<false> g(safety_lock);
             std::vector<callback<A...>> clonecb(callbacks);
             g.Unlock();
             for (callback<A...> cb : clonecb) cb.invoke(static_cast<A&&>(args)...);
@@ -87,7 +87,7 @@
 
         /// Execute all registered callbacks, operator ()
         invokable<A...>& invoke_blocking(A... args) {
-            timed_guard g(safety_lock);
+            timed_guard<false> g(safety_lock);
             for (callback<A...> cb : callbacks) cb.invoke(static_cast<A&&>(args)...);
             return (*this);
         }

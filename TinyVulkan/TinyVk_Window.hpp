@@ -264,11 +264,11 @@
 			virtual int GetYpos() { return hwndYpos; }
 
 			/// <summary>Executes functions in the main window loop (w/ ref to bool to exit loop as needed).</summary>
-			invokable<std::atomic_bool&> onWhileMain;
+			invokable<std::atomic<bool>&> onWhileMain;
 
 			/// <summary>[overridable] Executes the main window loop.</summary>
 			virtual void WhileMain(const bool waitOrPollEvents = true) {
-				std::atomic_bool shouldRun = true;
+				std::atomic<bool> shouldRun = true;
 
 				while (shouldRun) {
 					onWhileMain.invoke(shouldRun);

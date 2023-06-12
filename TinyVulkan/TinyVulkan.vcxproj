@@ -182,6 +182,7 @@
     <ClInclude Include="triangulation_earcut.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\compile.bat" />
     <None Include="..\sample_shader.frag" />
     <None Include="..\sample_shader.vert" />
   </ItemGroup>

@@ -119,9 +119,9 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// Finally when the render thread closes with the window, join and free the render thread.
     /// 
 
-    //std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
+    std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
     window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
     window.WhileMain(false);
-    //mythread.join();
+    mythread.join();
     return VK_SUCCESS;
 };

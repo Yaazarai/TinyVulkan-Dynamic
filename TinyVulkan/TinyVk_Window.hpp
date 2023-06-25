@@ -117,8 +117,6 @@
 			std::string title;
 			GLFWwindow* hwndWindow;
 
-			invokable<GLFWwindow*, int, int> frameBufferResized;
-			invokable<GLFWwindow*, int, int> windowPositionMoved;
 			inline static invokable<GLFWwindow*, int, int> onWindowResized;
 			inline static invokable<GLFWwindow*, int, int> onWindowPositionMoved;
 
@@ -272,6 +270,8 @@
 
 				while (shouldRun) {
 					onWhileMain.invoke(shouldRun);
+
+					if (!shouldRun) break;
 					shouldRun = (waitOrPollEvents)? !ShouldCloseWaitEvents() : !ShouldClosePollEvents();
 				}
 			}

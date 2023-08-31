@@ -4,14 +4,6 @@
 	#include "./TinyVK.hpp"
 
 	namespace TINYVULKAN_NAMESPACE {
-		struct TinyVkSwapChainDeletionFrame {
-			const std::vector<VkImageView> swapViews;
-			const VkSwapchainKHR swapChain;
-
-			TinyVkSwapChainDeletionFrame(VkSwapchainKHR swapChain, const std::vector<VkImageView> swapViews)
-			: swapChain(swapChain), swapViews(swapViews) {}
-		};
-		
 		/// <summary>SwapChain (screen buffering) description and layout for rendering to the window via TinyVkSwapChainRenderer.</summary>
 		class TinyVkSwapChain : public disposable {
 		private:

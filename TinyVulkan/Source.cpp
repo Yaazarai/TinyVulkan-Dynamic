@@ -95,6 +95,10 @@ int32_t TINYVULKAN_WINDOWMAIN {
         offsetx = glm::sin(glm::radians(static_cast<glm::float32>(angle))) * 64;
         offsety = glm::cos(glm::radians(static_cast<glm::float32>(angle))) * 64;
         glm::mat4 camera = TinyVkMath::Project2D(window.GetWidth(), window.GetHeight(), offsetx, offsety, 1.0, 0.0);
+        //std::cout << camera[0][0] << ", " << camera[1][0] << ", " << camera[2][0] << ", " << camera[3][0] << ", " << std::endl;
+        //std::cout << camera[0][1] << ", " << camera[1][1] << ", " << camera[2][1] << ", " << camera[3][1] << ", " << std::endl;
+        //std::cout << camera[0][2] << ", " << camera[1][2] << ", " << camera[2][2] << ", " << camera[3][2] << ", " << std::endl;
+        //std::cout << camera[0][3] << ", " << camera[1][3] << ", " << camera[2][3] << ", " << camera[3][3] << ", " << std::endl;
         frame.projection.StageBufferData(&camera, sizeof(glm::mat4), 0, 0);
         VkDescriptorBufferInfo cameraDescriptorInfo = frame.projection.GetBufferDescriptor();
         VkWriteDescriptorSet cameraDescriptor = renderPipe.SelectWriteBufferDescriptor(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { &cameraDescriptorInfo });
@@ -102,7 +106,8 @@ int32_t TINYVULKAN_WINDOWMAIN {
         //swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &camera);
 
         swapRenderer.CmdBindGeometry(commandBuffer, &frame.vbuffer.buffer, frame.ibuffer.buffer, offsets, offsets[0]);
-        swapRenderer.CmdDrawGeometry(commandBuffer, true, 1, 0, static_cast<uint32_t>(frame.ibuffer.size) / sizeof(uint32_t), 0, 0);
+        swapRenderer.CmdDrawGeometry(commandBuffer, true, 1, 0, 6, 0, 0);
+        
         swapRenderer.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
 
         angle += 1.25;
@@ -120,7 +125,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// 
 
     std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
-    window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
+    //window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
     window.WhileMain(false);
     mythread.join();
     return VK_SUCCESS;

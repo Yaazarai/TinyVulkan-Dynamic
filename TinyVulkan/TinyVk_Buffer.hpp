@@ -100,6 +100,8 @@
 				}
 			}
 
+			TinyVkBuffer operator=(const TinyVkBuffer& buffer) = delete;
+
 			/// <summary>Copies data from CPU accessible memory to GPU accessible memory.</summary>
 			void StageBufferData(void* data, VkDeviceSize dataSize, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
 				TinyVkBuffer stagingBuffer = TinyVkBuffer(renderDevice, graphicsPipeline, commandPool, vmAlloc, dataSize, TinyVkBufferType::VKVMA_BUFFER_TYPE_STAGING);

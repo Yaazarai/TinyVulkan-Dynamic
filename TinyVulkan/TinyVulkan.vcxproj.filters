@@ -104,6 +104,9 @@
     <ClInclude Include="TinyVk_ResourceQueue.hpp">
       <Filter>Header Files\TinyVulkan-Lib\TinyVulkan Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="vk_mem_alloc.hpp">
+      <Filter>Header Files\Internal Dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\sample_shader.frag">

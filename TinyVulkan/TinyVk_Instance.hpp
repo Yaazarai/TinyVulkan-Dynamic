@@ -70,8 +70,10 @@
 				std::vector<VkLayerProperties> availableLayers(layerCount);
 				vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
+				#if TVK_VALIDATION_LAYERS
 				for (const auto& layerProperties : availableLayers)
 					std::cout << layerProperties.layerName << std::endl;
+				#endif
 
 				for (const std::string layerName : validationLayers) {
 					bool layerFound = false;

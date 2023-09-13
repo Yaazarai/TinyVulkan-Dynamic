@@ -145,6 +145,8 @@
 				ReCreateImage(width, height, isDepthImage, format, layout, addressingMode, aspectFlags);
 			}
 
+			TinyVkImage operator=(const TinyVkImage& image) = delete;
+
 			/// <summary>Recreates this TinyVkImage using a new layout/format (don't forget to call image.Disposable(bool waitIdle) to dispose of the previous image first.</summary>
 			void ReCreateImage(VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, TinyVkImageLayout layout = TINYVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT) {
 				VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
@@ -158,7 +160,10 @@
 				imgCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 				imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 				imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-				
+				currentLayout = TINYVK_UNDEFINED;
+				this->width = width;
+				this->height = height;
+
 				if (!isDepthImage) {
 					imgCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 				} else {

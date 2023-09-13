@@ -40,7 +40,7 @@
 				CreateLogicalDevice();
 			}
 
-			TinyVkRenderDevice operator=(const TinyVkRenderDevice& inst) = delete;
+			TinyVkRenderDevice operator=(const TinyVkRenderDevice& rdevice) = delete;
 
 			#pragma region PHYSICAL_LOGICAL_DEVICES
 

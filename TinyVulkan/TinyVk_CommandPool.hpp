@@ -9,9 +9,6 @@
 		private:
 			VkCommandPool commandPool;
 			size_t bufferCount;
-			
-			std::vector<VkCommandBuffer> commandBuffers;
-			std::vector<bool> rentQueue;
 
 			void CreateCommandPool() {
 				VkCommandPoolCreateInfo poolInfo{};
@@ -46,6 +43,8 @@
 
 		public:
 			TinyVkRenderDevice& renderDevice;
+			std::vector<VkCommandBuffer> commandBuffers;
+			std::vector<bool> rentQueue;
 
 			~TinyVkCommandPool() { this->Dispose(); }
 
@@ -92,11 +91,14 @@
 			}
 
 			/// <summary>Reserves a VkCommandBuffer for use and returns the VkCommandBuffer and it's ID (used for returning to the pool).</summary>
-			std::pair<VkCommandBuffer,int32_t> LeaseBuffer() {
+			std::pair<VkCommandBuffer,int32_t> LeaseBuffer(bool resetCmdBuffer = false) {
 				for (int32_t i = 0; i < rentQueue.size(); i++)
 					if (rentQueue[i] == false) {
 						rentQueue[i] = true;
-						vkResetCommandBuffer(commandBuffers[i], 0);
+						
+						if (resetCmdBuffer)
+							vkResetCommandBuffer(commandBuffers[i], 0);
+
 						return std::pair(commandBuffers[i], i);
 					}
 
@@ -110,6 +112,13 @@
 					throw std::runtime_error("TinyVulkan: Failed to return command buffer!");
 
 				rentQueue[bufferIndexPair.second] = false;
+			}
+
+			void ReturnAllBuffers(bool resetCmdPool = false) {
+				if (resetCmdPool) vkResetCommandPool(renderDevice.logicalDevice, commandPool, 0);
+
+				for(size_t i = 0; i < rentQueue.size(); i++)
+					rentQueue[i] = false;
 			}
 		};
 	}

@@ -222,7 +222,7 @@
 					vkDestroySwapchainKHR(renderDevice.logicalDevice, oldSwapChain, nullptr);
 
 					presentable = true;
-					onResizeFrameBuffer.invoke(width, height);
+					onResizeFrameBuffer.invoke(imageExtent.width, imageExtent.height);
 				}
 			}
 		};

@@ -80,7 +80,7 @@
     #define VMA_DEBUG_GLOBAL_MUTEX VK_TRUE
     #define VMA_USE_STL_CONTAINERS VK_TRUE
     #define VMA_RECORDING_ENABLED TVK_VALIDATION_LAYERS
-    #include <vma/vk_mem_alloc.h>
+    #include "./vk_mem_alloc.hpp"
 
     #define GLM_FORCE_RADIANS
     #define GLM_FORCE_LEFT_HANDED

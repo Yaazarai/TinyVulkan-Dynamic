@@ -29,7 +29,7 @@
 				shaderStageInfo.module = shaderModule;
 				shaderStageInfo.pName = "main";
 
-				#ifdef _DEBUG
+				#if TVK_VALIDATION_LAYERS
 				std::cout << "TinyVulkan: Loading Shader @ " << path << std::endl;
 				#endif
 

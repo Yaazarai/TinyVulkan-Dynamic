@@ -27,13 +27,13 @@ int32_t TINYVULKAN_WINDOWMAIN {
     TinyVkWindow window("TINYVK WINDOW", 1440, 810, true, false);
 	TinyVkInstance instance(TinyVkWindow::QueryRequiredExtensions(TVK_VALIDATION_LAYERS), "TINYVK");
 	TinyVkRenderDevice rdevice(instance, window.CreateWindowSurface(instance.GetInstance()), rdeviceTypes);
-	TinyVkCommandPool commandPool(rdevice, static_cast<size_t>(bufferingMode) + DEFAULT_COMMAND_POOLSIZE);
+	TinyVkCommandPool commandPool(rdevice, DEFAULT_COMMAND_POOLSIZE);
 	TinyVkSwapChain swapChain(rdevice, window, bufferingMode);
 	TinyVkShaderStages shaders(rdevice, { vertexShader, fragmentShader });
     //TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, {}, pushConstantRanges, true, TinyVkGraphicsPipeline::GetBlendDescription(), VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
     TinyVkGraphicsPipeline renderPipe(rdevice, swapChain.imageFormat, shaders, vertexDescription, pushDescriptorLayouts, {}, true, TinyVkGraphicsPipeline::GetBlendDescription(), VKCOMP_RGBA, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL);
     TinyVkVMAllocator vmAlloc(instance, rdevice);
-    TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, commandPool, swapChain, renderPipe);
+    TinyVkSwapChainRenderer swapRenderer(rdevice, vmAlloc, swapChain, renderPipe);
 
     VkClearValue clearColor{ .color = { 0.0, 0.0, 0.0, 0.5f } };
     VkClearValue depthStencil{ .depthStencil = { 1.0f, 0 } };
@@ -87,9 +87,11 @@ int32_t TINYVULKAN_WINDOWMAIN {
     );
 
     int angle = 0;
-    swapRenderer.onRenderEvents.hook(callback<VkCommandBuffer>([&angle, &instance, &window, &swapChain, &swapRenderer, &renderPipe, &queue, &clearColor, &depthStencil, &offsets](VkCommandBuffer commandBuffer) {
+    swapRenderer.onRenderEvents.hook(callback<TinyVkCommandPool&>([&angle, &instance, &window, &swapChain, &swapRenderer, &renderPipe, &queue, &clearColor, &depthStencil, &offsets](TinyVkCommandPool& commandPool) {
         auto frame = queue.GetFrameResource();
-        swapRenderer.BeginRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
+
+        auto commandBuffer = commandPool.LeaseBuffer();
+        swapRenderer.BeginRecordCmdBuffer(commandBuffer.first, clearColor, depthStencil);
         
         int offsetx, offsety;
         offsetx = glm::sin(glm::radians(static_cast<glm::float32>(angle))) * 64;
@@ -102,13 +104,12 @@ int32_t TINYVULKAN_WINDOWMAIN {
         frame.projection.StageBufferData(&camera, sizeof(glm::mat4), 0, 0);
         VkDescriptorBufferInfo cameraDescriptorInfo = frame.projection.GetBufferDescriptor();
         VkWriteDescriptorSet cameraDescriptor = renderPipe.SelectWriteBufferDescriptor(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { &cameraDescriptorInfo });
-        swapRenderer.PushDescriptorSet(commandBuffer, { cameraDescriptor });
+        swapRenderer.PushDescriptorSet(commandBuffer.first, { cameraDescriptor });
         //swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &camera);
 
-        swapRenderer.CmdBindGeometry(commandBuffer, &frame.vbuffer.buffer, frame.ibuffer.buffer, offsets, offsets[0]);
-        swapRenderer.CmdDrawGeometry(commandBuffer, true, 1, 0, 6, 0, 0);
-        
-        swapRenderer.EndRecordCmdBuffer(commandBuffer, swapChain.imageExtent, clearColor, depthStencil);
+        swapRenderer.CmdBindGeometry(commandBuffer.first, &frame.vbuffer.buffer, frame.ibuffer.buffer, offsets, offsets[0]);
+        swapRenderer.CmdDrawGeometry(commandBuffer.first, true, 1, 0, 6, 0, 0);
+        swapRenderer.EndRecordCmdBuffer(commandBuffer.first, clearColor, depthStencil);
 
         angle += 1.25;
     }));
@@ -124,9 +125,9 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// Finally when the render thread closes with the window, join and free the render thread.
     /// 
 
-    std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
-    //window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
+    //std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
+    window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
     window.WhileMain(false);
-    mythread.join();
+    //mythread.join();
     return VK_SUCCESS;
 };

@@ -65,6 +65,7 @@
 					vkDestroyShaderModule(renderDevice.logicalDevice, shaderModule, nullptr);
 			}
 
+			/// <summary>Creates a shader stage pipeline for a specific graphics pipeline and imports the compiled shaders.</summary>
 			TinyVkShaderStages(TinyVkRenderDevice& renderDevice, const std::vector<std::tuple<VkShaderStageFlagBits, std::string>> shaders) : renderDevice(renderDevice), shaders(shaders) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 

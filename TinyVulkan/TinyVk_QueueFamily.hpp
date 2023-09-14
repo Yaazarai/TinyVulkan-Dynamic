@@ -22,6 +22,12 @@
 			/// <summary>Returns true/false if this is a complete graphics and present queue family pair.</summary>
 			bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 
+			/// <summary>Returns true/false if this is a complete graphics queue family.</summary>
+			bool HasGraphicsFamily() { return graphicsFamily.has_value(); }
+			
+			/// <summary>Returns true/false if this is a complete present queue family.</summary>
+			bool HasPresentFamily() { return presentFamily.has_value(); }
+
 			/// <summary>Returns info about the VkPhysicalDevice graphics/present queue families. If no surface provided, auto checks for Win32 surface support.</summary>
 			inline static TinyVkQueueFamily FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface = nullptr) {
 				TinyVkQueueFamily indices;
@@ -34,16 +40,20 @@
 
 				for (int i = 0; i < queueFamilies.size(); i++) {
 					const auto& queueFamily = queueFamilies[i];
-					if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+					if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 						indices.graphicsFamily = i;
+						if (surface == nullptr) break;
+					}
 
-					VkBool32 presentSupport = false;
-					vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+					if (surface != nullptr) {
+						VkBool32 presentSupport = false;
+						vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
-					if (presentSupport)
-						indices.presentFamily = i;
+						if (presentSupport)
+							indices.presentFamily = i;
 
-					if (indices.IsComplete()) break;
+						if (indices.IsComplete()) break;
+					}
 				}
 
 				return indices;

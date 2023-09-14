@@ -33,6 +33,7 @@
 			VKVMA_BUFFER_TYPE_INDIRECT,	/// For writing VkIndirectCommand's to a buffer for Indirect drawing.
 		};
 
+		/// <summary>GPU device Buffer for sending data to the render (GPU) device.</summary>
 		class TinyVkBuffer : public disposable {
 		private:
 			void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
@@ -69,6 +70,7 @@
 				vmaDestroyBuffer(vmAlloc.GetAllocator(), buffer, memory);
 			}
 
+			/// <summary>Creates a VkBuffer of the specified size in bytes with manually-set VMA memory allocation properties.</summary>
 			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkGraphicsPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags)
 			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
@@ -76,6 +78,7 @@
 				CreateBuffer(size, usage, flags);
 			}
 
+			/// <summary>Creates a VkBuffer of the specified size in bytes with auto-set memory allocation properties by TinyVkBufferType.</summary>
 			TinyVkBuffer(TinyVkRenderDevice& renderDevice, TinyVkGraphicsPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize dataSize, TinyVkBufferType type)
 			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), size(dataSize) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));

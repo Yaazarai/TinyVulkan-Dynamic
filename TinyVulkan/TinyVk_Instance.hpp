@@ -158,6 +158,7 @@
 				vkDestroyInstance(instance, nullptr);
 			}
 
+			/// <summary>Initiates the Vulkan subsystem with the required instance/presentation extensions.</summary>
 			TinyVkInstance(const std::vector<const char*> presentationExtensions, const std::string title) : presentationExtensions(presentationExtensions) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 				

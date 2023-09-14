@@ -23,6 +23,7 @@
 			callback<T&> destructorCallback;
 			~TinyVkResourceQueue() { this->Dispose(); }
 
+			/// <summary>Creates a resource queue which returns an instance of type T at an frame index I for swapchain rendering.</summary>
 			TinyVkResourceQueue(std::array<T, S> resources, callback<size_t&> indexCallback, callback<T&> destructor)
 			: resourceQueue(resources), indexCallback(indexCallback), destructorCallback(destructor) {}
 

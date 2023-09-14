@@ -189,6 +189,7 @@
 				vkDestroySwapchainKHR(renderDevice.logicalDevice, swapChain, nullptr);
 			}
 
+			/// <summary>Creates the swapchain and buffering images for presenting to the screen.</summary>
 			TinyVkSwapChain(TinyVkRenderDevice& renderDevice, TinyVkWindow& renderWindow, const TinyVkBufferingMode bufferingMode = TinyVkBufferingMode::TRIPLE, TinyVkSurfaceSupporter presentDetails = TinyVkSurfaceSupporter(), VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			: renderDevice(renderDevice), renderWindow(renderWindow), bufferingMode(bufferingMode), presentDetails(presentDetails), imageUsage(imageUsage), presentable(true) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));

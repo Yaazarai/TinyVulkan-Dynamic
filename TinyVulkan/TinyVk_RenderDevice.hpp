@@ -33,6 +33,7 @@
 				vkDestroySurfaceKHR(instance.instance, presentationSurface, nullptr);
 			}
 
+			/// <summary>Creates a logical device to communicate with the host graphics hardware. Headless mode with presentSurface = nullptr</summary>
 			TinyVkRenderDevice(TinyVkInstance& instance, VkSurfaceKHR presentSurface, const std::vector<VkPhysicalDeviceType> pTypes) : instance(instance), presentationSurface(presentSurface), physicalDeviceTypes(pTypes) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
@@ -132,7 +133,13 @@
 
 				std::vector<VkPhysicalDevice> suitableDevices(deviceCount);
 				vkEnumeratePhysicalDevices(instance.instance, &deviceCount, suitableDevices.data());
-				std::erase_if(suitableDevices, [this](VkPhysicalDevice device) { return !QueryDeviceSuitability(device); });
+				std::erase_if(suitableDevices, [this](VkPhysicalDevice device) {
+					if (this->presentationSurface != nullptr) {
+						return !QueryDeviceSuitability(device);
+					} else {
+						return !QueryDeviceSuitabilityHeadless(device);
+					}
+				});
 				return suitableDevices;
 			}
 
@@ -174,7 +181,7 @@
 				bool supportsExtensions = QueryDeviceExtensionSupport(device);
 
 				bool swapChainAdequate = false;
-				if (supportsExtensions) {
+				if (presentationSurface != nullptr && supportsExtensions) {
 					TinyVkSwapChainSupporter swapChainSupport = QuerySwapChainSupport(device);
 					swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 				}
@@ -186,8 +193,29 @@
 						break;
 					}
 
-				return indices.IsComplete() && hasType && supportsExtensions && swapChainAdequate
-					&& deviceFeatures.features.multiViewport && deviceFeatures.features.multiDrawIndirect;
+				return indices.IsComplete() && swapChainAdequate && hasType && supportsExtensions && deviceFeatures.features.multiViewport && deviceFeatures.features.multiDrawIndirect;
+			}
+
+			/// <summary>Returns BOOL(true/false) if a VkPhysicalDevice (GPU/iGPU) is suitable for use.</summary>
+			bool QueryDeviceSuitabilityHeadless(VkPhysicalDevice device) {
+				VkPhysicalDeviceProperties2 deviceProperties {};
+				deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+				vkGetPhysicalDeviceProperties2(device, &deviceProperties);
+				
+				VkPhysicalDeviceFeatures2 deviceFeatures {};
+				deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+				vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
+				
+				TinyVkQueueFamily indices = TinyVkQueueFamily::FindQueueFamilies(device, presentationSurface);
+
+				bool hasType = false;
+				for (auto type : physicalDeviceTypes)
+					if (deviceProperties.properties.deviceType == type) {
+						hasType = true;
+						break;
+					}
+
+				return indices.graphicsFamily.has_value() && hasType && deviceFeatures.features.multiViewport && deviceFeatures.features.multiDrawIndirect;
 			}
 
 			/// <summary>Returns BOOL(true/false) if the VkPhysicalDevice (GPU/iGPU) supports extensions.</summary>

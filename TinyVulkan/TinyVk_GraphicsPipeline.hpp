@@ -195,7 +195,9 @@
 
 				TinyVkQueueFamily indices = TinyVkQueueFamily::FindQueueFamilies(renderDevice.physicalDevice, renderDevice.presentationSurface);
 				vkGetDeviceQueue(renderDevice.logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
-				vkGetDeviceQueue(renderDevice.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
+				
+				if (renderDevice.presentationSurface != nullptr)
+					vkGetDeviceQueue(renderDevice.logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 
 				CreateGraphicsPipeline();
 			}

@@ -28,23 +28,28 @@
 
 		class TinyVkRendererInterface {
 		public:
+			/// <summary>Alias call for easy-calls to: vkCmdBindVertexBuffers + vkCmdBindIndexBuffer.</summary>
 			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, const VkBuffer* vertexBuffers, const VkBuffer indexBuffer, const VkDeviceSize* offsets, const VkDeviceSize indexOffset = 0, uint32_t binding = 0, uint32_t bindingCount = 1) {
 				vkCmdBindVertexBuffers(cmdBuffer, binding, bindingCount, vertexBuffers, offsets);
 				vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, indexOffset, VK_INDEX_TYPE_UINT32);
 			}
 
+			/// <summary>Alias call for: vkCmdBindVertexBuffers.</summary>
 			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, const VkBuffer* vertexBuffers, const VkDeviceSize* offsets, uint32_t binding = 0, uint32_t bindingCount = 1) {
 				vkCmdBindVertexBuffers(cmdBuffer, binding, bindingCount, vertexBuffers, offsets);
 			}
 
+			/// <summary>Alias call for: vkCmdBindIndexBuffers.</summary>
 			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, const VkBuffer indexBuffer, const VkDeviceSize indexOffset = 0, uint32_t binding = 0, uint32_t bindingCount = 1) {
 				vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, indexOffset, VK_INDEX_TYPE_UINT32);
 			}
 
+			/// <summary>Alias call for: vkCmdBindVertexBuffers2.</summary>
 			inline static void CmdBindGeometry(VkCommandBuffer cmdBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* vertexBuffers, const VkDeviceSize* vbufferOffsets, const VkDeviceSize* vbufferSizes, const VkDeviceSize* vbufferStrides = nullptr) {
 					vkCmdBindVertexBuffers2(cmdBuffer, firstBinding, bindingCount, vertexBuffers, vbufferOffsets, vbufferSizes, vbufferStrides);
 			}
 
+			/// <summary>Alias call for vkCmdDraw (isIndexed = false) and vkCmdDrawIndexed (isIndexed = true).</summary>
 			inline static void CmdDrawGeometry(VkCommandBuffer cmdBuffer, bool isIndexed = false, uint32_t instanceCount = 1, uint32_t firstInstance = 0, uint32_t vertexCount = 0, uint32_t vertexOffset = 0, uint32_t firstIndex = 0) {
 				switch (isIndexed) {
 					case true:
@@ -56,10 +61,12 @@
 				}
 			}
 
+			/// <summary>Alias call for: vkCmdDrawIndexedIndirect.</summary>
 			inline static void CmdDrawGeometryIndirect(VkCommandBuffer cmdBuffer, const VkBuffer drawParamBuffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
 				vkCmdDrawIndexedIndirect(cmdBuffer, drawParamBuffer, offset, drawCount, stride);
 			}
 
+			/// <summary>Alias call for: vkCmdDrawIndexedIndirectCount.</summary>
 			inline static void CmdDrawGeometryIndirect(VkCommandBuffer cmdBuffer, const VkBuffer drawParamBuffer, VkDeviceSize offset, const VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t drawCount, uint32_t maxDrawCount, uint32_t stride) {
 				vkCmdDrawIndexedIndirectCount(cmdBuffer, drawParamBuffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 			}
@@ -94,6 +101,7 @@
 				}
 			}
 
+			/// <summary>Creates a headless renderer specifically for performing render commands on a TinyVkImage (VkImage).</summary>
 			TinyVkImageRenderer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& vmAlloc, TinyVkImage* renderTarget, TinyVkGraphicsPipeline& graphicsPipeline, size_t cmdpoolbuffercount = 32ULL)
 			: renderDevice(renderDevice), vmAlloc(vmAlloc), graphicsPipeline(graphicsPipeline), renderTarget(renderTarget) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
@@ -458,6 +466,7 @@
 				}
 			}
 
+			/// <summary>Creates a renderer specifically for performing render commands on a TinyVkSwapChain (VkSwapChain) to present to the window.</summary>
 			TinyVkSwapChainRenderer(TinyVkRenderDevice& renderDevice, TinyVkVMAllocator& memAlloc, TinyVkSwapChain& swapChain, TinyVkGraphicsPipeline& graphicsPipeline, size_t cmdpoolbuffercount = 32ULL)
 				: renderDevice(renderDevice), memAlloc(memAlloc), swapChain(swapChain), graphicsPipeline(graphicsPipeline) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));

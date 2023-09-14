@@ -34,6 +34,7 @@
 			TINYVK_COLOR_ATTACHMENT_OPTIMAL = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		};
 
+		/// <summary>GPU device image for sending images to the render (GPU) device.</summary>
 		class TinyVkImage : public disposable {
 		private:
 			TinyVkRenderDevice& renderDevice;
@@ -138,6 +139,7 @@
 				vkDestroyFence(renderDevice.logicalDevice, imageWaitable, nullptr);
 			}
 
+			/// <summary>Creates a VkImage for rendering or loading image files (stagedata) into.</summary>
 			TinyVkImage(TinyVkRenderDevice& renderDevice, TinyVkGraphicsPipeline& graphicsPipeline, TinyVkCommandPool& commandPool, TinyVkVMAllocator& vmAlloc, VkDeviceSize width, VkDeviceSize height, bool isDepthImage = false, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, TinyVkImageLayout layout = TINYVK_UNDEFINED, VkSamplerAddressMode addressingMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT)
 			: renderDevice(renderDevice), graphicsPipeline(graphicsPipeline), commandPool(commandPool), vmAlloc(vmAlloc), width(width), height(height), isDepthImage(isDepthImage), format(format), currentLayout(TINYVK_UNDEFINED), addressingMode(addressingMode), aspectFlags(aspectFlags) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));

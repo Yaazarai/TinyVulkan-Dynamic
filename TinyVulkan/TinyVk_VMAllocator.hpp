@@ -17,6 +17,7 @@
 				vmaDestroyAllocator(memoryAllocator);
 			}
 
+			/// <summary>Creates the VMA (by AMD) allocator for allocating buffer/image memory on the host graphics device.</summary>
 			TinyVkVMAllocator(TinyVkInstance& mvkInstance, TinyVkRenderDevice& renderDevice) : renderDevice(renderDevice) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 

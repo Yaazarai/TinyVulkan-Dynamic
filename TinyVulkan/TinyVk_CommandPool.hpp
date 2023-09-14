@@ -54,6 +54,7 @@
 				vkDestroyCommandPool(renderDevice.logicalDevice, commandPool, nullptr);
 			}
 			
+			/// <summary>Creates a command pool to lease VkCommandBuffers from for recording render commands.</summary>
 			TinyVkCommandPool(TinyVkRenderDevice& renderDevice, size_t bufferCount = static_cast<size_t>(TinyVkBufferingMode::QUADRUPLE)) : renderDevice(renderDevice), bufferCount(bufferCount) {
 				onDispose.hook(callback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
@@ -114,6 +115,7 @@
 				rentQueue[bufferIndexPair.second] = false;
 			}
 
+			/// <summary>Sets all of the command buffers to available--optionally resets their recorded commands.</summary>
 			void ReturnAllBuffers(bool resetCmdPool = false) {
 				if (resetCmdPool) vkResetCommandPool(renderDevice.logicalDevice, commandPool, 0);
 

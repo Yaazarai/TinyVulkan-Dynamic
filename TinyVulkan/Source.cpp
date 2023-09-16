@@ -103,7 +103,7 @@ int32_t TINYVULKAN_WINDOWMAIN {
         //std::cout << camera[0][3] << ", " << camera[1][3] << ", " << camera[2][3] << ", " << camera[3][3] << ", " << std::endl;
         frame.projection.StageBufferData(&camera, sizeof(glm::mat4), 0, 0);
         VkDescriptorBufferInfo cameraDescriptorInfo = frame.projection.GetBufferDescriptor();
-        VkWriteDescriptorSet cameraDescriptor = renderPipe.SelectWriteBufferDescriptor(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { &cameraDescriptorInfo });
+        VkWriteDescriptorSet cameraDescriptor = renderPipe.SelectWriteBufferDescriptor(0, 1, { &cameraDescriptorInfo });
         swapRenderer.PushDescriptorSet(commandBuffer.first, { cameraDescriptor });
         //swapRenderer.PushConstants(commandBuffer, VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::mat4), &camera);
 
@@ -125,9 +125,9 @@ int32_t TINYVULKAN_WINDOWMAIN {
     /// Finally when the render thread closes with the window, join and free the render thread.
     /// 
 
-    //std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
-    window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
+    std::thread mythread([&window, &swapRenderer]() { while (!window.ShouldClose()) { swapRenderer.RenderExecute(); } });
+    //window.onWhileMain.hook(callback<std::atomic<bool>&>([&swapRenderer](std::atomic<bool>& shouldClose){ swapRenderer.RenderExecute(); }));
     window.WhileMain(false);
-    //mythread.join();
+    mythread.join();
     return VK_SUCCESS;
 };

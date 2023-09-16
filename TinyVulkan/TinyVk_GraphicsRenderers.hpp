@@ -310,7 +310,7 @@
 					if (commandPool->rentQueue[i] != false)
 						commandBuffers.push_back(commandPool->commandBuffers[i]);
 				}
-				submitInfo.commandBufferCount = commandBuffers.size();
+				submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 				submitInfo.pCommandBuffers = commandBuffers.data();
 
 				if (vkQueueSubmit(graphicsPipeline.graphicsQueue, 1, &submitInfo, renderTarget->imageWaitable) != VK_SUCCESS)
@@ -391,7 +391,7 @@
 					if (commandPools[currentSyncFrame]->rentQueue[i] != false)
 						commandBuffers.push_back(commandPools[currentSyncFrame]->commandBuffers[i]);
 				}
-				submitInfo.commandBufferCount = commandBuffers.size();
+				submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 				submitInfo.pCommandBuffers = commandBuffers.data();
 
 				VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentSyncFrame] };

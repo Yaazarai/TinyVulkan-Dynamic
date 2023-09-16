@@ -7,6 +7,13 @@
 		#define VKCOMP_RGBA VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		#define VKCOMP_BGRA VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT
 
+		enum TinyVkDescriptorTypes {
+			TINYVK_DESCRIPTOR_IMAGE_SAMPLER = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			TINYVK_DESCRIPTOR_STORAGE_IMAGE = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+			TINYVK_DESCRIPTOR_UNIFORM_BUFFER = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			TINYVK_DESCRIPTOR_STORAGE_BUFFER = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+		};
+
 		/// <summary>Represents the Vertex shader layout data passing through the graphics pipeline.</summary>
 		struct TinyVkVertexDescription {
 			const VkVertexInputBindingDescription binding;
@@ -290,13 +297,37 @@
 			}
 
 			/// <summary>Creates a write buffer descriptor (any of VK_DESCRIPTOR_TYPE_*_BUFFER) for passing buffers to the GPU (on myrenderer.PushDescriptorSet).</summary>
-			inline static VkWriteDescriptorSet SelectWriteBufferDescriptor(uint32_t binding, uint32_t descriptorCount, VkDescriptorType descriptorType, const VkDescriptorBufferInfo* bufferInfo) {
+			inline static VkWriteDescriptorSet SelectWriteBufferDescriptor(uint32_t binding, uint32_t descriptorCount, const VkDescriptorBufferInfo* bufferInfo) {
 				VkWriteDescriptorSet writeDescriptorSets{};
 				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				writeDescriptorSets.dstSet = 0;
 				writeDescriptorSets.dstBinding = binding;
 				writeDescriptorSets.descriptorCount = descriptorCount;
-				writeDescriptorSets.descriptorType = descriptorType;
+				writeDescriptorSets.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				writeDescriptorSets.pBufferInfo = bufferInfo;
+				return writeDescriptorSets;
+			}
+		
+			/// <summary>Creates a layout description for how a descriptor should be bound to the graphics pipeline at hwta binding and shader stages./summary>
+			inline static VkDescriptorSetLayoutBinding SelectPushDescriptorLayoutBinding(uint32_t binding, TinyVkDescriptorTypes descriptorType, VkShaderStageFlags stageFlags, uint32_t descriptorCount = 1) {
+				VkDescriptorSetLayoutBinding descriptorLayoutBinding {};
+				descriptorLayoutBinding.binding = binding;
+				descriptorLayoutBinding.descriptorCount = descriptorCount;
+				descriptorLayoutBinding.descriptorType = static_cast<VkDescriptorType>(descriptorType);
+				descriptorLayoutBinding.pImmutableSamplers = nullptr;
+				descriptorLayoutBinding.stageFlags = stageFlags;
+				return descriptorLayoutBinding;
+			}
+
+			/// <summary>Creates a generic write descriptor to represent data passed to the GPU when rendering (on myrenderer.PushDescriptorSet).</summary>
+			inline static VkWriteDescriptorSet SelectWriteDescriptor(uint32_t binding, uint32_t descriptorCount, TinyVkDescriptorTypes descriptorType, const VkDescriptorImageInfo* imageInfo, const VkDescriptorBufferInfo* bufferInfo) {
+				VkWriteDescriptorSet writeDescriptorSets{};
+				writeDescriptorSets.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets.dstSet = 0;
+				writeDescriptorSets.dstBinding = binding;
+				writeDescriptorSets.descriptorCount = descriptorCount;
+				writeDescriptorSets.descriptorType = static_cast<VkDescriptorType>(descriptorType);
+				writeDescriptorSets.pImageInfo = imageInfo;
 				writeDescriptorSets.pBufferInfo = bufferInfo;
 				return writeDescriptorSets;
 			}

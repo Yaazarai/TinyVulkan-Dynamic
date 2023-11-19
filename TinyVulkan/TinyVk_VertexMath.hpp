@@ -169,16 +169,16 @@
 
             static void OffsetPosition(std::vector<TinyVkVertex>& quad, glm::vec2 xy, bool relative) {
                 if (relative) {
-                    quad[0].position += xy;
-                    quad[1].position += xy;
-                    quad[2].position += xy;
-                    quad[3].position += xy;
+                    quad[0].position += glm::vec3(xy,0.0f);
+                    quad[1].position += glm::vec3(xy,0.0f);
+                    quad[2].position += glm::vec3(xy,0.0f);
+                    quad[3].position += glm::vec3(xy,0.0f);
                 } else {
-                    glm::vec2 wh = glm::vec2(quad[1].position - quad[0].position, quad[2].position - quad[3].position);
-                    quad[0].position = glm::vec3(xy, 0.0);
-                    quad[1].position = glm::vec3(xy.x + wh.x, xy.y, 0.0);
-                    quad[2].position = glm::vec3(xy.x + wh.x, xy.y + wh.y, 0.0);
-                    quad[3].position = glm::vec3(xy.x, xy.y + wh.y, 0.0);
+                    glm::vec2 wh = glm::vec2(quad[1].position.x - quad[0].position.x, quad[2].position.y - quad[3].position.y);
+                    quad[0].position = glm::vec3(xy, quad[0].position.z);
+                    quad[1].position = glm::vec3(xy.x + wh.x, xy.y, quad[1].position.z);
+                    quad[2].position = glm::vec3(xy.x + wh.x, xy.y + wh.y, quad[2].position.z);
+                    quad[3].position = glm::vec3(xy.x, xy.y + wh.y, quad[3].position.z);
                 }
             }
         };

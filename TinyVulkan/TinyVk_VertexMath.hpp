@@ -166,6 +166,21 @@
                     quad[i].position = glm::vec3(position, quad[i].position.z);
                 }
             }
+
+            static void OffsetPosition(std::vector<TinyVkVertex>& quad, glm::vec2 xy, bool relative) {
+                if (relative) {
+                    quad[0].position += xy;
+                    quad[1].position += xy;
+                    quad[2].position += xy;
+                    quad[3].position += xy;
+                } else {
+                    glm::vec2 wh = glm::vec2(quad[1].position - quad[0].position, quad[2].position - quad[3].position);
+                    quad[0].position = glm::vec3(xy, 0.0);
+                    quad[1].position = glm::vec3(xy.x + wh.x, xy.y, 0.0);
+                    quad[2].position = glm::vec3(xy.x + wh.x, xy.y + wh.y, 0.0);
+                    quad[3].position = glm::vec3(xy.x, xy.y + wh.y, 0.0);
+                }
+            }
         };
 
         /// <summary>Default (white) color layout for generating quads.</summary>

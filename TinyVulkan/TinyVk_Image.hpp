@@ -294,7 +294,24 @@
 				region.imageOffset = { 0, 0, 0 };
 				region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 				vkCmdCopyBufferToImage(bufferIndexPair.first, srcBuffer.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+				EndTransferCmd(bufferIndexPair);
+			}
 
+			/// <summary>Copies data from this TinyVkImage into the destination TinyVkBuffer</summary>
+			void TransferToBufferCmd(TinyVkBuffer& dstBuffer) {
+				std::pair<VkCommandBuffer, int32_t> bufferIndexPair = BeginTransferCmd();
+
+				VkBufferImageCopy region{};
+				region.bufferOffset = 0;
+				region.bufferRowLength = 0;
+				region.bufferImageHeight = 0;
+				region.imageSubresource.aspectMask = aspectFlags;
+				region.imageSubresource.mipLevel = 0;
+				region.imageSubresource.baseArrayLayer = 0;
+				region.imageSubresource.layerCount = 1;
+				region.imageOffset = { 0, 0, 0 };
+				region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
+				vkCmdCopyImageToBuffer(bufferIndexPair.first, image, (VkImageLayout) currentLayout, dstBuffer.buffer, 1, &region);
 				EndTransferCmd(bufferIndexPair);
 			}
 

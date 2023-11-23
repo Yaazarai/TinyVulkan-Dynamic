@@ -43,7 +43,7 @@
 		/// <summary>Description of the Rendering Surface format.</summary>
 		struct TinyVkSurfaceSupporter {
 		public:
-			VkFormat dataFormat = VK_FORMAT_B8G8R8A8_SRGB;
+			VkFormat dataFormat = VK_FORMAT_B8G8R8A8_UNORM;
 			VkColorSpaceKHR colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 			VkPresentModeKHR idealPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 		};

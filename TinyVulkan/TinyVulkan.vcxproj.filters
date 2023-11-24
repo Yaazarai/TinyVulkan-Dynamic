@@ -31,10 +31,10 @@
     <Filter Include="Header Files\TinyVulkan-Lib1\TinyVulkan Rendering">
       <UniqueIdentifier>{8551ed74-08b4-4d30-83dc-0f4e64486dc1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\TinyVulkan-Lib">
+    <Filter Include="Header Files\TinyVulkan-Lib2">
       <UniqueIdentifier>{44a538d2-4dae-4681-836f-5bc212435ac6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\TinyVulkan-Lib\TinyVulkan">
+    <Filter Include="Header Files\TinyVulkan-Lib2\TinyVulkan">
       <UniqueIdentifier>{10546f28-6f42-4f71-acf6-a6089d8c4fee}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -114,52 +114,52 @@
       <Filter>Header Files\Internal Dependencies</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan.hpp">
-      <Filter>Header Files\TinyVulkan-Lib</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_Disposable.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_Invokable.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_Utilities.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_CommandPool.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_VulkanDevice.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_Window.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_InputEnums.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_GraphicsPipeline.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_VertexMath.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_Buffer.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_Image.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_ResourceQueue.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_ImageRenderer.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_TimedGuard.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
     <ClInclude Include="TinyVulkan\TinyVk_SwapChainRenderer.hpp">
-      <Filter>Header Files\TinyVulkan-Lib\TinyVulkan</Filter>
+      <Filter>Header Files\TinyVulkan-Lib2\TinyVulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

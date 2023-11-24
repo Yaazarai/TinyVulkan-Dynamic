@@ -180,6 +180,22 @@
     <ClInclude Include="TinyVk_VertexMath.hpp" />
     <ClInclude Include="TinyVk_VMAllocator.hpp" />
     <ClInclude Include="TinyVk_Window.hpp" />
+    <ClInclude Include="TinyVulkan.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_Buffer.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_GraphicsPipeline.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_Image.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_ImageRenderer.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_InputEnums.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_ResourceQueue.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_SwapChainRenderer.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_TimedGuard.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_VertexMath.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_Window.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_CommandPool.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_Disposable.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_Invokable.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_Utilities.hpp" />
+    <ClInclude Include="TinyVulkan\TinyVk_VulkanDevice.hpp" />
     <ClInclude Include="triangulation_earcut.hpp" />
     <ClInclude Include="vk_mem_alloc.hpp" />
   </ItemGroup>

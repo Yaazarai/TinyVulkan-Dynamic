@@ -281,8 +281,8 @@
 			
 			/// <summary>Executes the registered onRenderEvents and renders them to the target image/texture.</summary>
 			void RenderExecute(VkCommandBuffer preRecordedCmdBuffer = nullptr) {
-				timed_guard swapChainLock(renderTarget->image_lock);
-				if (!swapChainLock.Acquired()) return;
+				timed_guard imageLock(renderTarget->image_lock);
+				if (!imageLock.Acquired()) return;
 				
 				if (renderTarget == nullptr)
 					throw new std::runtime_error("TinyVulkan: RenderTarget for TinyVkImageRenderer is not set [nullptr]!");
@@ -642,7 +642,7 @@
 
 			/// <summary>Executes the registered onRenderEvents and presents them to the SwapChain(Window).</summary>
 			void RenderExecute() {
-				timed_guard<false> swapChainLock(swapChain.swapChainMutex);
+				timed_guard swapChainLock(swapChain.swapChainMutex);
 				if (!swapChainLock.Acquired()) return;
 				RenderSwapChain();
 			}

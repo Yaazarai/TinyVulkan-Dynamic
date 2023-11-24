@@ -473,12 +473,12 @@
 				swapChain.onResizeFrameBuffer.hook(callback<int, int>([this](int, int){ this->RenderSwapChain(); }));
 
 				for(size_t i = 0; i < static_cast<size_t>(swapChain.bufferingMode); i++) {
-					commandPools.push_back(new TinyVkCommandPool(renderDevice, cmdpoolbuffercount));
+					commandPools.push_back(new TinyVkCommandPool(renderDevice, cmdpoolbuffercount + 1));
 					frameRenderSizes.push_back({ swapChain.imageExtent.width, swapChain.imageExtent.height });
 				}
 
 				if (graphicsPipeline.DepthTestingIsEnabled()) {
-					depthImagePool = new TinyVkCommandPool(renderDevice, static_cast<size_t>(swapChain.bufferingMode));
+					depthImagePool = new TinyVkCommandPool(renderDevice, static_cast<size_t>(swapChain.bufferingMode) + 1);
 					
 					for(size_t i = 0; i < static_cast<size_t>(swapChain.bufferingMode); i++)
 						optionalDepthImages.push_back(new TinyVkImage(renderDevice, graphicsPipeline, *depthImagePool, memAlloc, swapChain.imageExtent.width, swapChain.imageExtent.height, true, graphicsPipeline.QueryDepthFormat(), TINYVK_DEPTHSTENCIL_ATTACHMENT_OPTIMAL, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_IMAGE_ASPECT_DEPTH_BIT));

@@ -62,7 +62,6 @@
 		}
 	}
 
-
 	namespace TINYVULKAN_NAMESPACE {
 		/// <summary>GLFW window handler for TinyVulkan that will link to and initialize GLFW and Vulkan to create your game/application window</summary>
 		class TinyVkWindow : public TinyVkDisposable {

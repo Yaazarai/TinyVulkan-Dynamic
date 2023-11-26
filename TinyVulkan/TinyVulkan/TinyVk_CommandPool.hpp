@@ -55,7 +55,7 @@
 			}
 			
 			/// <summary>Creates a command pool to lease VkCommandBuffers from for recording render commands.</summary>
-			TinyVkCommandPool(TinyVkVulkanDevice& vkdevice, size_t bufferCount = static_cast<size_t>(TinyVkBufferingMode::QUADRUPLE)) : vkdevice(vkdevice), bufferCount(bufferCount) {
+			TinyVkCommandPool(TinyVkVulkanDevice& vkdevice, size_t bufferCount = 32ULL) : vkdevice(vkdevice), bufferCount(bufferCount) {
 				onDispose.hook(TinyVkCallback<bool>([this](bool forceDispose) {this->Disposable(forceDispose); }));
 
 				CreateCommandPool();
